@@ -15,7 +15,7 @@ class WriteOnlyViewController: UIViewController {
     var red : CGFloat = 0.0
     var green : CGFloat = 0.0
     var blue : CGFloat = 0.0
-    var lineWidth : CGFloat = 2.0 //how thick lines are
+    var lineWidth : CGFloat = 0.0 //how thick lines are
     var swiped = false //identifies if line is continuous
     
     override func viewDidLoad() {
