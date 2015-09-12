@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="8187.4" systemVersion="14F27" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="49e-Tb-3d3">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="8151.3"/>
+    </dependencies>
+    <scenes>
+        <!--First-->
+        <scene sceneID="hNz-n2-bh7">
+            <objects>
+                <viewController id="9pv-A4-QxB" customClass="WriteOnlyViewController" customModule="EMR_App" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Ia1-K6-d13"/>
+                        <viewControllerLayoutGuide type="bottom" id="4ug-Mw-9AY"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="tsR-hK-woN">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="5rw-MN-mTK">
+                                <rect key="frame" x="0.0" y="20" width="600" height="531"/>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="5rw-MN-mTK" firstAttribute="bottom" secondItem="4ug-Mw-9AY" secondAttribute="top" id="K2k-gB-U3n"/>
+                            <constraint firstItem="5rw-MN-mTK" firstAttribute="leading" secondItem="tsR-hK-woN" secondAttribute="leading" id="N4Q-nq-WPV"/>
+                            <constraint firstAttribute="trailing" secondItem="5rw-MN-mTK" secondAttribute="trailing" id="d6l-zW-6kq"/>
+                            <constraint firstItem="5rw-MN-mTK" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="nRz-xD-cqS"/>
+                        </constraints>
+                    </view>
+                    <tabBarItem key="tabBarItem" title="First" image="first" id="ieI-sN-UrH"/>
+                    <connections>
+                        <outlet property="canvasImageView" destination="5rw-MN-mTK" id="zHd-6R-VId"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="W5J-7L-Pyd" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="750" y="-320"/>
+        </scene>
+        <!--Second-->
+        <scene sceneID="wg7-f3-ORb">
+            <objects>
+                <viewController id="8rJ-Kc-sve" customClass="ReadOnlyViewController" customModule="EMR_App" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="L7p-HK-0SC"/>
+                        <viewControllerLayoutGuide type="bottom" id="Djb-ko-YwX"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="QS5-Rx-YEW">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" text="Text Goes Here" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="bRs-tu-rhR">
+                                <rect key="frame" x="0.0" y="28" width="600" height="119"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                            </textView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="N9B-se-hu5" customClass="MLTWMultiLineView">
+                                <rect key="frame" x="0.0" y="161" width="600" height="390"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="Djb-ko-YwX" firstAttribute="top" secondItem="bRs-tu-rhR" secondAttribute="bottom" constant="404" id="6CO-Vm-fPO"/>
+                            <constraint firstItem="N9B-se-hu5" firstAttribute="trailing" secondItem="bRs-tu-rhR" secondAttribute="trailing" id="Jxf-dC-DYq"/>
+                            <constraint firstAttribute="trailing" secondItem="bRs-tu-rhR" secondAttribute="trailing" id="R50-QW-ed2"/>
+                            <constraint firstItem="bRs-tu-rhR" firstAttribute="top" secondItem="L7p-HK-0SC" secondAttribute="bottom" constant="8" symbolic="YES" id="ap5-KV-t4x"/>
+                            <constraint firstItem="N9B-se-hu5" firstAttribute="leading" secondItem="bRs-tu-rhR" secondAttribute="leading" id="hWt-f8-zTb"/>
+                            <constraint firstItem="bRs-tu-rhR" firstAttribute="leading" secondItem="QS5-Rx-YEW" secondAttribute="leading" id="ll4-ov-P2V"/>
+                            <constraint firstItem="N9B-se-hu5" firstAttribute="bottom" secondItem="Djb-ko-YwX" secondAttribute="top" id="lzZ-Pr-h1t"/>
+                            <constraint firstItem="N9B-se-hu5" firstAttribute="top" secondItem="bRs-tu-rhR" secondAttribute="bottom" constant="14" id="pfY-nI-SLd"/>
+                        </constraints>
+                    </view>
+                    <tabBarItem key="tabBarItem" title="Second" image="second" id="cPa-gy-q4n"/>
+                    <connections>
+                        <outlet property="multiLineView" destination="N9B-se-hu5" id="dbG-HW-SBA"/>
+                        <outlet property="textView" destination="bRs-tu-rhR" id="PkK-oV-Whb"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="4Nw-L8-lE0" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="750" y="360"/>
+        </scene>
+        <!--Tab Bar Controller-->
+        <scene sceneID="yl2-sM-qoP">
+            <objects>
+                <tabBarController id="49e-Tb-3d3" sceneMemberID="viewController">
+                    <nil key="simulatedBottomBarMetrics"/>
+                    <tabBar key="tabBar" contentMode="scaleToFill" id="W28-zg-YXA">
+                        <rect key="frame" x="0.0" y="975" width="768" height="49"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                    </tabBar>
+                    <connections>
+                        <segue destination="9pv-A4-QxB" kind="relationship" relationship="viewControllers" id="u7Y-xg-7CH"/>
+                        <segue destination="8rJ-Kc-sve" kind="relationship" relationship="viewControllers" id="lzU-1b-eKA"/>
+                    </connections>
+                </tabBarController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="HuB-VB-40B" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="first" width="30" height="30"/>
+        <image name="second" width="30" height="30"/>
+    </resources>
+</document>
