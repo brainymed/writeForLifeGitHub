@@ -11,9 +11,16 @@ class ReadOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     @IBOutlet weak var textView: UITextView!
     @IBOutlet weak var multiLineView: MLTWMultiLineView!
     
+    var currentPatient: Patient?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.initializeMLTW()
+        
+        let customView = PatientNameEntryView(frame: CGRect(x: 0, y: 0, width: 50, height: 100))
+        self.view.addSubview(customView)
+        
+        print("Current Patient (ROVC): \(currentPatient)")
     }
 
     override func didReceiveMemoryWarning() {
@@ -38,11 +45,11 @@ class ReadOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     }
     
     func multiLineViewDidBeginConfiguration(view: MLTWMultiLineView!) {
-        NSLog("View Began Configuration")
+        //
     }
     
     func multiLineViewDidEndConfiguration(view: MLTWMultiLineView!) {
-        NSLog("Configuration Completed Successfully")
+        //
     }
     
     func multiLineView(view: MLTWMultiLineView!, didFailConfigurationWithError error: NSError!) {
@@ -51,14 +58,23 @@ class ReadOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     
     func multiLineViewDidStartRecognition(view: MLTWMultiLineView!) {
         //Called when program starts recognizing handwriting & converting -> text:
-        NSLog("Recognition Started")
     }
     
     func multiLineViewDidEndRecognition(view: MLTWMultiLineView!) {
-        NSLog("Recognition Ended")
+        //
     }
     
     func multiLineView(view: MLTWMultiLineView!, didChangeText text: String!) {
         textView.text = text
+    }
+    
+    //MARK: - Navigation
+    
+    override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
+        return true
+    }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        //Do something:
     }
 }
