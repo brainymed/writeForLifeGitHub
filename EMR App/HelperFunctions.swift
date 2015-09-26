@@ -1,6 +1,5 @@
 //  HelperFunctions.swift
 //  EMR App
-//
 //  Created by Arnav Pondicherry  on 9/15/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 

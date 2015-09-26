@@ -1,14 +1,15 @@
-//  WriteOnlyViewController.swift
-//  Created by Arnav Pondicherry  on 9/5/15.
+//  PatientCareModeViewController.swift
+//  EMR App
+//  Created by Arnav Pondicherry  on 9/21/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Controls the Write-Only portion of the app (for information input)
+// Controls the Patient Care Mode of the app (for handwritten information input & information extraction)
 
 import UIKit
 import CoreGraphics
 import CoreData
 
-class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
+class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate, LoginViewControllerDelegate {
     
     @IBOutlet weak var mainImageView: UIImageView!
     @IBOutlet weak var multiLineView: CustomMLTWView! //Change made here & to WriteVC file name
@@ -16,6 +17,7 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     @IBOutlet weak var sendButton: UIButton!
     @IBOutlet weak var mltwTextLabel: UILabel!
     @IBOutlet weak var closeButton: UIButton!
+    @IBOutlet weak var openButton: UIButton!
     
     var openScope : EMRField? //the currently open scope @ any given point in time; there can only be 1!
     var currentPatient : Patient?
@@ -23,24 +25,26 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        //Create Margins - how do we make the layout adaptive instead of static? <Replace w/ configureView() function in the future>
+        configureMargins()
+        initializeMLTW()
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        print("Current Patient (PCMVC): \(currentPatient?.name)")
+        if (currentPatient == nil) {
+            //If there is no patient file open, force the user to open one before proceeding:
+        }
+    }
+    
+    func configureMargins() {
         drawLineFrom(CGPoint(x: view.frame.minX, y: view.frame.minY), toPoint: CGPoint(x: view.frame.maxX, y: view.frame.minY)) //Top Layout Margin (separates from battery & time)
         drawLineFrom(CGPoint(x: view.frame.minX, y: (view.frame.minY + 80)), toPoint: CGPoint(x: view.frame.width, y: (view.frame.minY + 80))) //Top Horizontal Margin
         drawLineFrom(CGPoint(x: (view.frame.minX + 80), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.minX + 80), y: view.frame.height)) //Left Vertical Margin
         drawLineFrom(CGPoint(x: (view.frame.width - 85), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.width - 85), y: view.frame.height)) //Right Vertical Margin
-        
-        //Configure MLTW:
-        initializeMLTW()
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     func drawLineFrom(fromPoint: CGPoint, toPoint: CGPoint) {
-        //This method draws the margins in our view: 
+        //This method draws the margins in our view:
         //First, set up a context holding the image currently in the mainImageView.
         UIGraphicsBeginImageContext(view.frame.size) //'View' specifies the root view in the view hierarchy
         let context = UIGraphicsGetCurrentContext()
@@ -65,6 +69,11 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
         UIGraphicsEndImageContext()
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+    
     //MARK: - MLTW Config
     
     func initializeMLTW() {
@@ -85,14 +94,15 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
         multiLineView.autoScrollRatio = 0.6 //Percent of view that must be filled before auto-scroll occurs
         multiLineView.scrollBackgroundColor = UIColor.lightGrayColor() //sets color of scroll bar
         
-        //Enable or Disable Various Gestures:
+        self.configureRecognitionForLocale()
+        
+        //Enable or Disable Various Gestures AFTER Configuration:
         multiLineView.setGesture(.Underline, enable: false) //Disables underline
         multiLineView.setGesture(.Join, enable: false) //Disables join gesture (combines words)
         multiLineView.setGesture(.Erase, enable: false) //Disables erase (strikethrough?) gesture
-        multiLineView.setGesture(.Overwrite, enable: false) 
+        multiLineView.setGesture(.Overwrite, enable: false)
         multiLineView.setGesture(.Return, enable: false) //Disables return (enter) gesture
-        
-        self.configureRecognitionForLocale()
+        multiLineView.setGesture(.Selection, enable: false) //Disables 'circle' gesture
     }
     
     func configureRecognitionForLocale() {
@@ -142,20 +152,18 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
                 alertController.addAction(ok)
                 self.presentViewController(alertController, animated: true, completion: nil)
                 closeButton.enabled = true //If file is open, user should have option to close it
+                openButton.enabled = false //Disable 'open' button until file is closed
             } else { //Patient was not found for the given name
                 let alertController = UIAlertController(title: "Error!", message: "No patient was found for the given name. Please enter an existing patient's name.", preferredStyle: .Alert)
                 let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                 alertController.addAction(ok)
                 self.presentViewController(alertController, animated: true, completion: nil)
             }
-        } else if (currentPatient != nil) { //Patient file is already opened
-            print("Patient file is already opened. Please close this file before opening a new one.")
         } else { //Nothing entered in MLTW
             print("Please enter a patient name.")
         }
         multiLineView.clear()
     }
-    
     
     @IBAction func mapButtonClick(sender: AnyObject) {
         //Checks if the input value matches an EMR field before mapping to it & opening a scope:
@@ -174,10 +182,11 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
                         dispatch_async(dispatch_get_main_queue(), { () -> Void in
                             self.mltwTextLabel.text = "Scope opened for <\(self.openScope?.getFieldName())>" //NOT WORKING
                         })
+                        openButton.enabled = false //Disables 'open' button while patient file is open
                         mapButton.enabled = false
                         sendButton.enabled = true //Enables send button while scope is open
                         print("New Patient - Scope Opened")
-                    } else {//'Current Patient' exists
+                    } else {//'Current Patient' exists but no patient file is open
                         //Alert user that new patient must first be entered:
                         let alertController = UIAlertController(title: "No Files are Open!", message: "There are currently no patient files open. Please enter a patient name before proceeding.", preferredStyle: .Alert)
                         let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
@@ -186,7 +195,7 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
                         
                         //Configure view for patient name entry:
                     }
-                } else {//'Current patient' exists
+                } else {//'Current patient' exists & match is found for keyword
                     //Open scope for NON-NAME field:
                     if (openScope!.getFieldName() == "name") {
                         //Throw error message - user should not be entering a new name while a current patient exists (they must clear the old patient first).
@@ -245,28 +254,59 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     @IBAction func closeFileButtonClick(sender: AnyObject) {
         //Close the existing patient file that is being worked on (& remove the current patient from the MOC) - first, we transfer the 'currentPatient' object -> a new object, which will be placed in the MOC, so that the info is not lost when the 'currentPatient' is removed from the MOC.
         openScope = nil //if there is a scope open, close it
-        let patient : Patient = currentPatient! //Transfer data
-        managedObjectContext.insertObject(patient) //Add new object to MOC
-        managedObjectContext.deleteObject(currentPatient!) //Remove currentPatient from MOC
-        saveManagedObjectContext() //saves MOC after changes have been made
-        currentPatient = nil //clear the currentPatient
+        if (currentPatient != nil) {
+            let patient : Patient = currentPatient! //Transfer data
+            managedObjectContext.insertObject(patient) //Add new object to MOC
+            managedObjectContext.deleteObject(currentPatient!) //Remove currentPatient from MOC
+            saveManagedObjectContext() //saves MOC after changes have been made
+            currentPatient = nil //clear the currentPatient
+        }
         
-        //After this, the user should open a new patient file, as instructed by the alert.
-        let alertController = UIAlertController(title: "Patient File Closed!", message: "The current patient file has been closed. Please enter another patient name before proceeding.", preferredStyle: .Alert)
-        let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-        alertController.addAction(ok)
-        self.presentViewController(alertController, animated: true, completion: nil)
-        
-        //Configure the view so that the user MUST enter a new patient name before proceeding:
+        if sender.tag == 1 { // We set the 'close' button's sender # == 1 in the storyboard!
+            //If the sender of the 'closeFile' action is the 'close' button, then we want to issue an alert to tell the user to enter a new patient name. If the sender is the 'logout' button, we want to simply logout.
+            let alertController = UIAlertController(title: "Patient File Closed!", message: "The current patient file has been closed. Please enter another patient name before proceeding.", preferredStyle: .Alert)
+            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+            alertController.addAction(ok)
+            self.presentViewController(alertController, animated: true, completion: nil)
+            
+            //Configure the view so that the user MUST enter a new patient name before proceeding:
+        }
         
         closeButton.enabled = false //disable 'close' button when the file is closed
         mapButton.enabled = true //enable 'map' to start cycle anew
         sendButton.enabled = false //disable 'send' to prevent data -> a closed scope
+        openButton.enabled = true //Re-enables 'open' button after current patient file is closed
         multiLineView.clear()
     }
     
     @IBAction func fetchButtonClick(sender: AnyObject) {
         fetchAllPatients()
+    }
+    
+    //MARK: - User Authentication
+    
+    var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!
+        didSet {
+            if loggedIn == true {
+                //Configure view appropriately:
+            } else {
+                self.performSegueWithIdentifier("showLogin", sender: self)
+            }
+        }
+    }
+    
+    @IBAction func logoutButtonClick(sender: AnyObject) {
+        closeFileButtonClick(sender) //Closes open patient file & resets buttons before logging out
+        //Clear out existing user defaults:
+        //        let appDomain = NSBundle.mainBundle().bundleIdentifier
+        //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
+        loggedIn = false
+    }
+    
+    //Delegate Method:
+    func didLoginSuccessfully() {
+        loggedIn = true
+        dismissViewControllerAnimated(true, completion: nil) //returns to PCM VC
     }
     
     //MARK: - Navigation
@@ -276,7 +316,11 @@ class WriteOnlyViewController: UIViewController, MLTWMultiLineViewDelegate {
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        //Do something:
+        //Before we segue, we want to set the delegate property only if the login VC is about to be shown:
+        if segue.identifier == "showLogin" {
+            let loginViewController = segue.destinationViewController as! LoginViewController
+            loginViewController.delegate = self //we set the homescreen VC as the delegate of the LoginVC!
+        }
     }
     
 }

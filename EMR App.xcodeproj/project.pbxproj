@@ -16,8 +16,6 @@
 		B136A1991B9B76A900E487C0 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B136A1971B9B76A900E487C0 /* LaunchScreen.storyboard */; };
 		B136A1A41B9B76AA00E487C0 /* EMR_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B136A1A31B9B76AA00E487C0 /* EMR_AppTests.swift */; };
 		B136A1AF1B9B76AA00E487C0 /* EMR_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B136A1AE1B9B76AA00E487C0 /* EMR_AppUITests.swift */; };
-		B136A1BD1B9B831100E487C0 /* ReadOnlyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B136A1BC1B9B831100E487C0 /* ReadOnlyViewController.swift */; settings = {ASSET_TAGS = (); }; };
-		B136A1BF1B9B831C00E487C0 /* WriteOnlyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B136A1BE1B9B831C00E487C0 /* WriteOnlyViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B137737B1B9D351A004C2EE2 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B137737A1B9D351A004C2EE2 /* SystemConfiguration.framework */; };
 		B137737D1B9D3528004C2EE2 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B137737C1B9D3528004C2EE2 /* Security.framework */; };
 		B137737F1B9D354A004C2EE2 /* libStylusCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B137737E1B9D354A004C2EE2 /* libStylusCore.a */; };
@@ -35,6 +33,7 @@
 		B14CCAC01B9E889C00A38815 /* AtkItc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CCABF1B9E889C00A38815 /* AtkItc.framework */; };
 		B14CCACC1B9E8AF300A38815 /* AtkMltw.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */; };
 		B14CCAD21B9E8CFF00A38815 /* libAtkInw.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CCAD11B9E8CFF00A38815 /* libAtkInw.a */; };
+		B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17842A11BB0D22500C34C48 /* LoginViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */; settings = {ASSET_TAGS = (); }; };
 		B1889FB11BA775EA00344130 /* PatientNameEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FB01BA775EA00344130 /* PatientNameEntryView.swift */; settings = {ASSET_TAGS = (); }; };
@@ -42,6 +41,8 @@
 		B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AF55721BA8B7400016A01A /* DateFormatter.swift */; settings = {ASSET_TAGS = (); }; };
 		B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B11C341BA856ED00651FC7 /* EMRField.swift */; settings = {ASSET_TAGS = (); }; };
 		B1D097D61BA8954300456488 /* HelperFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D097D51BA8954300456488 /* HelperFunctions.swift */; settings = {ASSET_TAGS = (); }; };
+		B1E0D5AC1BB096580097EC0F /* PatientCareModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */; settings = {ASSET_TAGS = (); }; };
+		B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0D5AD1BB0966A0097EC0F /* DataEntryModeViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B1EF1CE11BA4B8B9009725B3 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B1EF1CDF1BA4B8B9009725B3 /* Model.xcdatamodeld */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
@@ -79,8 +80,6 @@
 		B136A1AA1B9B76AA00E487C0 /* EMR AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "EMR AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B136A1AE1B9B76AA00E487C0 /* EMR_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMR_AppUITests.swift; sourceTree = "<group>"; };
 		B136A1B01B9B76AA00E487C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B136A1BC1B9B831100E487C0 /* ReadOnlyViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadOnlyViewController.swift; sourceTree = "<group>"; };
-		B136A1BE1B9B831C00E487C0 /* WriteOnlyViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WriteOnlyViewController.swift; sourceTree = "<group>"; };
 		B137737A1B9D351A004C2EE2 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		B137737C1B9D3528004C2EE2 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		B137737E1B9D354A004C2EE2 /* libStylusCore.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libStylusCore.a; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/styluscore/libStylusCore.a"; sourceTree = "<group>"; };
@@ -99,6 +98,7 @@
 		B14CCABF1B9E889C00A38815 /* AtkItc.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AtkItc.framework; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/itc/AtkItc.framework"; sourceTree = "<group>"; };
 		B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AtkMltw.framework; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/mltw/AtkMltw.framework"; sourceTree = "<group>"; };
 		B14CCAD11B9E8CFF00A38815 /* libAtkInw.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libAtkInw.a; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/inw/libAtkInw.a"; sourceTree = "<group>"; };
+		B17842A11BB0D22500C34C48 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabBarViewController.swift; sourceTree = "<group>"; };
 		B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Patient+CoreDataProperties.swift"; path = "../Patient+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		B1889FB01BA775EA00344130 /* PatientNameEntryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PatientNameEntryView.swift; sourceTree = "<group>"; };
@@ -106,6 +106,8 @@
 		B1AF55721BA8B7400016A01A /* DateFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateFormatter.swift; sourceTree = "<group>"; };
 		B1B11C341BA856ED00651FC7 /* EMRField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRField.swift; sourceTree = "<group>"; };
 		B1D097D51BA8954300456488 /* HelperFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HelperFunctions.swift; sourceTree = "<group>"; };
+		B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PatientCareModeViewController.swift; sourceTree = "<group>"; };
+		B1E0D5AD1BB0966A0097EC0F /* DataEntryModeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataEntryModeViewController.swift; sourceTree = "<group>"; };
 		B1EF1CE01BA4B8B9009725B3 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -271,9 +273,10 @@
 		B1889FB41BA777BB00344130 /* Main Views */ = {
 			isa = PBXGroup;
 			children = (
-				B136A1BE1B9B831C00E487C0 /* WriteOnlyViewController.swift */,
+				B17842A11BB0D22500C34C48 /* LoginViewController.swift */,
+				B1E0D5AD1BB0966A0097EC0F /* DataEntryModeViewController.swift */,
+				B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */,
 				B11545851BA707DD00E31EB6 /* CustomMLTWView.swift */,
-				B136A1BC1B9B831100E487C0 /* ReadOnlyViewController.swift */,
 				B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */,
 			);
 			name = "Main Views";
@@ -422,15 +425,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B136A1BF1B9B831C00E487C0 /* WriteOnlyViewController.swift in Sources */,
 				B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */,
 				B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */,
-				B136A1BD1B9B831100E487C0 /* ReadOnlyViewController.swift in Sources */,
+				B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */,
+				B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */,
 				B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */,
 				B1EF1CE11BA4B8B9009725B3 /* Model.xcdatamodeld in Sources */,
 				B1889FB31BA7760800344130 /* PhysicalAndROSView.swift in Sources */,
 				B1D097D61BA8954300456488 /* HelperFunctions.swift in Sources */,
 				B136A18D1B9B76A900E487C0 /* AppDelegate.swift in Sources */,
+				B1E0D5AC1BB096580097EC0F /* PatientCareModeViewController.swift in Sources */,
 				B1889FB11BA775EA00344130 /* PatientNameEntryView.swift in Sources */,
 				B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */,
 				B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */,
@@ -587,7 +591,7 @@
 					"/Users/arnavpond/Downloads/MyScript_ATK-ios-1.3.0/libs/mltw",
 				);
 				INFOPLIST_FILE = "EMR App/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"/Users/arnavpond/Downloads/MyScript_ATK-ios-1.3.0/libs/sdk",
@@ -634,7 +638,7 @@
 					"/Users/arnavpond/Downloads/MyScript_ATK-ios-1.3.0/libs/mltw",
 				);
 				INFOPLIST_FILE = "EMR App/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"/Users/arnavpond/Downloads/MyScript_ATK-ios-1.3.0/libs/sdk",

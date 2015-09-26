@@ -15,6 +15,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        
+        //Select 'Complete Date Entry' VC (@ index 0) as start point:
+        //let tabBar : UITabBarController = self.window?.rootViewController as! UITabBarController
+        //tabBar.selectedIndex = 0
         return true
     }
 
