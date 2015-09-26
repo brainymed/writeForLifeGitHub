@@ -11,7 +11,16 @@ import UIKit
 
 class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate, UITextFieldDelegate {
     
-    var currentPatient: Patient?
+    var currentPatient: Patient? {
+        didSet {
+            if (currentPatient != nil) { //Patient file is open. Handle accordingly.
+                
+            } else { //No patient file is open. Configure view for opening a patient file.
+                configureViewForEntry("patientName")
+            }
+        }
+    }
+    
     var openScope: EMRField?
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
@@ -31,7 +40,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func viewDidAppear(animated: Bool) {
-        if loggedIn == false {//If user is not logged in, we modally segue to the login screen. We need this line of code b/c the 'didSet' function is NOT called when we initially set the value of 'loggedIn'.
+        if loggedIn == false {//If user is not logged in, modally segue -> login screen. Need this line of code b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
@@ -45,16 +54,18 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //        }
         print("Current Patient (DEMVC): \(currentPatient?.name)")
         
-//        if currentPatient == nil { //If there is no current patient, configure view for name entry:
-//            //The length of this view should be configured so it does NOT interfere w/ the navigation items in the top, left & right margins!!! Currently, it fills the whole screen & (even though we cannot see it), is preventing user actions from reaching the buttons on the top margin.
-//            let customView = PatientNameEntryView(frame: CGRect(x: 60, y: 100, width: 400, height: 400))
-//            customView.tag = 1000
-//            self.view.addSubview(customView)
-//        } else {
-//            //Configure view differently. Allow the user to hit the 'ENTER' button & submit information for other, non-name views!
-//        }
+        if currentPatient == nil { //If there is no current patient, configure view for name entry
+            configureViewForEntry("patientName")
+        } else {
+            //Configure view differently. Allow the user to hit the 'ENTER' button & submit information for other, non-name views!
+            configureViewForEntry("fieldName")
+        }
     }
-    
+
+    //        let customView = PatientNameEntryView(frame: CGRect(x: 60, y: 100, width: 400, height: 400))
+    //        customView.tag = 1000
+    //        self.view.addSubview(customView)
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -77,99 +88,118 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     @IBAction func createNewFileButtonClick(sender: AnyObject) {
         //Create a new patient file:
-        currentPatient?.name = patientNameTextField.text!
-        configureViewForFieldNameEntry()
-        
-        notificationsFeed.text = "New File Created for {}"
+        let inputName = patientNameTextField.text!
+        currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
+        patientNameTextField.text = ""
+        configureViewForEntry("fieldName")
+        notificationsFeed.text = "New File Created for \(inputName)"
         fadeIn()
         fadeOut()
     }
     
     @IBAction func openExistingFileButtonClick(sender: AnyObject) {
-        //Open an existing patient file for the given name (check for patient):
-        currentPatient?.name = patientNameTextField.text!
-        configureViewForFieldNameEntry()
-        
-        notificationsFeed.text = "Patient File Opened for {}"
+        //Open an existing patient file for the given name (check for patient) using the EMR patient name retrieval API or the persistent store:
+        let inputName = patientNameTextField.text!
+        currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
+        patientNameTextField.text = ""
+        configureViewForEntry("fieldName")
+        notificationsFeed.text = "Patient File Opened for \(inputName)"
         fadeIn()
         fadeOut()
     }
     
-    func configureViewForFieldNameEntry() { //Configures view AFTER patient file has been opened
-        //Hide patient name entry views:
-        patientNameTextField.hidden = true
-        patientNameEntryLabel.hidden = true
-        openExistingFileButton.hidden = true
-        createNewFileButton.hidden = true
-        
-        //Bring up 'Field Name' Entry Views:
-        fieldNameEntryLabel.hidden = false
-        fieldNameTextField.hidden = false
-        
-        //Set delegate for fieldNameTextField & make it the 1st responder.
-        fieldNameTextField.delegate = self
-        fieldNameTextField.becomeFirstResponder()
-    }
-    
-    //Configure behavior when 'RETURN' button is hit:
-    func textFieldShouldReturn(textField: UITextField) -> Bool {
-        textField.text = ""
-        textField.resignFirstResponder()
-        
-        if textField.tag == 1 { // sender is Field Name TF
-            //Configure behavior based on the value that was entered:
-            openScope = EMRField(inputWord: textField.text!)
-//            if (openScope!.matchFound()) {
-//                //Check if 'currentPatient' exists:
-//                if (currentPatient == nil) {//Does NOT exist
-//                    //If it doesn't exist, first check if the user is trying to enter a new patient:
-//                    if (openScope!.getFieldName() == "name") {
-//                        //Open scope for new patient name:
-//                    } else {//'Current Patient' exists but no patient file is open
-//                        //This should never trigger b/c a patient file must be open before any behaviors can take place
-//                    }
-//                } else {//'Current patient' exists & match is found for keyword
-//                    //Open scope for NON-NAME field:
-//                    if (openScope!.getFieldName() == "name") {
-//                        //Throw error message - user should not be entering a new name while a current patient exists (they must clear the old patient first).
-//                    } else {
-//                        //Open Scope (render the view according to the fieldName that was entered):
-//                        //Bring up the 'Field Value' Entry Views:
-//                    }
-//                }
-//            } else {//'matchFound' == nil
-//                print("No match found!")
-//                //Keep the first responder here & accept a new field name entry.
-//            }
+    func configureViewForEntry(desiredView: String) { //Configures view
+        switch desiredView {
+        case "patientName": //Configure view to open a patient file
+            //Hide field name entry views:
+            fieldNameTextField.hidden = true
+            fieldNameEntryLabel.hidden = true
+            
+            //Bring up patient name entry views:
+            patientNameTextField.hidden = false
+            patientNameEntryLabel.hidden = false
+            openExistingFileButton.hidden = false
+            createNewFileButton.hidden = false
+            
+            //Make the 'patientNameTextField' the 1st responder:
+            patientNameTextField.becomeFirstResponder()
+        case "fieldName": //Configure view for field name entry
+            //Hide patient name entry views & resign 1st responder:
+            patientNameTextField.resignFirstResponder()
+            patientNameTextField.hidden = true
+            patientNameEntryLabel.hidden = true
+            openExistingFileButton.hidden = true
+            createNewFileButton.hidden = true
+            fieldValueEntryLabel.hidden = true
+            fieldValueAnalog.hidden = true
+            
+            //Bring up 'Field Name' Entry Views:
+            fieldNameEntryLabel.hidden = false
+            fieldNameTextField.hidden = false
+            
+            //Set delegate for fieldNameTextField & make it the 1st responder.
+            fieldNameTextField.delegate = self
+            fieldNameTextField.becomeFirstResponder()
+        case "fieldValue": //Temporary Rendering {change to specific values}
             //Hide the open views & render the view based on the entered value (post "{} Field has been opened" in the twitter feed):
             fieldNameEntryLabel.hidden = true
             fieldNameTextField.hidden = true
             fieldValueEntryLabel.hidden = false
             fieldValueAnalog.hidden = false
             
-            //Updates twitter feed asynchronously; eventually, we want this to be a scrollable view that the user can refer back to.
-            notificationsFeed.text = "Scope has been opened for {} field"
-            fadeIn()
-            fadeOut()
-            
             //Swap delegates:
-            textField.delegate = nil
+            fieldNameTextField.delegate = nil
             fieldValueAnalog.delegate = self
             fieldValueAnalog.becomeFirstResponder()
+        default:
+            print("Error. Switch case triggered unknown statement")
+        }
+    }
+    
+    //Configure behavior when 'RETURN' button is hit:
+    func textFieldShouldReturn(textField: UITextField) -> Bool {
+        let input = textField.text
+        textField.text = ""
+        textField.resignFirstResponder()
+        
+        if textField.tag == 1 { // sender is Field Name TF
+            //Configure behavior based on the value that was entered:
+            openScope = EMRField(inputWord: input!)
+            if (openScope!.matchFound()) {
+                //Check if 'currentPatient' exists:
+                if (currentPatient == nil) {//File is NOT open
+                    //This should never trigger b/c a patient file must be open before any behaviors can take place!
+                    openScope = nil
+                    print("No patient file open")
+                } else {//'Current patient' exists & match is found for keyword
+                    //Open scope for NON-NAME field:
+                    if (openScope!.getFieldName() == "name") {
+                        //Should never be called - user doesn't enter patient name this way.
+                        openScope = nil
+                        print("'Name' entered as field name")
+                        configureViewForEntry("fieldName")
+                    } else {
+                        //Open Scope (render the view according to the fieldName that was entered):
+                        print("Match found")
+                        notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
+                        fadeIn()
+                        fadeOut()
+                        configureViewForEntry("fieldValue")
+                    }
+                }
+            } else {//'matchFound' == nil
+                openScope = nil
+                print("No match found!")
+                //Keep the first responder here & accept a new field name entry:
+                configureViewForEntry("fieldName")
+            }
         } else if textField.tag == 2 { // Sender is Field Value Analog (to be deleted when specific configurations are enabled)
             //Send the input values to the EMR or persistent data store, post "{} has been mapped to {}" in the twitter feed, & return the fieldName view:
-            fieldValueEntryLabel.hidden = true
-            fieldValueAnalog.hidden = true
-            fieldNameEntryLabel.hidden = false
-            fieldNameTextField.hidden = false
-            
-            notificationsFeed.text = "'{Value}' has been sent to '{Field}'"
+            notificationsFeed.text = "'\(input!)' has been sent to '\(openScope!.getFieldName()!)'"
             fadeIn()
             fadeOut()
-            
-            textField.delegate = nil
-            fieldNameTextField.delegate = self
-            fieldNameTextField.becomeFirstResponder()
+            configureViewForEntry("fieldName")
+            openScope = nil //Last, close the scope
         }
         return true
     }
@@ -200,8 +230,23 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //Clear out existing user defaults:
         //        let appDomain = NSBundle.mainBundle().bundleIdentifier
         //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
-        print("Logout")
+        print("Logging Out")
         loggedIn = false
+    }
+    
+    @IBAction func closePatientFileButtonClick(sender: AnyObject) {
+        if currentPatient != nil {
+            currentPatient = nil
+            let alertController = UIAlertController(title: "Success!", message: "Patient file was closed. Please open a new file before continuing.", preferredStyle: .Alert)
+            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+            alertController.addAction(ok)
+            self.presentViewController(alertController, animated: true, completion: nil)
+        } else {
+            let alertController = UIAlertController(title: "Error!", message: "No patient file is open.", preferredStyle: .Alert)
+            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+            alertController.addAction(ok)
+            self.presentViewController(alertController, animated: true, completion: nil)
+        }
     }
     
     //MARK: - User Authentication

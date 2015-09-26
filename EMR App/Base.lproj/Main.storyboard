@@ -634,24 +634,24 @@
                                     </mask>
                                 </variation>
                             </view>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Patient Name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="5tk-JL-gVC">
+                            <textField hidden="YES" opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Patient Name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="5tk-JL-gVC">
                                 <rect key="frame" x="-25" y="-30" width="97" height="30"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES"/>
                             </textField>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Please Enter an Existing Patient or Add a New One" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vqY-Ps-6xz">
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Please Enter an Existing Patient or Add a New One" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vqY-Ps-6xz">
                                 <rect key="frame" x="-42" y="-21" width="42" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Please Enter an EMR Field Name or Select a Template" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Fjc-PL-dqr">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Please Enter an EMR Field Name or Select a Template" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Fjc-PL-dqr">
                                 <rect key="frame" x="-42" y="-21" width="42" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <textField hidden="YES" opaque="NO" clipsSubviews="YES" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="EMR Field" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="QbU-cx-t16">
+                            <textField hidden="YES" opaque="NO" clipsSubviews="YES" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter field name and hit 'Return'" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="QbU-cx-t16">
                                 <rect key="frame" x="-25" y="-30" width="97" height="30"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES"/>
@@ -706,13 +706,23 @@
                                             <action selector="patientIconButtonClick:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="ZtQ-yu-xR1"/>
                                         </connections>
                                     </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="z4k-tN-mQN">
+                                        <rect key="frame" x="-23" y="-15" width="46" height="30"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="11"/>
+                                        <state key="normal" title="Close File"/>
+                                        <connections>
+                                            <action selector="closePatientFileButtonClick:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="gr0-wA-dCJ"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" red="0.93725490199999995" green="0.93725490199999995" blue="0.95686274510000002" alpha="1" colorSpace="calibratedRGB"/>
                                 <constraints>
                                     <constraint firstItem="ydE-qx-8FU" firstAttribute="top" secondItem="BJJ-5M-V1G" secondAttribute="bottom" constant="47" id="0RN-Fk-c9r"/>
                                     <constraint firstItem="ydE-qx-8FU" firstAttribute="centerX" secondItem="BJJ-5M-V1G" secondAttribute="centerX" id="2eC-be-COO"/>
                                     <constraint firstItem="BJJ-5M-V1G" firstAttribute="top" secondItem="D9h-4g-1c0" secondAttribute="bottom" constant="44" id="6iV-fC-07g"/>
+                                    <constraint firstItem="z4k-tN-mQN" firstAttribute="centerX" secondItem="ydE-qx-8FU" secondAttribute="centerX" id="BRm-pl-pq3"/>
                                     <constraint firstItem="D9h-4g-1c0" firstAttribute="top" secondItem="9x0-Qk-N8N" secondAttribute="top" constant="139" id="GR4-HL-CpS"/>
+                                    <constraint firstItem="z4k-tN-mQN" firstAttribute="top" secondItem="ydE-qx-8FU" secondAttribute="bottom" constant="34" id="VTt-01-LhR"/>
                                     <constraint firstItem="BJJ-5M-V1G" firstAttribute="centerX" secondItem="9x0-Qk-N8N" secondAttribute="centerX" id="aHi-rN-U1H"/>
                                     <constraint firstItem="D9h-4g-1c0" firstAttribute="centerX" secondItem="9x0-Qk-N8N" secondAttribute="centerX" id="qYt-M0-uJt"/>
                                     <constraint firstAttribute="width" constant="63" id="v0u-U2-IaT">
@@ -724,15 +734,18 @@
                                         <exclude reference="BJJ-5M-V1G"/>
                                         <exclude reference="ydE-qx-8FU"/>
                                         <exclude reference="D9h-4g-1c0"/>
+                                        <exclude reference="z4k-tN-mQN"/>
                                     </mask>
                                     <mask key="constraints">
                                         <exclude reference="v0u-U2-IaT"/>
-                                        <exclude reference="6iV-fC-07g"/>
-                                        <exclude reference="aHi-rN-U1H"/>
                                         <exclude reference="GR4-HL-CpS"/>
                                         <exclude reference="qYt-M0-uJt"/>
+                                        <exclude reference="6iV-fC-07g"/>
+                                        <exclude reference="aHi-rN-U1H"/>
                                         <exclude reference="0RN-Fk-c9r"/>
                                         <exclude reference="2eC-be-COO"/>
+                                        <exclude reference="BRm-pl-pq3"/>
+                                        <exclude reference="VTt-01-LhR"/>
                                     </mask>
                                 </variation>
                                 <variation key="heightClass=regular-widthClass=regular">
@@ -740,15 +753,18 @@
                                         <include reference="BJJ-5M-V1G"/>
                                         <include reference="ydE-qx-8FU"/>
                                         <include reference="D9h-4g-1c0"/>
+                                        <include reference="z4k-tN-mQN"/>
                                     </mask>
                                     <mask key="constraints">
                                         <include reference="v0u-U2-IaT"/>
-                                        <include reference="6iV-fC-07g"/>
-                                        <include reference="aHi-rN-U1H"/>
                                         <include reference="GR4-HL-CpS"/>
                                         <include reference="qYt-M0-uJt"/>
+                                        <include reference="6iV-fC-07g"/>
+                                        <include reference="aHi-rN-U1H"/>
                                         <include reference="0RN-Fk-c9r"/>
                                         <include reference="2eC-be-COO"/>
+                                        <include reference="BRm-pl-pq3"/>
+                                        <include reference="VTt-01-LhR"/>
                                     </mask>
                                 </variation>
                             </view>
