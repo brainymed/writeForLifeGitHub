@@ -3,7 +3,8 @@
 //  Created by Arnav Pondicherry  on 9/21/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Controls the Patient Care Mode of the app (for handwritten information input & information extraction)
+// Controls the Patient Care Mode of the app (for handwritten information input & information extraction).
+// Use COLLECTION VIEW (lookup) potentially for handling widgets!!!
 
 import UIKit
 import CoreGraphics
@@ -24,6 +25,11 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     var currentPatient: Patient?
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
+    var newWidth: CGFloat?
+    var newHeight: CGFloat?
+    
+    //MARK: - Default View Configuration
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureMargins()
@@ -34,15 +40,30 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         print("Current User (DEMVC): \(currentUser)")
         print("Current Patient (PCMVC): \(currentPatient?.name)")
         if (currentPatient == nil) {
-            //If there is no patient file open, force the user to open one before proceeding:
+            //If there is no patient file open, force the user to open one (e.g. by selecting from list of the day's patients):
         }
     }
     
+    override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) { //Handle view rotation
+        newWidth = size.width
+        newHeight = size.height
+        configureMargins()
+    }
+    
     func configureMargins() {
-        drawLineFrom(CGPoint(x: view.frame.minX, y: view.frame.minY), toPoint: CGPoint(x: view.frame.maxX, y: view.frame.minY)) //Top Layout Margin (separates from battery & time)
-        drawLineFrom(CGPoint(x: view.frame.minX, y: (view.frame.minY + 80)), toPoint: CGPoint(x: view.frame.width, y: (view.frame.minY + 80))) //Top Horizontal Margin
-        drawLineFrom(CGPoint(x: (view.frame.minX + 80), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.minX + 80), y: view.frame.height)) //Left Vertical Margin
-        drawLineFrom(CGPoint(x: (view.frame.width - 85), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.width - 85), y: view.frame.height)) //Right Vertical Margin
+        mainImageView.image = nil //clear existing lines
+        if (newWidth != nil) { //Rotation has occurred
+            drawLineFrom(CGPoint(x: 0, y: 0), toPoint: CGPoint(x: newWidth!, y: 0)) //Top Layout Margin (separates from status bar)
+            drawLineFrom(CGPoint(x: 0, y: 80), toPoint: CGPoint(x: newWidth!, y: 80)) //Top Horizontal Margin
+            drawLineFrom(CGPoint(x: 80, y: 0), toPoint: CGPoint(x: 80, y: newHeight!)) //Left Vertical Margin
+            drawLineFrom(CGPoint(x: (newWidth! - 65), y: 0), toPoint: CGPoint(x: (newWidth! - 65), y: newHeight!)) //Right Vertical Margin
+        } else { //No rotation has occurred
+            print("Standard Config")
+            drawLineFrom(CGPoint(x: view.frame.minX, y: view.frame.minY), toPoint: CGPoint(x: view.frame.maxX, y: view.frame.minY)) //Top Layout Margin
+            drawLineFrom(CGPoint(x: view.frame.minX, y: (view.frame.minY + 80)), toPoint: CGPoint(x: view.frame.width, y: (view.frame.minY + 80))) //Top Horizontal Margin
+            drawLineFrom(CGPoint(x: (view.frame.minX + 80), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.minX + 80), y: view.frame.height)) //Left Vertical Margin
+            drawLineFrom(CGPoint(x: (view.frame.width - 85), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.width - 85), y: view.frame.height)) //Right Vertical Margin
+        }
     }
     
     func drawLineFrom(fromPoint: CGPoint, toPoint: CGPoint) {
@@ -136,7 +157,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         NSLog("Failed configuration: %@", error.localizedDescription)
     }
     
-    //MARK: - Map, Send & Clear Buttons
+    //MARK: - Side Panel Buttons*
     
     @IBAction func clearButtonClick(sender: AnyObject) {
         multiLineView.clear()
@@ -305,8 +326,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         loggedIn = false
     }
     
-    //Delegate Method:
-    func didLoginSuccessfully() {
+    func didLoginSuccessfully() { //Delegate Method
         loggedIn = true
         dismissViewControllerAnimated(true, completion: nil) //returns to PCM VC
     }
@@ -318,7 +338,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        //Before we segue, we want to set the delegate property only if the login VC is about to be shown:
+        //Before we segue, set the delegate property only if the login VC is about to be shown:
         if segue.identifier == "showLogin" {
             let loginViewController = segue.destinationViewController as! LoginViewController
             loginViewController.delegate = self //we set the homescreen VC as the delegate of the LoginVC!

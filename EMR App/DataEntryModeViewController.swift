@@ -3,15 +3,13 @@
 //  Created by Arnav Pondicherry  on 9/21/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Controls the Data Entry portion of the app for information input into the EMR. Make sure to add LOGOUT button for both views so that others can utilize the app @ any point! 
-
-// Stagger the horizontal centering of the views by 60 pts so they are centered in the clear area!
+// Controls the Data Entry portion of the app for information input into the EMR.
 
 import UIKit
 
 class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
     
-    var currentPatient: Patient? {
+    var currentPatient: Patient? { //Open patient file
         didSet {
             if (currentPatient != nil) { //Patient file is open. Handle accordingly.
                 
@@ -21,8 +19,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         }
     }
     
-    var currentUser: String? //current user who is logged in
-    var openScope: EMRField?
+    var currentUser: String? //current user (HCP) who is logged in
+    var openScope: EMRField? //handles MK identification & data mapping -> EMR
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
     @IBOutlet weak var patientNameTextField: UITextField!
@@ -33,9 +31,9 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBOutlet weak var createNewFileButton: UIButton!
     @IBOutlet weak var currentPatientButton: UIButton!
     @IBOutlet weak var currentUserButton: UIButton!
-    @IBOutlet weak var notificationsFeed: UILabel! //Convert our twitter feed -> a scrolling set of table view cells instead of a text view
+    @IBOutlet weak var notificationsFeed: UILabel! //Convert notification feed -> scrolling set of TV cells instead of a text view
     
-    // Current user & patient views:
+    // CurrentUser & CurrentPatient Views:
     @IBOutlet weak var patientInfoView: UIView!
     @IBOutlet weak var userInfoView: UIView!
     @IBOutlet weak var currentPatientLabel: UILabel!
@@ -44,8 +42,17 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     // Table View & Associated Side View:
     @IBOutlet weak var labelsTableView: UITableView!
     @IBOutlet weak var dataEntryImageView: UIImageView!
-    //var dataEntryView: UIView?
     var tableViewCellLabels: [String]? //labels in TV cells based on entered MK
+    var newWidth: CGFloat? //on rotation, the width of the incoming view
+    var newHeight: CGFloat? //on rotation, the height of the incoming view
+    
+    // Template Buttons:
+    @IBOutlet weak var vitalsButton: UIButton!
+    @IBOutlet weak var hpiButton: UIButton!
+    @IBOutlet weak var medicationsButton: UIButton!
+    @IBOutlet weak var allergiesButton: UIButton!
+    @IBOutlet weak var physicalButton: UIButton!
+    @IBOutlet weak var rosButton: UIButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -59,14 +66,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func viewDidAppear(animated: Bool) {
-        if loggedIn == false {//If user is not logged in, modally segue -> login screen. Need this line of code b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
+        if loggedIn == false {//If user is not logged in, modally segue -> login screen. Need this line b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
         print("Current User (DEMVC): \(currentUser)")
         print("Current Patient (DEMVC): \(currentPatient?.name)")
         
-        //Alternative way using user defaults:
+        //Alternative way to authenticate using user defaults:
         //        let preferences : NSUserDefaults = NSUserDefaults.standardUserDefaults()
         //        let loggedInCheck : Int = preferences.integerForKey("ISLOGGEDIN") as Int
         //        if (loggedInCheck != 1) {
@@ -78,8 +85,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         if currentPatient == nil { //If there is no current patient, configure view for name entry
             configureViewForEntry("patientName")
         } else {
-            //Configure view differently. Allow the user to hit the 'ENTER' button & submit information for other, non-name views!
-            configureViewForEntry("fieldName")
+            //Let app go to whichever screen it was previously on.
         }
     }
 
@@ -88,37 +94,41 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         // Dispose of any resources that can be recreated.
     }
     
-    //MARK: - Handling Rotation of View
+    //MARK: - View Rotation
     
-    override func viewWillLayoutSubviews() { //Called when view rotates
-//        for subview in view.subviews {
-//            if subview.tag == 1000 {
-//                subview.removeFromSuperview()
-//            }
-//        }
-        
-        //Redraw the lines WRT the table view on rotation if the table view is active:
-        if labelsTableView.hidden == false {
-            
+    override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
+        if (UIDevice.currentDevice().orientation == UIDeviceOrientation.Portrait) {
+            print("Device is now in Portrait. Width = \(size.width). Height = \(size.height)")
+        } else {
+            print("Device is now in Landscape. Width = \(size.width). Height = \(size.height)")
         }
         
-//        let customView = PatientNameEntryView(frame: CGRect(x: 60, y: 100, width: view.frame.width - 60, height: view.frame.height - 150))
-//        customView.backgroundColor = UIColor.blueColor()
-//        customView.tag = 1000
-//        self.view.addSubview(customView)
+        //Redraw the TV & dataEntryImageView on rotation when the table view is active. Set newWidth & newHeight to indicate rotation has occurred while the TV & imageView were open
+        if labelsTableView.hidden == false {
+            newWidth = size.width
+            newHeight = size.height
+            configureViewForEntry("fieldValue")
+        }
     }
     
-    //MARK: - Standard View Configuration
+    //MARK: - Default View Configuration
     
     @IBAction func createNewFileButtonClick(sender: AnyObject) {
         //Create a new patient file:
         let inputName = patientNameTextField.text!
-        currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
-        patientNameTextField.text = ""
-        configureViewForEntry("fieldName")
-        notificationsFeed.text = "New File Created for \(inputName)"
-        fadeIn()
-        fadeOut()
+        //Perform predicate matching for new patient entry (not necessary when opening existing patient file b/c that data will come from EMR):
+        let fullNameFormat = ".* .*" //add optional portion for middle name
+        let matchPredicate = NSPredicate(format:"SELF MATCHES %@", fullNameFormat)
+        if (matchPredicate.evaluateWithObject(inputName)) {
+            currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
+            patientNameTextField.text = ""
+            configureViewForEntry("fieldName")
+            notificationsFeed.text = "New patient file created for \(inputName.uppercaseString)"
+            fadeIn()
+            fadeOut()
+        } else {
+            print("Please enter a full name")
+        }
     }
     
     @IBAction func openExistingFileButtonClick(sender: AnyObject) {
@@ -127,7 +137,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
         patientNameTextField.text = ""
         configureViewForEntry("fieldName")
-        notificationsFeed.text = "Patient File Opened for \(inputName)"
+        notificationsFeed.text = "Patient file opened for \(inputName.uppercaseString)"
         fadeIn()
         fadeOut()
     }
@@ -135,40 +145,42 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     func configureViewForEntry(desiredView: String) { //Configures view
         switch desiredView {
         case "patientName": //Configure view to open a patient file
-            //Hide field name entry views:
+            //Hide field name & field value entry views:
             fieldNameTextField.hidden = true
             fieldNameEntryLabel.hidden = true
+            labelsTableView.hidden = true
+            dataEntryImageView.hidden = true
             
             //Bring up patient name entry views:
             patientNameTextField.hidden = false
             patientNameEntryLabel.hidden = false
             openExistingFileButton.hidden = false
             createNewFileButton.hidden = false
-            
-            //Make the 'patientNameTextField' the 1st responder:
-            patientNameTextField.becomeFirstResponder()
+            patientNameTextField.becomeFirstResponder() //Set textField -> 1st responder
         case "fieldName": //Configure view for field name entry
-            //Hide patient name entry views & resign 1st responder:
-            patientNameTextField.resignFirstResponder()
-            patientNameTextField.hidden = true
-            patientNameEntryLabel.hidden = true
-            openExistingFileButton.hidden = true
-            createNewFileButton.hidden = true
+            //If open, hide patient name entry views, field value entry views, & resign 1st responder:
+            if patientNameTextField.hidden == false {
+                patientNameTextField.resignFirstResponder()
+                patientNameTextField.hidden = true
+                patientNameEntryLabel.hidden = true
+                openExistingFileButton.hidden = true
+                createNewFileButton.hidden = true
+            } else if labelsTableView.hidden == false { //Hide TV & ImageView
+                labelsTableView.hidden = true
+                dataEntryImageView.hidden = true
+            }
             
-            //Bring up 'Field Name' Entry Views:
+            //Bring up 'Field Name' Entry Views, set delegate & 1st responder:
             fieldNameEntryLabel.hidden = false
             fieldNameTextField.hidden = false
-            
-            //Set delegate for fieldNameTextField & make it the 1st responder.
             fieldNameTextField.delegate = self
             fieldNameTextField.becomeFirstResponder()
         case "fieldValue":
-            //Hide the open views & pull up the formatted TV, post "{} Field has been opened" in the twitter feed:
+            //Hide the open views & pull up the formatted TV & imageView:
             fieldNameEntryLabel.hidden = true
             fieldNameTextField.hidden = true
-            labelsTableView.reloadData()
-            print(tableViewCellLabels)
             renderDataEntryImageView(tableViewCellLabels!.count)
+            labelsTableView.reloadData() //refreshes visible TV cells w/ existing data
             labelsTableView.hidden = false
             dataEntryImageView.hidden = false
         default:
@@ -176,8 +188,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         }
     }
     
-    //Configure behavior when 'RETURN' button is hit:
-    func textFieldShouldReturn(textField: UITextField) -> Bool {
+    func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior when 'RETURN' button is hit
         let input = textField.text
         textField.text = ""
         textField.resignFirstResponder()
@@ -214,11 +225,13 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
                 //Keep the first responder here & accept a new field name entry:
                 configureViewForEntry("fieldName")
             }
-        } else if textField.tag == 2 { // Sender is Field Value Analog (to be deleted when specific configurations are enabled)
+        } else if textField.tag == 2 { // Sender is textField from dataEntryImageView sending FV
             //Send the input values to the EMR or persistent data store, post "{} has been mapped to {}" in the twitter feed, & return the fieldName view:
             notificationsFeed.text = "'\(input!)' has been sent to '\(openScope!.getFieldName()!)'"
             fadeIn()
             fadeOut()
+            dataEntryImageView.canResignFirstResponder() //resign 1st responder?
+            tableViewCellLabels = nil
             configureViewForEntry("fieldName")
             openScope = nil //Last, close the scope
         }
@@ -237,11 +250,39 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             }, completion: nil)
     }
     
-    //MARK: - Template Selection Rendering
+    //MARK: - Template-Selection View Configuration
     
+    @IBAction func vitalsButtonClick(sender: AnyObject) {
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "vitals")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
+    }
     
+    @IBAction func hpiButtonClick(sender: AnyObject) {
+        
+    }
     
-    //MARK: - TableView & ImageView Rendering
+    @IBAction func medicationsButtonClick(sender: AnyObject) {
+        
+    }
+    
+    @IBAction func allergiesButtonClick(sender: AnyObject) {
+        
+    }
+    
+    @IBAction func physicalButtonClick(sender: AnyObject) {
+        
+    }
+    
+    @IBAction func rosButtonClick(sender: AnyObject) {
+        
+    }
+    
+    //MARK: - Dynamic View Configuration (TV & ImageView)
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         //Number of cells we show is based on the # of labels needed:
@@ -253,13 +294,16 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        //When we draw cells, put a background color for each cell that matches the color of the side view! Can help user w/ visual cues.
+        //When we draw cells, put a background color for each cell that matches the color of the side view (create an array of colors & iterate through it as each cell is drawn, selecting a color from the array each time)! Can help user w/ visual cues.
         let cell : UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell")! as UITableViewCell
         if let labelArray = tableViewCellLabels { //Partition TV based on # of cells
             cell.textLabel?.text = labelArray[indexPath.row]
             cell.textLabel?.textAlignment = NSTextAlignment.Center
             cell.textLabel?.textColor = UIColor.blueColor()
             cell.backgroundColor = UIColor.lightGrayColor()
+            tableView.separatorColor = UIColor.whiteColor()
+            tableView.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
+            cell.separatorInset = UIEdgeInsetsZero
         }
         cell.selectionStyle = UITableViewCellSelectionStyle.None //When user taps on cell, it does not change in appearance
         return cell
@@ -268,37 +312,123 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
         if let labelArray = tableViewCellLabels {
             let numberOfLabels = CGFloat(labelArray.count)
-            let cellHeightPortrait = 619/numberOfLabels //device in portrait
-            let cellHeightLandscape = 875/numberOfLabels //device in landscape
-            return cellHeightPortrait
+            var cellHeight = CGFloat()
+            if UIDevice.currentDevice().orientation == UIDeviceOrientation.Portrait {
+                cellHeight = 875/numberOfLabels //device in portrait
+            } else {
+                cellHeight = 619/numberOfLabels //device in landscape
+            }
+            return cellHeight
         } else {
             return 0
         }
     }
     
     func tableView(tableView: UITableView, willSelectRowAtIndexPath indexPath: NSIndexPath) -> NSIndexPath? {
-        //Disable selection of TV cells & prevent the swiping functionality. User interaction is also disabled from Interface Builder.
+        //Disable selection of TV cells & prevent swiping functionality. User interaction is disabled from Interface Builder.
         return nil
     }
     
-    func renderDataEntryImageView(numberOfLabels: Int) {
-        //Depending on the # of labels, we draw in a # of lines for the image view, then partition it into a # of views = # of labels. In each view, we will color code it to the label and then draw in a text view/label for data entry.
-        let numberOfPartitions = CGFloat(numberOfLabels)
-        let partitionSize = (dataEntryImageView.frame.height)/numberOfPartitions
+    func renderDataEntryImageView(numberOfLabels: Int) {//Partitions imageView 
+        //Match partition color w/ the label color.
+        for view in dataEntryImageView.subviews { //Before rendering, wipe out any old textLabels!
+            view.removeFromSuperview()
+        }
+        dataEntryImageView.image = nil //Clears any existing lines
+        
+        //Compute the width & height of the dataEntryImageView if rotation is occurring. If the values of newWidth & newHeight are nil, we know that we are on the initial view! The initial view can be drawn with standard methods. 
+        //What happens if the user rotates before opening up the table/imageView? -The TV does not get rendered properly in portrait. Even if the device begins the interaction in portrait mode, the tableView is not rendered properly, ONLY on rotation is this fixed. Landscape works correctly in all cases (starting in landscape, rotating in landscape, rotating while outside the view into landscape). 'reloadData' is called only when the tableView is visible? Reload the data just before rendering. The imageView is rendered correctly.
+        var rotationHasOccurred : Bool = false
+        if (newWidth != nil) {
+            rotationHasOccurred = true
+        }
+        
         print("Image View - Height: \(dataEntryImageView.frame.height). Width: \(dataEntryImageView.frame.width)")
         print("MinX: \(dataEntryImageView.frame.minX). MaxX: \(dataEntryImageView.frame.maxX)")
         print("MinY: \(dataEntryImageView.frame.minY). MaxY: \(dataEntryImageView.frame.maxY)")
         print("Table View - Height: \(labelsTableView.frame.height). Width: \(labelsTableView.frame.width)")
-        if numberOfLabels > 1 { //No partitioning for only 1 label
-            for partition in 1...(numberOfLabels - 1) {
-                let partitionNumber = CGFloat(partition)
-                drawLineFrom(CGPoint(x: 0, y: (partitionSize*partitionNumber)), toPoint: CGPoint(x: dataEntryImageView.frame.width, y: (partitionSize*partitionNumber)))
-                print("From Point: (0, \(partitionSize*partitionNumber)). To Point: (\(dataEntryImageView.frame.width), \(partitionSize*partitionNumber))")
+        
+        let numberOfPartitions = CGFloat(numberOfLabels)
+        if (!rotationHasOccurred) { //No rotation, first time the view has been opened
+            let partitionSize = (dataEntryImageView.frame.height)/numberOfPartitions
+            if numberOfLabels > 1 { //No partitioning for only 1 label
+                for partition in 1...(numberOfLabels - 1) {
+                    // Coordinate system - top left corner of the image view is point (0, 0), width = 764, height = 619 points (in portrait orientation).
+                    let partitionNumber = CGFloat(partition)
+                    drawLineFrom(CGPoint(x: 0, y: (partitionSize*partitionNumber)), toPoint: CGPoint(x: dataEntryImageView.frame.width, y: (partitionSize*partitionNumber)))
+                    //print("From Point: (0, \(partitionSize*partitionNumber)). To Point: (\(dataEntryImageView.frame.width), \(partitionSize*partitionNumber))")
+                    
+                    //Add a centered textLabel into each partition:
+                    let product = 2 * partitionSize * partitionNumber - partitionSize
+                    let textField = UITextField(frame: CGRect(x: ((dataEntryImageView.frame.width * 0.25)/2), y: ((product - 50)/2), width: (dataEntryImageView.frame.width * 0.75), height: 50))
+                    textField.placeholder = "Please enter a value for the \(openScope!.getLabelsForMK()![partition - 1])"
+                    textField.textColor = UIColor.blackColor()
+                    textField.backgroundColor = UIColor.clearColor()
+                    textField.userInteractionEnabled = true //In IB, set user interaction = enabled for imageView as well or textField will not respond to touch!
+                    dataEntryImageView.addSubview(textField)
+                    dataEntryImageView.bringSubviewToFront(textField)
+                    if partition == 1 { //The top-most label is the 1st responder
+                        textField.becomeFirstResponder()
+                    }
+                }
             }
+            //Generate the last textField - split the final partition in half (or the entire frame if there is only 1 label). Make the delegate = the VC.
+            let lastPartitionTopPoint = dataEntryImageView.frame.height - partitionSize
+            let lastTextFieldYPosition = (dataEntryImageView.frame.height + lastPartitionTopPoint - 50)/2
+            let lastTextField = UITextField(frame: CGRect(x: ((dataEntryImageView.frame.width * 0.25)/2), y: lastTextFieldYPosition, width: dataEntryImageView.frame.width * 0.75, height: 50))
+            lastTextField.textColor = UIColor.blackColor()
+            lastTextField.backgroundColor = UIColor.clearColor()
+            lastTextField.tag = 2
+            lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press the 'Return' key."
+            lastTextField.delegate = self
+            if (numberOfPartitions == 1) { //If there is only 1 label, the last label is also 1st responder
+                lastTextField.becomeFirstResponder()
+            }
+            dataEntryImageView.addSubview(lastTextField)
+            dataEntryImageView.bringSubviewToFront(lastTextField)
+        } else { //Rotation has occurred while the TV & imageView are visible
+            let imageViewWidth = newWidth! - 260
+            let imageViewHeight = newHeight! - 100
+            let partitionSize = (imageViewHeight)/numberOfPartitions
+            if numberOfLabels > 1 {
+                for partition in 1...(numberOfLabels - 1) {
+                    let partitionNumber = CGFloat(partition)
+                    drawLineFrom(CGPoint(x: 0, y: (partitionSize*partitionNumber)), toPoint: CGPoint(x: imageViewWidth, y: (partitionSize*partitionNumber)))
+                    print("From Point: (0, \(partitionSize*partitionNumber)). To Point: (\(imageViewWidth), \(partitionSize*partitionNumber))")
+                    
+                    let product = 2 * partitionSize * partitionNumber - partitionSize
+                    let textField = UITextField(frame: CGRect(x: ((imageViewWidth * 0.25)/2), y: ((product - 50)/2), width: (imageViewWidth * 0.75), height: 50))
+                    textField.placeholder = "Please enter a value for the \(openScope!.getLabelsForMK()![partition - 1])"
+                    textField.textColor = UIColor.blackColor()
+                    textField.backgroundColor = UIColor.clearColor()
+                    textField.userInteractionEnabled = true
+                    dataEntryImageView.addSubview(textField)
+                    dataEntryImageView.bringSubviewToFront(textField)
+                    if partition == 1 {
+                        textField.becomeFirstResponder()
+                    }
+                }
+            }
+            let lastPartitionTopPoint = imageViewHeight - partitionSize
+            let lastTextFieldYPosition = (imageViewHeight + lastPartitionTopPoint - 50)/2
+            let lastTextField = UITextField(frame: CGRect(x: ((imageViewWidth * 0.25)/2), y: lastTextFieldYPosition, width: (imageViewWidth * 0.75), height: 50))
+            lastTextField.textColor = UIColor.blackColor()
+            lastTextField.backgroundColor = UIColor.clearColor()
+            lastTextField.tag = 2
+            if newWidth! < 1024 {
+                lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press 'Return'."
+            } else {
+                lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press the 'Return' key."
+            }
+            lastTextField.delegate = self
+            if (numberOfPartitions == 1) {
+                lastTextField.becomeFirstResponder()
+            }
+            dataEntryImageView.addSubview(lastTextField)
+            dataEntryImageView.bringSubviewToFront(lastTextField)
+            newWidth = nil //Clear the rotation indicators so they will be refreshed
+            newHeight = nil
         }
-//        drawLineFrom(CGPoint(x: 0, y: 206.33), toPoint: CGPoint(x: 764, y: 206.33))
-//        drawLineFrom(CGPoint(x: 0, y: 412.66), toPoint: CGPoint(x: 764, y: 412.6))
-//        drawLineFrom(CGPoint(x: 0, y: 619), toPoint: CGPoint(x: 764, y: 619))
     }
     
     func drawLineFrom(fromPoint: CGPoint, toPoint: CGPoint) {
@@ -314,7 +444,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //Set the drawing parameters for line size & color:
         CGContextSetLineCap(context, .Round)
         CGContextSetLineWidth(context, 0.5)
-        CGContextSetRGBStrokeColor(context, 0.0, 0.0, 0.0, 1.0)
+        CGContextSetRGBStrokeColor(context, 1.0, 1.0, 1.0, 1.0)
         CGContextSetBlendMode(context, .Normal)
         
         //Draw the path:
@@ -326,7 +456,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         UIGraphicsEndImageContext()
     }
     
-    //MARK: - Check Users
+    //MARK: - Current Patient & User Views
     
     @IBAction func currentPatientButtonClick(sender: AnyObject) {
         userInfoView.hidden = true
@@ -371,6 +501,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
             alertController.addAction(ok)
             self.presentViewController(alertController, animated: true, completion: nil)
+            configureViewForEntry("patientName")
         } else {
             let alertController = UIAlertController(title: "Error!", message: "No patient file is open.", preferredStyle: .Alert)
             let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
@@ -385,7 +516,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
-        //In response to a touch, checks where the touch occurred. If either the patientInfoView or userInfoView is open & the touch is outside, it hides the view. 
+        //In response to a touch, checks where  touch occurred. If either the patientInfoView or userInfoView is open & the touch is outside the open view, it hides the view.
         let touch = touches.first
         let touchLocation = touch!.locationInView(view)
         let userInfoViewFrame = CGRect(x: 60, y: 221, width: 180, height: 80)
@@ -399,21 +530,18 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     //MARK: - User Authentication
     
-    //Since this is the initial VC, we will redirect -> login screen from here if no user is logged in:
     var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!
         didSet {
-            if loggedIn == true {
-                //Do nothing, go to DEM view.
+            if loggedIn == true { //Do nothing, go to DEM view.
             } else {
                 self.performSegueWithIdentifier("showLogin", sender: self) //go to login screen
             }
         }
     }
     
-    //Delegate Method:
-    func didLoginSuccessfully() {
-        loggedIn = true //Sets the loginValue to true, which will call the 'configureView' function!
-        dismissViewControllerAnimated(true, completion: nil) //When we first load the VC, the VC performs a segue & modally shows the login screen (it 'owns' that screen); when we call 'dismissVC' it dismisses the modally presented screen after authentication is complete.
+    func didLoginSuccessfully() { //Delegate Method
+        loggedIn = true //Sets loginValue to true, which configures the default view
+        dismissViewControllerAnimated(true, completion: nil) //When we first load the VC, the VC performs a segue & modally shows the login screen; when we call 'dismissVC' (after authentication is complete), it dismisses the modally presented screen.
     }
     
     //MARK: - Navigation
@@ -423,10 +551,10 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        //Before we segue, we want to set the delegate property only if the login VC is about to be shown:
+        //Before we segue, set the delegate property only if the login VC is about to be shown:
         if segue.identifier == "showLogin" {
             let loginViewController = segue.destinationViewController as! LoginViewController
-            loginViewController.delegate = self //we set the homescreen VC as the delegate of the LoginVC!
+            loginViewController.delegate = self //set the DEM VC as delegate of the LoginVC
         }
     }
     

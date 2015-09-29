@@ -1,5 +1,18 @@
 //Garbage Code that might come in handy later:
 
+//Setting Layers: 
+textField.layer.zPosition = 1
+
+//Drawing Custom Views in VC:
+let customView = PatientNameEntryView(frame: CGRect(x: 60, y: 100, width: view.frame.width - 60, height: view.frame.height - 150))
+customView.tag = 1000
+self.view.addSubview(customView)
+for subview in view.subviews {
+    if subview.tag == 1000 {
+        subview.removeFromSuperview()
+    }
+}
+
 //MARK: - ViewController Drawing Code
 
 override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
