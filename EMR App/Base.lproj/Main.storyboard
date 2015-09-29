@@ -18,9 +18,14 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="redraw" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="HtQ-vm-DJj">
-                                <rect key="frame" x="0.0" y="20" width="600" height="581"/>
-                            </imageView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SO7-jl-Had">
+                                <rect key="frame" x="0.0" y="0.0" width="240" height="128"/>
+                                <color key="backgroundColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5eC-JN-n3B">
+                                <rect key="frame" x="0.0" y="0.0" width="240" height="128"/>
+                                <color key="backgroundColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                            </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gwc-nX-5FJ" customClass="CustomMLTWView" customModule="EMR_App" customModuleProvider="target">
                                 <rect key="frame" x="80" y="100" width="435" height="451"/>
                                 <color key="backgroundColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
@@ -107,47 +112,71 @@
                             <constraint firstItem="gwc-nX-5FJ" firstAttribute="leading" secondItem="tsR-hK-woN" secondAttribute="leadingMargin" constant="60" id="1EH-xi-R8C"/>
                             <constraint firstItem="Gl7-64-p7U" firstAttribute="top" secondItem="ZTp-zN-XIw" secondAttribute="bottom" constant="51" id="1Tf-RD-Jke"/>
                             <constraint firstItem="AjR-fO-d2h" firstAttribute="leading" secondItem="9Af-ay-VBZ" secondAttribute="leading" id="2Kx-Qf-9cq"/>
-                            <constraint firstItem="4ug-Mw-9AY" firstAttribute="top" secondItem="HtQ-vm-DJj" secondAttribute="bottom" constant="-50" id="2Zd-uQ-fT1"/>
                             <constraint firstAttribute="trailingMargin" secondItem="gwc-nX-5FJ" secondAttribute="trailing" constant="65" id="4CH-0a-m7P"/>
                             <constraint firstItem="edC-Mn-wVr" firstAttribute="leading" secondItem="V9k-Bi-Wcu" secondAttribute="leading" id="4f0-dK-LCP"/>
                             <constraint firstItem="liT-b3-NQF" firstAttribute="leading" secondItem="tsR-hK-woN" secondAttribute="leadingMargin" id="4tq-0x-C9B"/>
                             <constraint firstItem="gwc-nX-5FJ" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" constant="80" id="7XA-ak-mMe"/>
                             <constraint firstItem="gwc-nX-5FJ" firstAttribute="top" secondItem="LB7-SK-a87" secondAttribute="bottom" id="8iL-VB-R7J"/>
                             <constraint firstItem="4ug-Mw-9AY" firstAttribute="top" secondItem="gwc-nX-5FJ" secondAttribute="bottom" id="B6Q-de-hn8"/>
+                            <constraint firstItem="gwc-nX-5FJ" firstAttribute="leading" secondItem="SO7-jl-Had" secondAttribute="trailing" id="ESa-Sf-2ye"/>
                             <constraint firstItem="AjR-fO-d2h" firstAttribute="leading" secondItem="V9k-Bi-Wcu" secondAttribute="leading" id="F79-nu-p4N"/>
                             <constraint firstItem="6wl-jp-znO" firstAttribute="top" secondItem="9Af-ay-VBZ" secondAttribute="bottom" constant="40" id="GTe-p4-1eI"/>
+                            <constraint firstItem="4ug-Mw-9AY" firstAttribute="top" secondItem="5eC-JN-n3B" secondAttribute="bottom" id="KtR-7N-ut7"/>
+                            <constraint firstItem="SO7-jl-Had" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="LhQ-DV-odv"/>
                             <constraint firstItem="ZTp-zN-XIw" firstAttribute="top" secondItem="V9k-Bi-Wcu" secondAttribute="bottom" constant="89" id="NC8-DY-F77"/>
+                            <constraint firstItem="5eC-JN-n3B" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="NQt-H3-7ED"/>
                             <constraint firstItem="6wl-jp-znO" firstAttribute="centerX" secondItem="9Af-ay-VBZ" secondAttribute="centerX" id="O7F-Do-W79"/>
                             <constraint firstItem="V9k-Bi-Wcu" firstAttribute="centerY" secondItem="LB7-SK-a87" secondAttribute="centerY" id="P2e-2M-P87"/>
+                            <constraint firstItem="4ug-Mw-9AY" firstAttribute="top" secondItem="SO7-jl-Had" secondAttribute="bottom" id="PPO-cE-Wkw"/>
                             <constraint firstItem="9Af-ay-VBZ" firstAttribute="top" secondItem="AjR-fO-d2h" secondAttribute="bottom" constant="28" id="VNd-0q-2xG"/>
                             <constraint firstItem="LB7-SK-a87" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="XC0-3y-DrE"/>
                             <constraint firstItem="edC-Mn-wVr" firstAttribute="top" secondItem="gwc-nX-5FJ" secondAttribute="top" id="Z7b-S2-cyx"/>
                             <constraint firstAttribute="trailingMargin" secondItem="LB7-SK-a87" secondAttribute="trailing" constant="65" id="ceF-v6-yFS"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="HtQ-vm-DJj" secondAttribute="trailing" constant="-20" id="fqG-p3-7yR"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="5eC-JN-n3B" secondAttribute="trailing" constant="-20" id="kQs-ab-v17"/>
                             <constraint firstItem="gwc-nX-5FJ" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="mFC-9o-1eK"/>
                             <constraint firstItem="liT-b3-NQF" firstAttribute="top" secondItem="V9k-Bi-Wcu" secondAttribute="top" id="neW-e0-dtG"/>
                             <constraint firstItem="ZTp-zN-XIw" firstAttribute="centerX" secondItem="V9k-Bi-Wcu" secondAttribute="centerX" id="oOW-Lm-CvQ"/>
+                            <constraint firstItem="5eC-JN-n3B" firstAttribute="leading" secondItem="gwc-nX-5FJ" secondAttribute="trailing" id="ovA-JS-z4r"/>
                             <constraint firstItem="LB7-SK-a87" firstAttribute="leading" secondItem="tsR-hK-woN" secondAttribute="leadingMargin" constant="60" id="r1j-uP-eDQ"/>
-                            <constraint firstItem="HtQ-vm-DJj" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="vax-Ha-aEK"/>
                             <constraint firstItem="V9k-Bi-Wcu" firstAttribute="leading" secondItem="LB7-SK-a87" secondAttribute="trailing" constant="22" id="wtA-Tw-Y0F"/>
                             <constraint firstItem="AjR-fO-d2h" firstAttribute="top" secondItem="Gl7-64-p7U" secondAttribute="bottom" constant="28" id="xOQ-SR-FEf"/>
-                            <constraint firstItem="HtQ-vm-DJj" firstAttribute="leading" secondItem="tsR-hK-woN" secondAttribute="leadingMargin" constant="-20" id="yyx-Pk-AS7"/>
+                            <constraint firstItem="SO7-jl-Had" firstAttribute="leading" secondItem="tsR-hK-woN" secondAttribute="leadingMargin" constant="-20" id="zp1-VF-cj5"/>
                         </constraints>
                         <variation key="default">
                             <mask key="subviews">
+                                <exclude reference="SO7-jl-Had"/>
+                                <exclude reference="5eC-JN-n3B"/>
                                 <exclude reference="6wl-jp-znO"/>
                             </mask>
                             <mask key="constraints">
+                                <exclude reference="LhQ-DV-odv"/>
+                                <exclude reference="zp1-VF-cj5"/>
+                                <exclude reference="ESa-Sf-2ye"/>
+                                <exclude reference="mFC-9o-1eK"/>
+                                <exclude reference="NQt-H3-7ED"/>
+                                <exclude reference="kQs-ab-v17"/>
+                                <exclude reference="ovA-JS-z4r"/>
+                                <exclude reference="KtR-7N-ut7"/>
+                                <exclude reference="PPO-cE-Wkw"/>
                                 <exclude reference="GTe-p4-1eI"/>
                                 <exclude reference="O7F-Do-W79"/>
-                                <exclude reference="mFC-9o-1eK"/>
                             </mask>
                         </variation>
                         <variation key="heightClass=regular-widthClass=regular">
                             <mask key="subviews">
+                                <include reference="SO7-jl-Had"/>
+                                <include reference="5eC-JN-n3B"/>
                                 <include reference="6wl-jp-znO"/>
                             </mask>
                             <mask key="constraints">
+                                <include reference="LhQ-DV-odv"/>
+                                <include reference="zp1-VF-cj5"/>
+                                <include reference="ESa-Sf-2ye"/>
+                                <include reference="NQt-H3-7ED"/>
+                                <include reference="kQs-ab-v17"/>
+                                <include reference="ovA-JS-z4r"/>
+                                <include reference="KtR-7N-ut7"/>
+                                <include reference="PPO-cE-Wkw"/>
                                 <include reference="GTe-p4-1eI"/>
                                 <include reference="O7F-Do-W79"/>
                             </mask>
@@ -156,7 +185,6 @@
                     <tabBarItem key="tabBarItem" title="Patient Care Mode" image="pencil" id="ieI-sN-UrH"/>
                     <connections>
                         <outlet property="closeButton" destination="AjR-fO-d2h" id="7Ax-Ca-YWT"/>
-                        <outlet property="mainImageView" destination="HtQ-vm-DJj" id="LXJ-Q9-yu0"/>
                         <outlet property="mapButton" destination="ZTp-zN-XIw" id="Kvs-4Y-EmC"/>
                         <outlet property="mltwTextLabel" destination="LB7-SK-a87" id="ikh-sD-nGD"/>
                         <outlet property="multiLineView" destination="gwc-nX-5FJ" id="Vcg-oO-Cfz"/>
@@ -167,7 +195,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="W5J-7L-Pyd" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="913" y="936"/>
+            <point key="canvasLocation" x="912.75" y="936"/>
         </scene>
         <!--Data Entry Mode-->
         <scene sceneID="wg7-f3-ORb">

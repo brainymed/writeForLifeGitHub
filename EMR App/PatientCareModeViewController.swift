@@ -12,7 +12,6 @@ import CoreData
 
 class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate, LoginViewControllerDelegate {
     
-    @IBOutlet weak var mainImageView: UIImageView!
     @IBOutlet weak var multiLineView: CustomMLTWView! //Change made here & to WriteVC file name
     @IBOutlet weak var mapButton: UIButton!
     @IBOutlet weak var sendButton: UIButton!
@@ -32,7 +31,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        configureMargins()
         initializeMLTW()
     }
     
@@ -45,51 +43,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     }
     
     override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) { //Handle view rotation
-        newWidth = size.width
-        newHeight = size.height
-        configureMargins()
-    }
-    
-    func configureMargins() {
-        mainImageView.image = nil //clear existing lines
-        if (newWidth != nil) { //Rotation has occurred
-            drawLineFrom(CGPoint(x: 0, y: 0), toPoint: CGPoint(x: newWidth!, y: 0)) //Top Layout Margin (separates from status bar)
-            drawLineFrom(CGPoint(x: 0, y: 80), toPoint: CGPoint(x: newWidth!, y: 80)) //Top Horizontal Margin
-            drawLineFrom(CGPoint(x: 80, y: 0), toPoint: CGPoint(x: 80, y: newHeight!)) //Left Vertical Margin
-            drawLineFrom(CGPoint(x: (newWidth! - 65), y: 0), toPoint: CGPoint(x: (newWidth! - 65), y: newHeight!)) //Right Vertical Margin
-        } else { //No rotation has occurred
-            print("Standard Config")
-            drawLineFrom(CGPoint(x: view.frame.minX, y: view.frame.minY), toPoint: CGPoint(x: view.frame.maxX, y: view.frame.minY)) //Top Layout Margin
-            drawLineFrom(CGPoint(x: view.frame.minX, y: (view.frame.minY + 80)), toPoint: CGPoint(x: view.frame.width, y: (view.frame.minY + 80))) //Top Horizontal Margin
-            drawLineFrom(CGPoint(x: (view.frame.minX + 80), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.minX + 80), y: view.frame.height)) //Left Vertical Margin
-            drawLineFrom(CGPoint(x: (view.frame.width - 85), y: view.frame.minY), toPoint: CGPoint(x: (view.frame.width - 85), y: view.frame.height)) //Right Vertical Margin
-        }
-    }
-    
-    func drawLineFrom(fromPoint: CGPoint, toPoint: CGPoint) {
-        //This method draws the margins in our view:
-        //First, set up a context holding the image currently in the mainImageView.
-        UIGraphicsBeginImageContext(view.frame.size) //'View' specifies the root view in the view hierarchy
-        let context = UIGraphicsGetCurrentContext()
-        mainImageView.image?.drawInRect(CGRect(x: 0, y: 0, width: view.frame.size.width, height: view.frame.size.height))
-        
-        //Get the current touch point & then draw a line from the last point to the current point. The touch events trigger so quickly that the result is a smooth curve:
-        CGContextMoveToPoint(context, fromPoint.x, fromPoint.y)
-        CGContextAddLineToPoint(context, toPoint.x, toPoint.y)
-        
-        //Set the drawing parameters for line size & color:
-        CGContextSetLineCap(context, .Round)
-        CGContextSetLineWidth(context, 2.0)
-        CGContextSetRGBStrokeColor(context, 0.0, 0.0, 0.0, 1.0)
-        CGContextSetBlendMode(context, .Normal)
-        
-        //Draw the path:
-        CGContextStrokePath(context)
-        
-        //Wrap up the drawing context to render the new line:
-        mainImageView.image = UIGraphicsGetImageFromCurrentImageContext()
-        mainImageView.alpha = 1.0
-        UIGraphicsEndImageContext()
     }
     
     override func didReceiveMemoryWarning() {

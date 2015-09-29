@@ -32,6 +32,8 @@
 		B14CCAC01B9E889C00A38815 /* AtkItc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CCABF1B9E889C00A38815 /* AtkItc.framework */; };
 		B14CCACC1B9E8AF300A38815 /* AtkMltw.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */; };
 		B14CCAD21B9E8CFF00A38815 /* libAtkInw.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CCAD11B9E8CFF00A38815 /* libAtkInw.a */; };
+		B15520551BBB56CC0012339A /* EMRConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15520541BBB56CC0012339A /* EMRConnection.swift */; settings = {ASSET_TAGS = (); }; };
+		B15520571BBB57220012339A /* EMRReturnedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15520561BBB57220012339A /* EMRReturnedData.swift */; settings = {ASSET_TAGS = (); }; };
 		B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17842A11BB0D22500C34C48 /* LoginViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */; settings = {ASSET_TAGS = (); }; };
@@ -96,6 +98,8 @@
 		B14CCABF1B9E889C00A38815 /* AtkItc.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AtkItc.framework; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/itc/AtkItc.framework"; sourceTree = "<group>"; };
 		B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AtkMltw.framework; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/mltw/AtkMltw.framework"; sourceTree = "<group>"; };
 		B14CCAD11B9E8CFF00A38815 /* libAtkInw.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libAtkInw.a; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/inw/libAtkInw.a"; sourceTree = "<group>"; };
+		B15520541BBB56CC0012339A /* EMRConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRConnection.swift; sourceTree = "<group>"; };
+		B15520561BBB57220012339A /* EMRReturnedData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRReturnedData.swift; sourceTree = "<group>"; };
 		B15981921BB6889D0096BADF /* CurrentPatientPopupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrentPatientPopupView.swift; sourceTree = "<group>"; };
 		B15981941BB688C80096BADF /* CurrentUserPopupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrentUserPopupView.swift; sourceTree = "<group>"; };
 		B17842A11BB0D22500C34C48 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
@@ -271,6 +275,8 @@
 			isa = PBXGroup;
 			children = (
 				B1B11C341BA856ED00651FC7 /* EMRField.swift */,
+				B15520541BBB56CC0012339A /* EMRConnection.swift */,
+				B15520561BBB57220012339A /* EMRReturnedData.swift */,
 			);
 			name = "EMR Networking";
 			sourceTree = "<group>";
@@ -445,10 +451,12 @@
 				B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */,
 				B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */,
 				B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */,
+				B15520571BBB57220012339A /* EMRReturnedData.swift in Sources */,
 				B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */,
 				B1EF1CE11BA4B8B9009725B3 /* Model.xcdatamodeld in Sources */,
 				B1D097D61BA8954300456488 /* HelperFunctions.swift in Sources */,
 				B136A18D1B9B76A900E487C0 /* AppDelegate.swift in Sources */,
+				B15520551BBB56CC0012339A /* EMRConnection.swift in Sources */,
 				B1E0D5AC1BB096580097EC0F /* PatientCareModeViewController.swift in Sources */,
 				B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */,
 				B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */,
