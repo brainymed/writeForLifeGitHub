@@ -9,12 +9,30 @@ import UIKit
 
 class PhysicalAndROSView: UIView {
 
-    /*
-    // Only override drawRect: if you perform custom drawing.
-    // An empty implementation adversely affects performance during animation.
-    override func drawRect(rect: CGRect) {
-        // Drawing code
+    var query : String
+    
+    //This initializer is not building when I add the 2nd parameter for the 'query'
+    override init(frame: CGRect, query: String) {
+        super.init(frame: frame)
+        self.query = query
+        if self.query == "physicalExam" {
+            self.addViewForPhysical()
+        } else if self.query == "ROS" {
+            self.addViewForROS()
+        } else {
+            print("Error, condition should never be called from Physical&ROSView")
+        }
     }
-    */
-
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    func addViewForPhysical() { //Add custom view for physical exam
+    
+    }
+    
+    func addViewForROS() { //Add custom view for ROS
+        
+    }
 }

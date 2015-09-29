@@ -12,11 +12,12 @@ class EMRField {
     private var match : Bool = false
     private var fieldName : String? //'fieldName' should always = nil when 'match' == FALSE
     private var fieldValue : AnyObject?
+    private var tableViewLabels : [String]?
     
     init(inputWord: String) {
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
         let lowercaseInput = inputWord.lowercaseString
-        let formatArray : [String] = ["^.*name$", "^dob$", "^date of birth$", "^test$", "^.medication [0-9]{2}$", "^blood pressure$", "^bp$", "^heart rate$", "^hr$", "^resp.*$", "^rr$", "^temp.*$"]
+        let formatArray : [String] = ["^.*name$", "^dob$", "^date of birth$", "^test$", "^med.*$", "^blood pressure$", "^bp$", "^heart rate$", "^hr$", "^resp.*$", "^rr$", "^temp.*$", "^vitals$"]
         var stopCounter = -1
         for format in formatArray {
             stopCounter += 1
@@ -51,6 +52,8 @@ class EMRField {
             self.fieldName = "respirations"
         case 11:
             self.fieldName = "temperature"
+        case 12:
+            self.fieldName = "vitals"
         default:
             //If the counter's value is 1 greater than the length(formatArray), NO match was found.
             self.fieldName = nil
@@ -88,10 +91,31 @@ class EMRField {
                 patient.vitals["respirations"] = Int(inputValue)
             case "temperature":
                 patient.vitals["temperature"] = Int(inputValue)
+            case "vitals":
+                print("Vitals entered")
             default:
                 NSLog("Error ('setFieldValue()')! This case shouldn't be triggered unless a case for 'fieldName' was missed")
             }
         }
+    }
+    
+    internal func getLabelsForMK() -> [String]? { //Sets the TV labels based on the MK
+        if let field = self.fieldName {
+            switch field {
+            case "dateOfBirth":
+                //Causing problems when I try to print the DOB:
+                tableViewLabels = ["Date Of Birth"]
+            case "testValue":
+                tableViewLabels = ["Test Value"]
+            case "medications":
+                tableViewLabels = ["Medication Name", "Route", "Dosage", "Frequency"]
+            case "vitals":
+                tableViewLabels = ["Blood Pressure", "Heart Rate", "Respiratory Rate", "Temperature"]
+            default:
+                tableViewLabels = ["Default Switch (Error)"]
+            }
+        }
+        return tableViewLabels
     }
     
 }

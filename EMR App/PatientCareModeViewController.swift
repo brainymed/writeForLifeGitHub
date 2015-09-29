@@ -19,8 +19,9 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     @IBOutlet weak var closeButton: UIButton!
     @IBOutlet weak var openButton: UIButton!
     
-    var openScope : EMRField? //the currently open scope @ any given point in time; there can only be 1!
-    var currentPatient : Patient?
+    var currentUser: String?
+    var openScope: EMRField? //the currently open scope @ any given point in time; there can only be 1!
+    var currentPatient: Patient?
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
     override func viewDidLoad() {
@@ -30,6 +31,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     }
     
     override func viewDidAppear(animated: Bool) {
+        print("Current User (DEMVC): \(currentUser)")
         print("Current Patient (PCMVC): \(currentPatient?.name)")
         if (currentPatient == nil) {
             //If there is no patient file open, force the user to open one before proceeding:

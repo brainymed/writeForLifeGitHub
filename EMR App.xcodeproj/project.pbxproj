@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B111BC3B1B9FA20F0068BE17 /* MyCertificate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B111BC3A1B9FA20F0068BE17 /* MyCertificate.swift */; settings = {ASSET_TAGS = (); }; };
 		B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11545851BA707DD00E31EB6 /* CustomMLTWView.swift */; settings = {ASSET_TAGS = (); }; };
 		B12420C51BA62FCB0009AE2F /* Patient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12420C31BA62FCB0009AE2F /* Patient.swift */; settings = {ASSET_TAGS = (); }; };
 		B136A18D1B9B76A900E487C0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B136A18C1B9B76A900E487C0 /* AppDelegate.swift */; };
@@ -36,10 +35,9 @@
 		B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17842A11BB0D22500C34C48 /* LoginViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */; settings = {ASSET_TAGS = (); }; };
-		B1889FB11BA775EA00344130 /* PatientNameEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FB01BA775EA00344130 /* PatientNameEntryView.swift */; settings = {ASSET_TAGS = (); }; };
-		B1889FB31BA7760800344130 /* PhysicalAndROSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */; settings = {ASSET_TAGS = (); }; };
 		B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AF55721BA8B7400016A01A /* DateFormatter.swift */; settings = {ASSET_TAGS = (); }; };
 		B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B11C341BA856ED00651FC7 /* EMRField.swift */; settings = {ASSET_TAGS = (); }; };
+		B1BF67CF1BB734BD000C68EF /* MyCertificate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B111BC3A1B9FA20F0068BE17 /* MyCertificate.swift */; settings = {ASSET_TAGS = (); }; };
 		B1D097D61BA8954300456488 /* HelperFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D097D51BA8954300456488 /* HelperFunctions.swift */; settings = {ASSET_TAGS = (); }; };
 		B1E0D5AC1BB096580097EC0F /* PatientCareModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0D5AD1BB0966A0097EC0F /* DataEntryModeViewController.swift */; settings = {ASSET_TAGS = (); }; };
@@ -98,10 +96,11 @@
 		B14CCABF1B9E889C00A38815 /* AtkItc.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AtkItc.framework; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/itc/AtkItc.framework"; sourceTree = "<group>"; };
 		B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AtkMltw.framework; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/mltw/AtkMltw.framework"; sourceTree = "<group>"; };
 		B14CCAD11B9E8CFF00A38815 /* libAtkInw.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libAtkInw.a; path = "../../Downloads/MyScript_ATK-ios-1.3.0/libs/inw/libAtkInw.a"; sourceTree = "<group>"; };
+		B15981921BB6889D0096BADF /* CurrentPatientPopupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrentPatientPopupView.swift; sourceTree = "<group>"; };
+		B15981941BB688C80096BADF /* CurrentUserPopupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrentUserPopupView.swift; sourceTree = "<group>"; };
 		B17842A11BB0D22500C34C48 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabBarViewController.swift; sourceTree = "<group>"; };
 		B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Patient+CoreDataProperties.swift"; path = "../Patient+CoreDataProperties.swift"; sourceTree = "<group>"; };
-		B1889FB01BA775EA00344130 /* PatientNameEntryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PatientNameEntryView.swift; sourceTree = "<group>"; };
 		B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhysicalAndROSView.swift; sourceTree = "<group>"; };
 		B1AF55721BA8B7400016A01A /* DateFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateFormatter.swift; sourceTree = "<group>"; };
 		B1B11C341BA856ED00651FC7 /* EMRField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRField.swift; sourceTree = "<group>"; };
@@ -252,10 +251,8 @@
 			isa = PBXGroup;
 			children = (
 				B137739A1B9D38C6004C2EE2 /* EMR App-Bridging-Header.h */,
-				B1AF55721BA8B7400016A01A /* DateFormatter.swift */,
-				B12420C31BA62FCB0009AE2F /* Patient.swift */,
-				B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */,
-				B1B11C341BA856ED00651FC7 /* EMRField.swift */,
+				B16F38E71BB9CA6B006A9CEA /* Persistent EMR Model */,
+				B16F38E61BB9CA63006A9CEA /* EMR Networking */,
 			);
 			name = "Data Models";
 			sourceTree = "<group>";
@@ -268,6 +265,24 @@
 			);
 			name = resources;
 			path = ../../../Downloads/resources;
+			sourceTree = "<group>";
+		};
+		B16F38E61BB9CA63006A9CEA /* EMR Networking */ = {
+			isa = PBXGroup;
+			children = (
+				B1B11C341BA856ED00651FC7 /* EMRField.swift */,
+			);
+			name = "EMR Networking";
+			sourceTree = "<group>";
+		};
+		B16F38E71BB9CA6B006A9CEA /* Persistent EMR Model */ = {
+			isa = PBXGroup;
+			children = (
+				B12420C31BA62FCB0009AE2F /* Patient.swift */,
+				B1AF55721BA8B7400016A01A /* DateFormatter.swift */,
+				B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */,
+			);
+			name = "Persistent EMR Model";
 			sourceTree = "<group>";
 		};
 		B1889FB41BA777BB00344130 /* Main Views */ = {
@@ -285,8 +300,9 @@
 		B1889FB51BA777C000344130 /* Custom Views */ = {
 			isa = PBXGroup;
 			children = (
-				B1889FB01BA775EA00344130 /* PatientNameEntryView.swift */,
 				B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */,
+				B15981921BB6889D0096BADF /* CurrentPatientPopupView.swift */,
+				B15981941BB688C80096BADF /* CurrentUserPopupView.swift */,
 			);
 			name = "Custom Views";
 			sourceTree = "<group>";
@@ -431,15 +447,13 @@
 				B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */,
 				B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */,
 				B1EF1CE11BA4B8B9009725B3 /* Model.xcdatamodeld in Sources */,
-				B1889FB31BA7760800344130 /* PhysicalAndROSView.swift in Sources */,
 				B1D097D61BA8954300456488 /* HelperFunctions.swift in Sources */,
 				B136A18D1B9B76A900E487C0 /* AppDelegate.swift in Sources */,
 				B1E0D5AC1BB096580097EC0F /* PatientCareModeViewController.swift in Sources */,
-				B1889FB11BA775EA00344130 /* PatientNameEntryView.swift in Sources */,
 				B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */,
 				B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */,
+				B1BF67CF1BB734BD000C68EF /* MyCertificate.swift in Sources */,
 				B12420C51BA62FCB0009AE2F /* Patient.swift in Sources */,
-				B111BC3B1B9FA20F0068BE17 /* MyCertificate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

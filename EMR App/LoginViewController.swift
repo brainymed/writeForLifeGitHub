@@ -5,13 +5,15 @@
 import UIKit
 
 protocol LoginViewControllerDelegate {
-    //This delegate acts as follows: when the user enters a username & pwd, if we successfully validate those credentials, we dismiss the login screen, return to the home screen, & change the text field. This protocol has 1 method which is called when we login & want move away from the login VC. We also want some other object to act as a delegate to the login VC to dismiss it when it is done doing the login work, so we need a delegate STORED PROPERTY (in the VC code)!
+    //This delegate acts as follows: when the user enters a username & pwd, if we successfully validate those credentials, we dismiss the login screen, return to the home screen, & change the text field. This protocol has 1 required variable (currentUser) & 1 method which is called when we login & want move away from the login VC. We also want some other object to act as a delegate to the login VC to dismiss it when it is done doing the login work, so we need a delegate STORED PROPERTY (in the VC code)!
+    var currentUser: String? { get set }
     func didLoginSuccessfully()
 }
 
 class LoginViewController: UIViewController, UITextFieldDelegate {
     
-    var delegate : LoginViewControllerDelegate? //Delegate Stored Property
+    var delegate: LoginViewControllerDelegate? //Delegate Stored Property
+    var currentUser: String?
     
     @IBOutlet weak var usernameField: UITextField!
     @IBOutlet weak var passwordField: UITextField!
@@ -29,6 +31,9 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
     @IBAction func loginButtonClick(sender: AnyObject) {
         //When the button is tapped, authenticate the username & pwd against EMR:
         if usernameField.text?.lowercaseString == "a" && passwordField.text == "a" {
+            //Pass the currently logged in user to the open VC:
+            currentUser = usernameField.text
+            delegate?.currentUser = currentUser //sets the current user for the delegate VC
             delegate?.didLoginSuccessfully() //If we can authenticate the username & pwd, we call the delegate method
         } else {//Use the alert controller to display a failure message.
             let alertController = UIAlertController(title: "Error!", message: "Incorrect username or password.", preferredStyle: .Alert)
@@ -57,10 +62,5 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         loginButtonClick(textField)
         return true
     }
-    
-    // MARK: - Navigation
-    
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-    
-    }
+
 }
