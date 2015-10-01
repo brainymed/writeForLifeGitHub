@@ -118,4 +118,9 @@ class EMRField {
         return tableViewLabels
     }
     
+    internal func urlConstructor() -> NSURL { //Return a query URL based on the input field
+        let url = NSURL()
+        return url
+    }
+    
 }

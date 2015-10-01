@@ -149,17 +149,17 @@
                                 <exclude reference="6wl-jp-znO"/>
                             </mask>
                             <mask key="constraints">
+                                <exclude reference="GTe-p4-1eI"/>
+                                <exclude reference="O7F-Do-W79"/>
+                                <exclude reference="NQt-H3-7ED"/>
+                                <exclude reference="kQs-ab-v17"/>
+                                <exclude reference="ovA-JS-z4r"/>
                                 <exclude reference="LhQ-DV-odv"/>
                                 <exclude reference="zp1-VF-cj5"/>
                                 <exclude reference="ESa-Sf-2ye"/>
                                 <exclude reference="mFC-9o-1eK"/>
-                                <exclude reference="NQt-H3-7ED"/>
-                                <exclude reference="kQs-ab-v17"/>
-                                <exclude reference="ovA-JS-z4r"/>
                                 <exclude reference="KtR-7N-ut7"/>
                                 <exclude reference="PPO-cE-Wkw"/>
-                                <exclude reference="GTe-p4-1eI"/>
-                                <exclude reference="O7F-Do-W79"/>
                             </mask>
                         </variation>
                         <variation key="heightClass=regular-widthClass=regular">
@@ -169,16 +169,16 @@
                                 <include reference="6wl-jp-znO"/>
                             </mask>
                             <mask key="constraints">
-                                <include reference="LhQ-DV-odv"/>
-                                <include reference="zp1-VF-cj5"/>
-                                <include reference="ESa-Sf-2ye"/>
+                                <include reference="GTe-p4-1eI"/>
+                                <include reference="O7F-Do-W79"/>
                                 <include reference="NQt-H3-7ED"/>
                                 <include reference="kQs-ab-v17"/>
                                 <include reference="ovA-JS-z4r"/>
+                                <include reference="LhQ-DV-odv"/>
+                                <include reference="zp1-VF-cj5"/>
+                                <include reference="ESa-Sf-2ye"/>
                                 <include reference="KtR-7N-ut7"/>
                                 <include reference="PPO-cE-Wkw"/>
-                                <include reference="GTe-p4-1eI"/>
-                                <include reference="O7F-Do-W79"/>
                             </mask>
                         </variation>
                     </view>
@@ -1350,6 +1350,6 @@
         <image name="trash" width="40" height="24"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="tyb-eo-8Ac"/>
+        <segue reference="Ob1-hb-La0"/>
     </inferredMetricsTieBreakers>
 </document>

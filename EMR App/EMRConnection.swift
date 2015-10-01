@@ -3,7 +3,7 @@
 //  Created by Arnav Pondicherry  on 9/29/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Create a network connection w/ the EMR & pass over data.
+// Create a network connection to the EMR.
 
 import Foundation
 
@@ -21,12 +21,15 @@ class EMRConnection {
     func downloadJSONFromURL(completion : JSONDictionaryCompletion) {
         let request : NSMutableURLRequest = NSMutableURLRequest(URL: self.queryURL)
         
-        //HTTP GET Request:
+        //HTTP GET Request & Headers:
         request.HTTPMethod = "GET"
-        request.setValue("application/JSON", forHTTPHeaderField: "Accept")
-        request.setValue("utf-8", forHTTPHeaderField: "Accept-Encoding")
+        let accessToken = "6kjk4t9xazjczaqv364cvt7b"
+        //request.setValue("application/JSON", forHTTPHeaderField: "Accept") //Generates 406 response code
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("70.105.169.126", forHTTPHeaderField: "X-Originating-IP")
+        //request.HTTPBody = NSData() //Needed? Usually appending data to URL. 
         
-        //Create your HTTP POST request:
+        //Create HTTP POST request:
 //        let request = NSMutableURLRequest(URL: url)
 //        request.HTTPMethod = "POST"
 //        request.HTTPBody = postData
@@ -39,6 +42,7 @@ class EMRConnection {
             if let httpResponse = response as? NSHTTPURLResponse {
                 switch httpResponse.statusCode {
                 case 200:
+                    print("Response Headers: \(httpResponse.allHeaderFields)")
                     do {
                         let jsonDictionary = try NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.MutableContainers) as? [String : AnyObject]
                         completion(jsonDictionary)
@@ -48,7 +52,7 @@ class EMRConnection {
                 case 404:
                     print("Page not found. HTTP status code: \(httpResponse.statusCode)")
                 default:
-                    print("Get request not successful. HTTP status code: \(httpResponse.statusCode)")
+                    print("HTTP request unsuccessful. Status Code: \(httpResponse.statusCode)")
                 }
             } else {
                 print("Error: not a valid HTTP response. Please check your network connection.")

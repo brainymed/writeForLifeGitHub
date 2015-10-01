@@ -66,7 +66,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func viewDidAppear(animated: Bool) {
-        if loggedIn == false {//If user is not logged in, modally segue -> login screen. Need this line b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
+        if loggedIn == false {//If user isn't logged in, modally segue -> login screen. Need this line b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
@@ -267,7 +267,13 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     @IBAction func medicationsButtonClick(sender: AnyObject) {
-        
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "medications")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
     }
     
     @IBAction func allergiesButtonClick(sender: AnyObject) {
@@ -279,13 +285,12 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     @IBAction func rosButtonClick(sender: AnyObject) {
-        
+        sendHTTPRequestToEMR()
     }
     
     //MARK: - Dynamic View Configuration (TV & ImageView)
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        //Number of cells we show is based on the # of labels needed:
         if let numberOfCells = tableViewCellLabels?.count {
             return numberOfCells
         } else {
@@ -313,10 +318,18 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         if let labelArray = tableViewCellLabels {
             let numberOfLabels = CGFloat(labelArray.count)
             var cellHeight = CGFloat()
-            if UIDevice.currentDevice().orientation == UIDeviceOrientation.Portrait {
-                cellHeight = 875/numberOfLabels //device in portrait
-            } else {
+            if (UIDevice.currentDevice().orientation == UIDeviceOrientation.LandscapeRight) {
                 cellHeight = 619/numberOfLabels //device in landscape
+            } else if (UIDevice.currentDevice().orientation == UIDeviceOrientation.LandscapeLeft) {
+                cellHeight = 619/numberOfLabels //device in landscape
+            } else if (UIDevice.currentDevice().orientation == UIDeviceOrientation.Portrait) {
+                cellHeight = 875/numberOfLabels //device in portrait
+            } else {//Check NF width to determine orientation. Update code to work on all iPads!!!
+                if (view.frame.width < 800) {//Portrait - width = 768
+                    cellHeight = 875/numberOfLabels
+                } else { //Landscape - NF width = 1024
+                    cellHeight = 619/numberOfLabels
+                }
             }
             return cellHeight
         } else {
@@ -454,6 +467,42 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         dataEntryImageView.image = UIGraphicsGetImageFromCurrentImageContext()
         dataEntryImageView.alpha = 1.0
         UIGraphicsEndImageContext()
+    }
+    
+    //MARK: - Network Request
+    
+    func sendHTTPRequestToEMR() {
+        let url = NSURL(string: "https://api.athenahealth.com/preview1/1/practiceinfo")
+        let dataParser = EMRDataParser(url: url!)
+        dataParser.ParseJSON {
+            (let returnedEMRData) in
+            if let data = returnedEMRData {
+                print("Total Count: \(data.totalCount)")
+                print("Practice Info: \(data.practiceInfo)")
+                if let practiceInfo = data.practiceInfo {
+                    let value = practiceInfo[0]
+                    let id = value["practiceid"]
+                    print("Practice ID: \(id)\n")
+                }
+            }
+        }
+        
+        let url2 = NSURL(string: "https://api.athenahealth.com/preview1/195900/departments?limit=10&offset=1&providerlist=false&showalldepartments=false")
+        let dataParser2 = EMRDataParser(url: url2!)
+        dataParser2.ParseJSON {
+            (let returnedEMRData) in
+            if let data = returnedEMRData {
+                print("\nTotal Count: \(data.totalCount)")
+                if let depts = data.departments {
+                    var departmentIDs : [AnyObject] = []
+                    for department in depts {
+                        let departmentID = department["departmentid"]
+                        departmentIDs.append(departmentID!)
+                    }
+                    print("\nDepartment ID #s: \(departmentIDs)")
+                }
+            }
+        }
     }
     
     //MARK: - Current Patient & User Views
