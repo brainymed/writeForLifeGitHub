@@ -18,6 +18,11 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
     // The Tab Bar controller does not segue between its tabs, so you must use these 2 delegate protocols to handle passing data between your VCs in the controller. 
     // We will NOT prevent the user from switching between tabs if a patient file is not opened. However, we will make sure the first interaction the user has with each separate interface (after logging in) is to open an existing patient file or create a new one.
     func tabBarController(tabBarController: UITabBarController, shouldSelectViewController viewController: UIViewController) -> Bool {//Function called BEFORE the transition takes place
+//        let dataEntryModeViewController = tabBarController.viewControllers![0] as! DataEntryModeViewController
+//        let patientCareModeViewController = tabBarController.viewControllers![1] as! PatientCareModeViewController
+        
+        //Check whether a BT keyboard is enabled to decide what views to load - PCM if not, DEM if so. How do we manually tell the tabBarVC to return a specific view? This function does not return a specific view controller. Can we programmatically create a segue that is called if no keyboard is detected?
+        
         return true
     }
     
@@ -36,6 +41,7 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
             (viewController as! PatientCareModeViewController).currentPatient = dataEntryModeViewController.currentPatient
         }
     }
+    
 }
 
 //Tells the TabBarController to respond to the supportedInterfaceOrientations & shouldAutorotate functions from the children VCs. 

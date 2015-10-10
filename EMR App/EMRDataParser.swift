@@ -3,14 +3,14 @@
 //  Created by Arnav Pondicherry  on 9/30/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Handle the response/data returned by the EMR in response to the HTTP request.
+// Handle the response/data returned by the EMR (through the web server) in response to the HTTP request.
 
 import Foundation
 
 struct EMRDataParser {
     let url : NSURL
     
-    init(url : NSURL) {//initialize struct by inputting the full URL for the API.
+    init(url : NSURL) {//initialize struct by inputting the URL for our web server - we simply pass the long-form version of the field name entered & the data entered into each field as a JSON object.
         self.url = url
     }
     

@@ -12,7 +12,7 @@ class EMRConnection {
     lazy var config : NSURLSessionConfiguration = NSURLSessionConfiguration.defaultSessionConfiguration()
     lazy var session : NSURLSession = NSURLSession(configuration: self.config)
     
-    init (queryURL : NSURL) {
+    init (queryURL : NSURL) {//URL is absolute URL of web server. We will POST all data to this URL.
         self.queryURL = queryURL
     }
     
@@ -29,9 +29,10 @@ class EMRConnection {
         request.setValue("70.105.169.126", forHTTPHeaderField: "X-Originating-IP")
         //request.HTTPBody = NSData() //Needed? Usually appending data to URL. 
         
-        //Create HTTP POST request:
+        //Create HTTP POST request - for data entry, pass in the fieldName being mapped to & the data being sent. For data extraction, pass in the (processed?) query name. 
 //        let request = NSMutableURLRequest(URL: url)
 //        request.HTTPMethod = "POST"
+//        let postData = NSData(base64EncodedString: <#T##String#>, options: <#T##NSDataBase64DecodingOptions#>)
 //        request.HTTPBody = postData
 //        request.setValue(postLength as String, forHTTPHeaderField: "Content-Length")
 //        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")

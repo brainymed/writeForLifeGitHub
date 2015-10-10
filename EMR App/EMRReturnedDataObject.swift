@@ -3,7 +3,7 @@
 //  Created by Arnav Pondicherry  on 9/30/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-//This data object will be populated AFTER the app sends request -> EMR & obtains JSON data as a response. Once we receive JSON, we will break it down into a custom dictionary object - we know what parameters could possibly be returned & create a dictionary entry for each potential parameter.
+//This data object will be populated AFTER the app sends request -> server -> EMR & obtains JSON data as a response. Once we receive JSON, we will break it down into a custom dictionary object - we know what parameters could possibly be returned & create a dictionary entry for each potential parameter.
 
 import Foundation
 
