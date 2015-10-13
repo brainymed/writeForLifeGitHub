@@ -3,6 +3,35 @@
 //Setting Layers: 
 textField.layer.zPosition = 1
 
+//Grabbing input values for notification feed & dictionary:
+//            var jsonDictToServer = Dictionary<String, [String : AnyObject]>()
+//            jsonDictToServer[(openScope?.getFieldName())!] = Dictionary<String, AnyObject>()
+//            var inputValuesForFieldName = jsonDictToServer[(openScope?.getFieldName())!]! //set the overall key to the current fieldName. The values will depend on the field name.
+//
+//            var counter = 1
+//            var notificationText = ""
+//            for view in dataEntryImageView.subviews {
+//                //Grab the values entered in text fields for the notificationsFeed & mapping dictionary:
+//                if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
+//                    inputValuesForFieldName[tableViewCellLabels![counter - 1]] = ((view as? UITextField)?.text)!
+//                    notificationText += tableViewCellLabels![counter - 1] + ": " + ((view as? UITextField)?.text)! + "\n"
+//                }
+//                counter += 1
+//            }
+//            //Grab the last text field's input value for feed & mapping dictionary:
+//            notificationText += (tableViewCellLabels?.last!)! + ": " + input!
+//            inputValuesForFieldName[(tableViewCellLabels?.last!)!] = input!
+//            print(inputValuesForFieldName)
+
+//            notificationsFeed.text = notificationText //display all mapped values to user
+//            fadeIn()
+//            fadeOut()
+//            dataEntryImageView.canResignFirstResponder() //resign 1st responder?
+//            tableViewCellLabels = nil //clear array w/ labels
+//            configureViewForEntry("fieldName")
+//            openScope = nil //Last, close the scope
+
+
 //Drawing Custom Views in VC:
 let customView = PatientNameEntryView(frame: CGRect(x: 60, y: 100, width: view.frame.width - 60, height: view.frame.height - 150))
 customView.tag = 1000

@@ -3,7 +3,7 @@
 //  Created by Arnav Pondicherry  on 9/29/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Create a network connection to the EMR.
+// Create a network connection to the centralized web server.
 
 import Foundation
 

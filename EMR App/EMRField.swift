@@ -13,11 +13,15 @@ class EMRField {
     private var fieldName : String? //'fieldName' should always = nil when 'match' == FALSE
     private var fieldValue : AnyObject?
     private var tableViewLabels : [String]?
+    private var currentItemCounter : Int? //for specific views (e.g. medications, diagnoses, allergies), counts the # of the item currently open.
+    private var currentItemLabel : String? //for specific views, generates a (singular) label to indicate what item is currently open (e.g. "medication", "diagnosis", "allergy"). The label & counter should only exist simultaneously!
+    var jsonDictToServer = Dictionary<String, [String : AnyObject]>() //dictionary containing user inputs being mapped -> server
+    //var inputValuesForFieldName = Dictionary<String, AnyObject>() //dictionary entry for the current field name
     
     init(inputWord: String) {
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
         let lowercaseInput = inputWord.lowercaseString
-        let formatArray : [String] = ["^.*name$", "^dob$", "^date of birth$", "^test$", "^med.*$", "^blood pressure$", "^bp$", "^heart rate$", "^hr$", "^resp.*$", "^rr$", "^temp.*$", "^vitals$"]
+        let formatArray : [String] = ["^.*name$", "^dob$", "^date of birth$", "^test$", "^med.*$", "^blood pressure$", "^bp$", "^heart rate$", "^hr$", "^resp.*$", "^rr$", "^temp.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies"]
         var stopCounter = -1
         for format in formatArray {
             stopCounter += 1
@@ -44,6 +48,8 @@ class EMRField {
             self.fieldName = "testValue"
         case 4:
             self.fieldName = "medications"
+            self.currentItemCounter = 1
+            self.currentItemLabel = "Medication"
         case 5, 6:
             self.fieldName = "bloodPressure"
         case 7, 8:
@@ -54,22 +60,36 @@ class EMRField {
             self.fieldName = "temperature"
         case 12:
             self.fieldName = "vitals"
+        case 13:
+            self.fieldName = "physicalExam"
+        case 14:
+            self.fieldName = "reviewOfSystems"
+        case 15:
+            self.fieldName = "allergies"
         default:
             //If the counter's value is 1 greater than the length(formatArray), NO match was found.
             self.fieldName = nil
         }
+        
+        if let currentField = self.fieldName { //Create an entry in the mapping dict for the fieldName
+            self.jsonDictToServer[currentField] = Dictionary<String, AnyObject>()
+            //self.inputValuesForFieldName = (self.jsonDictToServer[currentField])!
+        }
     }
+    
+    //MARK: - Match Checking
     
     internal func matchFound() -> Bool {
         return self.match
     }
     
+    //MARK: - Setting Field Name
     internal func getFieldName() -> String? {
         return self.fieldName
     }
     
     internal func setFieldValueForPatient(inputValue: String, forPatient patient: Patient) {
-        //Takes in a field value + patient & sets that FV for the appropriate field name:
+        //Takes in a field value + patient & sets that FV for the appropriate field name in the persistent data store:
         if let field = self.fieldName {
             switch field {
             case "dateOfBirth":
@@ -93,6 +113,12 @@ class EMRField {
                 patient.vitals["temperature"] = Int(inputValue)
             case "vitals":
                 print("Vitals entered")
+            case "physicalExam":
+                print("PX")
+            case "reviewOfSystems":
+                print("ROS")
+            case "allergies":
+                print("allergies")
             default:
                 NSLog("Error ('setFieldValue()')! This case shouldn't be triggered unless a case for 'fieldName' was missed")
             }
@@ -111,6 +137,12 @@ class EMRField {
                 tableViewLabels = ["Medication Name", "Route", "Dosage", "Frequency"]
             case "vitals":
                 tableViewLabels = ["Blood Pressure", "Heart Rate", "Respiratory Rate", "Temperature"]
+            case "physicalExam":
+                tableViewLabels = ["Anterior View", "Posterior View"]
+            case "reviewOfSystems":
+                tableViewLabels = ["Anterior View", "Posterior View"]
+            case "allergies":
+                tableViewLabels = ["Allergen"]
             default:
                 tableViewLabels = ["Default Switch (Error)"]
             }
@@ -118,4 +150,18 @@ class EMRField {
         return tableViewLabels
     }
     
+    //MARK: - Current Item Number
+    internal func getCurrentItem() -> (String, Int)? { //returns current item for specific fieldNames
+        if let counter = currentItemCounter {
+            return (self.currentItemLabel!, counter)
+        } else {
+            return nil
+        }
+    }
+    
+    internal func incrementCurrentItemNumber() {
+        if (currentItemCounter != nil) {
+            self.currentItemCounter! += 1
+        }
+    }
 }

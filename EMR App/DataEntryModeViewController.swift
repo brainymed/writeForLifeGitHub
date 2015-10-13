@@ -6,6 +6,7 @@
 // Controls the Data Entry portion of the app for information input into the EMR.
 
 import UIKit
+import CoreData
 
 class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
     
@@ -33,7 +34,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBOutlet weak var currentUserButton: UIButton!
     @IBOutlet weak var notificationsFeed: UILabel! //Convert notification feed -> scrolling set of TV cells instead of a text view
     
-    // CurrentUser & CurrentPatient Views:
+    // CurrentUser & CurrentPatient Views (this can be achieved more cleanly using a popover segue):
     @IBOutlet weak var patientInfoView: UIView!
     @IBOutlet weak var userInfoView: UIView!
     @IBOutlet weak var currentPatientLabel: UILabel!
@@ -54,6 +55,10 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBOutlet weak var allergiesButton: UIButton!
     @IBOutlet weak var physicalButton: UIButton!
     @IBOutlet weak var rosButton: UIButton!
+    
+    // Additional Item Rendering:
+    @IBOutlet weak var plusButton: UIButton! //button for adding additional items in appropriate views
+    @IBOutlet weak var currentItemNumberLabel: UILabel! //label indicating how current item # for view
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -189,7 +194,9 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         }
     }
     
-    func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior when 'RETURN' button is hit
+    func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior for 'RETURN' button
+        plusButton.hidden = true //re-hide plus button & itemLabel (in case they were opened)
+        currentItemNumberLabel.hidden = true
         let input = textField.text
         textField.text = ""
         textField.resignFirstResponder()
@@ -200,18 +207,16 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             if (openScope!.matchFound()) {
                 //Check if 'currentPatient' exists:
                 if (currentPatient == nil) {//File is NOT open
-                    //This should never trigger b/c a patient file must be open before any behaviors can take place!
+                    //This should never trigger (patient file must be open before anything takes place)!
                     openScope = nil
                     print("No patient file open")
                 } else {//'Current patient' exists & match is found for keyword
                     //Open scope for NON-NAME field:
-                    if (openScope!.getFieldName() == "name") {
-                        //Should never be called - user doesn't enter patient name this way.
+                    if (openScope!.getFieldName() == "name") { //Should never be called.
                         openScope = nil
                         print("'Name' entered as field name")
                         configureViewForEntry("fieldName")
-                    } else {
-                        //Open Scope (render the view according to the fieldName that was entered):
+                    } else { //Open Scope (render view according to fieldName that was entered)
                         print("Match found")
                         notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
                         fadeIn()
@@ -226,24 +231,20 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
                 //Keep the first responder here & accept a new field name entry:
                 configureViewForEntry("fieldName")
             }
-        } else if textField.tag == 100 { //Sender is lastTextField from dataEntryImageView sending FV
-            //Send input values from ALL present textFields -> EMR or persistent data store, post results in the twitter feed, & configure the 'fieldName' view:
-            var counter = 1
-            var notificationText = ""
-            for view in dataEntryImageView.subviews {
-                if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
-                    notificationText += tableViewCellLabels![counter - 1] + ": " + ((view as? UITextField)?.text)! + "\n"
-                }
-                counter += 1
+        } else if textField.tag == 100 { //Sender is lastTextField from dataEntryImageView sending FVs
+            //Obtain dictionary & notificationText containing input values; send dictionary -> central web server/persistent store & show notification, then configure the 'fieldName' view:
+            getInputValuesFromTextFields(input!, notificationString: { (let notification) in
+                self.notificationsFeed.text = notification //display all mapped values in feed
+                })
+            for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
+                print("Dict: \(item): \(value)")
             }
-            notificationText += (tableViewCellLabels?.last!)! + ": " + input!
-            notificationsFeed.text = notificationText //display all mapped values to user
             fadeIn()
             fadeOut()
-            dataEntryImageView.canResignFirstResponder() //resign 1st responder?
+            dataEntryImageView.viewWithTag(1)?.resignFirstResponder() //resign 1st responder
             tableViewCellLabels = nil //clear array w/ labels
             configureViewForEntry("fieldName")
-            openScope = nil //Last, close the scope
+            openScope = nil //close the existing scope
         }
         return true
     }
@@ -255,7 +256,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     func fadeOut() { //Gradually fades out the twitter feed
-        UIView.animateWithDuration(1.0, delay: 4.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
+        UIView.animateWithDuration(1.0, delay: 3.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
             self.notificationsFeed.alpha = 0.0
             }, completion: nil)
     }
@@ -287,15 +288,34 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     @IBAction func allergiesButtonClick(sender: AnyObject) {
-        
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "allergies")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
     }
     
     @IBAction func physicalButtonClick(sender: AnyObject) {
-        
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "physical")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
     }
     
     @IBAction func rosButtonClick(sender: AnyObject) {
         sendHTTPRequestToEMR()
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "ros")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
     }
     
     //MARK: - Dynamic View Configuration (TV & ImageView)
@@ -381,6 +401,15 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     func partitionImageViewForOrientation(numberOfLabels: Int, viewWidth: CGFloat, viewHeight: CGFloat) { //Handles partitioning based on width & height of the imageView
+        //If the entered field name allows for multiple sub-scopes, we will reveal our label & plus button:
+        if (openScope?.getCurrentItem() != nil) {
+            plusButton.hidden = false
+            currentItemNumberLabel.hidden = false
+            let label = (openScope?.getCurrentItem()!.0)!
+            let count = (openScope?.getCurrentItem()!.1)!
+            currentItemNumberLabel.text = "\(label) \(count)"
+        }
+        
         let numberOfPartitions = CGFloat(numberOfLabels)
         let partitionSize = viewHeight/numberOfPartitions
         if numberOfLabels > 1 { //No partitioning for only 1 label
@@ -446,6 +475,76 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         dataEntryImageView.image = UIGraphicsGetImageFromCurrentImageContext()
         dataEntryImageView.alpha = 1.0
         UIGraphicsEndImageContext()
+    }
+    
+    @IBAction func plusButtonClick(sender: AnyObject) {
+        //Grab the info currently in the view & then render the view for addition of a new object of the same type (e.g. for medications, diagnoses, allergies, etc.). The dictionary receiving this information should be partitioned into sub-parts (e.g. "med1", "med2", etc. & then the information should be mapped to corresponding sub-scopes).
+        if (openScope?.getCurrentItem() != nil) { //Checks if fieldName has sub-scope
+            //Construct the dictionary:
+            let lastFieldText = (dataEntryImageView.viewWithTag(100) as? UITextField)?.text //Grab last textField's input value
+            getInputValuesFromTextFields(lastFieldText!, notificationString: { (let notification) -> Void in
+                self.notificationsFeed.text = notification
+                })
+            fadeIn()
+            fadeOut()
+            dataEntryImageView.viewWithTag(1)?.becomeFirstResponder() //Set 1st txtField as 1st responder
+            
+            //Render the next item's label:
+            openScope?.incrementCurrentItemNumber() //increment counter for next item's label
+            let label = (openScope?.getCurrentItem()!.0)!
+            let count = (openScope?.getCurrentItem()!.1)!
+            currentItemNumberLabel.text = "\(label) \(count)"
+        }
+    }
+    
+    //MARK: - Capture User Inputs
+    
+    func getInputValuesFromTextFields(lastFieldText: String, notificationString: (String -> Void)) {
+        //Grab the values entered in text fields for the notificationsFeed & mapping dictionary:
+        var counter = 0
+        var notificationText = ""
+        let fieldName = (openScope?.getFieldName())!
+        
+        if (openScope?.getCurrentItem() != nil) { //fieldName has sub-scope (called by '+BtnClick')
+            //Construct the dictionary's custom key:
+            let label = (openScope?.getCurrentItem()!.0)!.lowercaseString
+            let currentItemCount = (openScope?.getCurrentItem()!.1)!
+            let currentItemKey = label + String(currentItemCount)
+            //Add the key into the jsonDict:
+            openScope?.jsonDictToServer[fieldName]![currentItemKey] = Dictionary<String, AnyObject>()
+            var tempDict : [String : AnyObject] = (openScope?.jsonDictToServer[fieldName]![currentItemKey])! as! [String : AnyObject] //create temporary dict to assign value
+            for view in dataEntryImageView.subviews {
+                if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
+                    let key = tableViewCellLabels![counter]
+                    let value = ((view as? UITextField)?.text)!
+                    tempDict[key] = value
+                    notificationText += key + ": " + value + "\n"
+                    counter += 1
+                    (view as? UITextField)?.text = "" //clears the view's text
+                } else if (view.tag == 100) {//Grab last textField's input value
+                    let key = (tableViewCellLabels?.last)!
+                    tempDict[key] = lastFieldText
+                    notificationText += key + ": " + lastFieldText
+                    (view as? UITextField)?.text = "" //clears the view's text
+                }
+                openScope?.jsonDictToServer[fieldName]![currentItemKey] = tempDict //Assign the temporary value in the temp dict -> jsonDictToServer @ end of each iteration
+            }
+        } else { //fieldName does NOT have sub-scopes (only called by 'textFieldShouldReturn')
+            for view in dataEntryImageView.subviews {
+                if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
+                    let key = tableViewCellLabels![counter]
+                    let value = ((view as? UITextField)?.text)!
+                    openScope?.jsonDictToServer[fieldName]![key] = value
+                    notificationText += key + ": " + value + "\n"
+                    counter += 1
+                } else if (view.tag == 100) {//Grab last textField's input value
+                    let key = (tableViewCellLabels!.last)!
+                    openScope?.jsonDictToServer[fieldName]![key] = lastFieldText
+                    notificationText += key + ": " + lastFieldText
+                }
+            }
+        }
+        notificationString(notificationText) //Send back the closure containing the notification text
     }
     
     //MARK: - Network Request

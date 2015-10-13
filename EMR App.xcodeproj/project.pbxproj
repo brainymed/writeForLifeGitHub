@@ -167,7 +167,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		B136A1801B9B76A900E487C0 = {
+		B10C450A1BC9D45700473F6B /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				B14CCAD11B9E8CFF00A38815 /* libAtkInw.a */,
@@ -180,15 +180,23 @@
 				B137738B1B9D3689004C2EE2 /* libMyScriptShape.a */,
 				B137738C1B9D3689004C2EE2 /* libMyScriptText.a */,
 				B137737E1B9D354A004C2EE2 /* libStylusCore.a */,
-				B137737C1B9D3528004C2EE2 /* Security.framework */,
-				B137737A1B9D351A004C2EE2 /* SystemConfiguration.framework */,
-				B13773981B9D381A004C2EE2 /* CoreGraphics.framework */,
-				B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */,
-				B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */,
-				B14CCABF1B9E889C00A38815 /* AtkItc.framework */,
-				B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */,
-				B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */,
 				B1A858621BC8884E00DC94F9 /* JotTouchSDK.bundle */,
+				B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */,
+				B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */,
+				B14CCABF1B9E889C00A38815 /* AtkItc.framework */,
+				B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */,
+				B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */,
+				B13773981B9D381A004C2EE2 /* CoreGraphics.framework */,
+				B137737A1B9D351A004C2EE2 /* SystemConfiguration.framework */,
+				B137737C1B9D3528004C2EE2 /* Security.framework */,
+			);
+			name = "Linked Frameworks";
+			sourceTree = "<group>";
+		};
+		B136A1801B9B76A900E487C0 = {
+			isa = PBXGroup;
+			children = (
+				B10C450A1BC9D45700473F6B /* Linked Frameworks */,
 				B136A18B1B9B76A900E487C0 /* EMR App */,
 				B12420C01BA5FBDB0009AE2F /* Unused Code.swift */,
 				B136A1A21B9B76AA00E487C0 /* EMR AppTests */,

@@ -12,12 +12,15 @@ import CoreData
 
 class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate, LoginViewControllerDelegate {
     
-    @IBOutlet weak var multiLineView: CustomMLTWView! //Change made here & to WriteVC file name
+    @IBOutlet weak var multiLineView: CustomMLTWView!
     @IBOutlet weak var mapButton: UIButton!
     @IBOutlet weak var sendButton: UIButton!
     @IBOutlet weak var mltwTextLabel: UILabel!
     @IBOutlet weak var closeButton: UIButton!
     @IBOutlet weak var openButton: UIButton!
+    
+    @IBOutlet weak var leftMarginView: UIView!
+    @IBOutlet weak var rightMarginView: UIView!
     
     var currentUser: String?
     var openScope: EMRField? //the currently open scope @ any given point in time; there can only be 1!
@@ -32,6 +35,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     override func viewDidLoad() {
         super.viewDidLoad()
         initializeMLTW()
+        configureStylus()
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -48,6 +52,32 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    //MARK: - Jot Touch Config
+    
+    func configureStylus() {
+        //Configure the Sync View:
+        //Check how the canvas view in the example app is blocking user touches!!! App crashes if the jot is disconnected!
+        let connectionStatusViewController : UIViewController = UIStoryboard.instantiateJotViewControllerWithIdentifier(JotViewControllerUnifiedStatusButtonAndConnectionAndSettingsIdentifier)
+        connectionStatusViewController.view.frame = leftMarginView.bounds
+        self.leftMarginView.addSubview(connectionStatusViewController.view)
+        self.addChildViewController(connectionStatusViewController)
+        
+        let batteryIdentifierViewController : UIViewController = UIStoryboard.instantiateJotViewControllerWithIdentifier(JotViewControllerBatteryIdentifier)
+        batteryIdentifierViewController.view.frame = mltwTextLabel.bounds
+        self.mltwTextLabel.addSubview(batteryIdentifierViewController.view)
+        self.addChildViewController(batteryIdentifierViewController)
+        
+        //        UIStoryboard.instantiateJotViewControllerWithIdentifier(JotViewControllerShortCutsIdentifier)
+        //        UIStoryboard.instantiateJotViewControllerWithIdentifier(JotViewControllerPressToConnectIdentifier)
+        //        UIStoryboard.instantiateJotViewControllerWithIdentifier(JotViewControllerWritingStyleIdentifier)
+        
+        //Create the Stylus Manager:
+        JotStylusManager.sharedInstance().enable()
+        JotStylusManager.sharedInstance().registerView(multiLineView)
+        JotStylusManager.sharedInstance().palmRejectorDelegate = multiLineView
+        JotStylusManager.sharedInstance().rejectMode = true
     }
     
     //MARK: - MLTW Config
