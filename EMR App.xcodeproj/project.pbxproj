@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B11274FD1BCDACAC00F68F9E /* JotTouchSDK.bundle in Resources */ = {isa = PBXBuildFile; fileRef = B11274FC1BCDACAC00F68F9E /* JotTouchSDK.bundle */; settings = {ASSET_TAGS = (); }; };
+		B11274FE1BCDAE6A00F68F9E /* PhysicalAndROSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */; settings = {ASSET_TAGS = (); }; };
 		B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11545851BA707DD00E31EB6 /* CustomMLTWView.swift */; settings = {ASSET_TAGS = (); }; };
 		B12420C51BA62FCB0009AE2F /* Patient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12420C31BA62FCB0009AE2F /* Patient.swift */; settings = {ASSET_TAGS = (); }; };
 		B136A18D1B9B76A900E487C0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B136A18C1B9B76A900E487C0 /* AppDelegate.swift */; };
@@ -41,7 +43,6 @@
 		B1A8585B1BC8845300DC94F9 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */; };
 		B1A8585D1BC884C100DC94F9 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */; };
 		B1A8585F1BC8853200DC94F9 /* JotTouchSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */; };
-		B1A858631BC8884E00DC94F9 /* JotTouchSDK.bundle in Resources */ = {isa = PBXBuildFile; fileRef = B1A858621BC8884E00DC94F9 /* JotTouchSDK.bundle */; settings = {ASSET_TAGS = (); }; };
 		B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AF55721BA8B7400016A01A /* DateFormatter.swift */; settings = {ASSET_TAGS = (); }; };
 		B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B11C341BA856ED00651FC7 /* EMRField.swift */; settings = {ASSET_TAGS = (); }; };
 		B1BF67CF1BB734BD000C68EF /* MyCertificate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B111BC3A1B9FA20F0068BE17 /* MyCertificate.swift */; settings = {ASSET_TAGS = (); }; };
@@ -70,6 +71,7 @@
 
 /* Begin PBXFileReference section */
 		B111BC3A1B9FA20F0068BE17 /* MyCertificate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyCertificate.swift; sourceTree = "<group>"; };
+		B11274FC1BCDACAC00F68F9E /* JotTouchSDK.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = JotTouchSDK.bundle; sourceTree = "<group>"; };
 		B11545851BA707DD00E31EB6 /* CustomMLTWView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomMLTWView.swift; sourceTree = "<group>"; };
 		B12420C01BA5FBDB0009AE2F /* Unused Code.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Unused Code.swift"; path = "EMR App/Unused Code.swift"; sourceTree = "<group>"; };
 		B12420C31BA62FCB0009AE2F /* Patient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Patient.swift; path = ../Patient.swift; sourceTree = "<group>"; };
@@ -115,7 +117,6 @@
 		B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
 		B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
 		B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JotTouchSDK.framework; path = "../../Desktop/JotTouchSDK-master/JotTouchSDK.framework"; sourceTree = "<group>"; };
-		B1A858621BC8884E00DC94F9 /* JotTouchSDK.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = JotTouchSDK.bundle; sourceTree = "<group>"; };
 		B1AF55721BA8B7400016A01A /* DateFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateFormatter.swift; sourceTree = "<group>"; };
 		B1B11C341BA856ED00651FC7 /* EMRField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRField.swift; sourceTree = "<group>"; };
 		B1D097D51BA8954300456488 /* HelperFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HelperFunctions.swift; sourceTree = "<group>"; };
@@ -180,8 +181,8 @@
 				B137738B1B9D3689004C2EE2 /* libMyScriptShape.a */,
 				B137738C1B9D3689004C2EE2 /* libMyScriptText.a */,
 				B137737E1B9D354A004C2EE2 /* libStylusCore.a */,
-				B1A858621BC8884E00DC94F9 /* JotTouchSDK.bundle */,
 				B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */,
+				B11274FC1BCDACAC00F68F9E /* JotTouchSDK.bundle */,
 				B14CCACB1B9E8AF300A38815 /* AtkMltw.framework */,
 				B14CCABF1B9E889C00A38815 /* AtkItc.framework */,
 				B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */,
@@ -448,7 +449,7 @@
 				B136A1961B9B76A900E487C0 /* Assets.xcassets in Resources */,
 				B136A1941B9B76A900E487C0 /* Main.storyboard in Resources */,
 				B14CCAB91B9E7E3A00A38815 /* en_US-ak-cur.lite.res in Resources */,
-				B1A858631BC8884E00DC94F9 /* JotTouchSDK.bundle in Resources */,
+				B11274FD1BCDACAC00F68F9E /* JotTouchSDK.bundle in Resources */,
 				B14CCABA1B9E7E3A00A38815 /* en_US-lk-text.lite.res in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -477,6 +478,7 @@
 				B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */,
 				B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */,
 				B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */,
+				B11274FE1BCDAE6A00F68F9E /* PhysicalAndROSView.swift in Sources */,
 				B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */,
 				B16E8A881BBCAC6100177BCB /* EMRReturnedDataObject.swift in Sources */,
 				B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */,

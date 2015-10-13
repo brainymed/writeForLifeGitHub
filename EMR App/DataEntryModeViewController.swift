@@ -47,6 +47,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     let tableViewCellColors: [UIColor] = [UIColor.lightGrayColor(), UIColor.darkGrayColor(), UIColor.whiteColor(), UIColor.yellowColor()] //We will color code the labels to the partitions
     var newWidth: CGFloat? //on rotation, the width of the incoming view
     var newHeight: CGFloat? //on rotation, the height of the incoming view
+    var physicalOrROSView: PhysicalAndROSView? //renders Px or ROS view
     
     // Template Buttons:
     @IBOutlet weak var vitalsButton: UIButton!
@@ -389,6 +390,13 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         print("MinY: \(dataEntryImageView.frame.minY). MaxY: \(dataEntryImageView.frame.maxY)")
         print("Table View - Height: \(labelsTableView.frame.height). Width: \(labelsTableView.frame.width)")
         
+        //Check if the keyword is 'physical' or 'ROS'. Render the custom view accordingly. Where in the flow should this sit? Remove outlet for rotateButton (it will turn invisible if the imageView is invisible)
+        if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") {
+            let fieldName = (openScope?.getFieldName())!
+            //physicalOrROSView = PhysicalAndROSView(viewChoice: fieldName, gender: 0, childOrAdult: 0) //in future, we will capture patient gender & age programmatically, for now assign defaults. Don't forget to clear set the variable to nil after view is closed.
+            //humanBodyImageView.image = physicalOrROSView?.getOriginalImageFile()
+        }
+        
         if (!rotationHasOccurred) { //No rotation, first time the view has been opened
             let height = dataEntryImageView.frame.height
             let width = dataEntryImageView.frame.width
@@ -496,6 +504,9 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             currentItemNumberLabel.text = "\(label) \(count)"
         }
     }
+    
+    //Rotate Button Click - Rotates view depending on current orientation
+    //humanBodyImageView.image = physicalOrROSView?.getRotatedImageFile()
     
     //MARK: - Capture User Inputs
     

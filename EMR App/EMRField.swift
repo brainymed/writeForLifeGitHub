@@ -16,7 +16,6 @@ class EMRField {
     private var currentItemCounter : Int? //for specific views (e.g. medications, diagnoses, allergies), counts the # of the item currently open.
     private var currentItemLabel : String? //for specific views, generates a (singular) label to indicate what item is currently open (e.g. "medication", "diagnosis", "allergy"). The label & counter should only exist simultaneously!
     var jsonDictToServer = Dictionary<String, [String : AnyObject]>() //dictionary containing user inputs being mapped -> server
-    //var inputValuesForFieldName = Dictionary<String, AnyObject>() //dictionary entry for the current field name
     
     init(inputWord: String) {
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
@@ -73,7 +72,6 @@ class EMRField {
         
         if let currentField = self.fieldName { //Create an entry in the mapping dict for the fieldName
             self.jsonDictToServer[currentField] = Dictionary<String, AnyObject>()
-            //self.inputValuesForFieldName = (self.jsonDictToServer[currentField])!
         }
     }
     
@@ -138,9 +136,9 @@ class EMRField {
             case "vitals":
                 tableViewLabels = ["Blood Pressure", "Heart Rate", "Respiratory Rate", "Temperature"]
             case "physicalExam":
-                tableViewLabels = ["Anterior View", "Posterior View"]
+                tableViewLabels = ["Anterior View"]
             case "reviewOfSystems":
-                tableViewLabels = ["Anterior View", "Posterior View"]
+                tableViewLabels = ["Anterior View"]
             case "allergies":
                 tableViewLabels = ["Allergen"]
             default:
