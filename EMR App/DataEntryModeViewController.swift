@@ -257,6 +257,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         return true
     }
     
+    //MARK: - Notification Feed Animations
+    
     func fadeIn() { //Fades in the twitter feed instantly
         UIView.animateWithDuration(1.0, delay: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
             self.notificationsFeed.alpha = 1.0

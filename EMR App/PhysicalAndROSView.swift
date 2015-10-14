@@ -30,6 +30,7 @@ class PhysicalAndROSView: UIView { //Create custom L side view containing the ap
     let spineAndBackButton = UIButton()
     let renalSystemButton = UIButton()
     
+    var dataEntryLabelArray: [String]? //array of labels used to populate the R side view for data entry
     let bodyImageView = UIImageView()
     
     init(viewChoice: String, gender: Int, childOrAdult: Int) {
@@ -148,37 +149,48 @@ class PhysicalAndROSView: UIView { //Create custom L side view containing the ap
     
     //MARK: - Button Actions
     
-    func generalAppearanceButtonClick(sender: UIButton) {
+    func generalAppearanceButtonClick(sender: UIButton) { //add data for the label array, allowing this information to be accessed in the 'partitionView' function in DEMVC.
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func headAndNeckButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func neurologicalSystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func cardiovascularSystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func respiratorySystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func gastrointestinalSystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func genitourinarySystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func renalSystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func breastButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func spineAndBackButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
     
     func peripheralVascularSystemButtonClick(sender: UIButton) {
+        dataEntryLabelArray = ["label1", "label2"]
     }
 
 }

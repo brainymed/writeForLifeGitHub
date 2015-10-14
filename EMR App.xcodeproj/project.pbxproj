@@ -45,6 +45,7 @@
 		B1A8585F1BC8853200DC94F9 /* JotTouchSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */; };
 		B1AF55731BA8B7400016A01A /* DateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AF55721BA8B7400016A01A /* DateFormatter.swift */; settings = {ASSET_TAGS = (); }; };
 		B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B11C341BA856ED00651FC7 /* EMRField.swift */; settings = {ASSET_TAGS = (); }; };
+		B1BAAEA11BCE74BC002D6733 /* DataExtractionModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BAAEA01BCE74BB002D6733 /* DataExtractionModeViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B1BF67CF1BB734BD000C68EF /* MyCertificate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B111BC3A1B9FA20F0068BE17 /* MyCertificate.swift */; settings = {ASSET_TAGS = (); }; };
 		B1D097D61BA8954300456488 /* HelperFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D097D51BA8954300456488 /* HelperFunctions.swift */; settings = {ASSET_TAGS = (); }; };
 		B1E0D5AC1BB096580097EC0F /* PatientCareModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */; settings = {ASSET_TAGS = (); }; };
@@ -119,6 +120,7 @@
 		B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JotTouchSDK.framework; path = "../../Desktop/JotTouchSDK-master/JotTouchSDK.framework"; sourceTree = "<group>"; };
 		B1AF55721BA8B7400016A01A /* DateFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateFormatter.swift; sourceTree = "<group>"; };
 		B1B11C341BA856ED00651FC7 /* EMRField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRField.swift; sourceTree = "<group>"; };
+		B1BAAEA01BCE74BB002D6733 /* DataExtractionModeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataExtractionModeViewController.swift; sourceTree = "<group>"; };
 		B1D097D51BA8954300456488 /* HelperFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HelperFunctions.swift; sourceTree = "<group>"; };
 		B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PatientCareModeViewController.swift; sourceTree = "<group>"; };
 		B1E0D5AD1BB0966A0097EC0F /* DataEntryModeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataEntryModeViewController.swift; sourceTree = "<group>"; };
@@ -323,6 +325,7 @@
 			children = (
 				B17842A11BB0D22500C34C48 /* LoginViewController.swift */,
 				B1E0D5AD1BB0966A0097EC0F /* DataEntryModeViewController.swift */,
+				B1BAAEA01BCE74BB002D6733 /* DataExtractionModeViewController.swift */,
 				B1E0D5AB1BB096580097EC0F /* PatientCareModeViewController.swift */,
 				B11545851BA707DD00E31EB6 /* CustomMLTWView.swift */,
 				B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */,
@@ -475,6 +478,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1BAAEA11BCE74BC002D6733 /* DataExtractionModeViewController.swift in Sources */,
 				B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */,
 				B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */,
 				B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */,
