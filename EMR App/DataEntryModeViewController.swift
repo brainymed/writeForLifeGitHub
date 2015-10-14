@@ -186,6 +186,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             //Hide the open views & pull up the formatted TV & imageView:
             fieldNameEntryLabel.hidden = true
             fieldNameTextField.hidden = true
+            fieldNameTextField.resignFirstResponder()
             renderDataEntryImageView(tableViewCellLabels!.count)
             labelsTableView.reloadData() //refreshes visible TV cells w/ existing data
             labelsTableView.hidden = false
@@ -222,8 +223,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
                         notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
                         fadeIn()
                         fadeOut()
-                        tableViewCellLabels = openScope?.getLabelsForMK() //set the # of tableView cells according to the MK
-                        configureViewForEntry("fieldValue")
+                        
+                        //Check if the user requested a physical or ROS view:
+                        if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") { //Render Px or ROS View
+                            configurePhysicalOrROSView((openScope?.getFieldName())!)
+                        } else { //NOT a Px or ROS view
+                            tableViewCellLabels = openScope?.getLabelsForMK() //set the # of tableView cells according to the MK
+                            configureViewForEntry("fieldValue")
+                        }
                     }
                 }
             } else {//'matchFound' == nil
@@ -260,63 +267,6 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         UIView.animateWithDuration(1.0, delay: 3.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
             self.notificationsFeed.alpha = 0.0
             }, completion: nil)
-    }
-    
-    //MARK: - Template-Selection View Configuration
-    
-    @IBAction func vitalsButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "vitals")
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
-    }
-    
-    @IBAction func hpiButtonClick(sender: AnyObject) {
-        
-    }
-    
-    @IBAction func medicationsButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "medications")
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
-    }
-    
-    @IBAction func allergiesButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "allergies")
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
-    }
-    
-    @IBAction func physicalButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "physical")
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
-    }
-    
-    @IBAction func rosButtonClick(sender: AnyObject) {
-        sendHTTPRequestToEMR()
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "ros")
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
     }
     
     //MARK: - Dynamic View Configuration (TV & ImageView)
@@ -389,13 +339,6 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         print("MinX: \(dataEntryImageView.frame.minX). MaxX: \(dataEntryImageView.frame.maxX)")
         print("MinY: \(dataEntryImageView.frame.minY). MaxY: \(dataEntryImageView.frame.maxY)")
         print("Table View - Height: \(labelsTableView.frame.height). Width: \(labelsTableView.frame.width)")
-        
-        //Check if the keyword is 'physical' or 'ROS'. Render the custom view accordingly. Where in the flow should this sit? Remove outlet for rotateButton (it will turn invisible if the imageView is invisible)
-        if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") {
-            let fieldName = (openScope?.getFieldName())!
-            //physicalOrROSView = PhysicalAndROSView(viewChoice: fieldName, gender: 0, childOrAdult: 0) //in future, we will capture patient gender & age programmatically, for now assign defaults. Don't forget to clear set the variable to nil after view is closed.
-            //humanBodyImageView.image = physicalOrROSView?.getOriginalImageFile()
-        }
         
         if (!rotationHasOccurred) { //No rotation, first time the view has been opened
             let height = dataEntryImageView.frame.height
@@ -505,8 +448,17 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         }
     }
     
-    //Rotate Button Click - Rotates view depending on current orientation
-    //humanBodyImageView.image = physicalOrROSView?.getRotatedImageFile()
+    func configurePhysicalOrROSView(requestedView: String) {
+        //Hide open views
+        fieldNameEntryLabel.hidden = true
+        fieldNameTextField.hidden = true
+        
+        //Render the L side of the custom view:
+        physicalOrROSView = PhysicalAndROSView(viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
+        self.view.addSubview(physicalOrROSView!)
+        
+        //Bring back fieldName view after Px or ROS is closed
+    }
     
     //MARK: - Capture User Inputs
     
@@ -556,6 +508,65 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             }
         }
         notificationString(notificationText) //Send back the closure containing the notification text
+    }
+    
+    //MARK: - Template-Selection View Configuration
+    
+    @IBAction func vitalsButtonClick(sender: AnyObject) {
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "vitals")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
+    }
+    
+    @IBAction func hpiButtonClick(sender: AnyObject) {
+        if (currentPatient != nil) {
+            //render appropriate view
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
+    }
+    
+    @IBAction func medicationsButtonClick(sender: AnyObject) {
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "medications")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
+    }
+    
+    @IBAction func allergiesButtonClick(sender: AnyObject) {
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "allergies")
+            tableViewCellLabels = openScope?.getLabelsForMK()
+            configureViewForEntry("fieldValue")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
+    }
+    
+    @IBAction func physicalButtonClick(sender: AnyObject) {
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "physical")
+            configurePhysicalOrROSView("physicalExam")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
+    }
+    
+    @IBAction func rosButtonClick(sender: AnyObject) {
+        sendHTTPRequestToEMR()
+        if (currentPatient != nil) {
+            openScope = EMRField(inputWord: "ros")
+            configurePhysicalOrROSView("reviewOfSystems")
+        } else { //In future, the template buttons should be disabled while no patient is entered.
+            print("Enter a patient first.")
+        }
     }
     
     //MARK: - Network Request

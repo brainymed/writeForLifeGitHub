@@ -32,7 +32,7 @@ textField.layer.zPosition = 1
 //            openScope = nil //Last, close the scope
 
 
-//Drawing Custom Views in VC:
+//Drawing & Removing Custom Views in VC:
 let customView = PatientNameEntryView(frame: CGRect(x: 60, y: 100, width: view.frame.width - 60, height: view.frame.height - 150))
 customView.tag = 1000
 self.view.addSubview(customView)
@@ -85,110 +85,6 @@ for subview in view.subviews {
 //        UIGraphicsEndImageContext()
 //    }
 
-//MARK: - Original Unclean Code for Partitioning Views
-//    func renderDataEntryImageView(numberOfLabels: Int) { //Partitions imageView
-//        //Match partition color w/ the label color!
-//        for view in dataEntryImageView.subviews { //Before rendering, wipe out any old textLabels!
-//            view.removeFromSuperview()
-//        }
-//        dataEntryImageView.image = nil //Clears any existing lines
-//
-//        //Compute the width & height of the dataEntryImageView if rotation is occurring. If the values of newWidth & newHeight are nil, we know that no rotation has happened yet! The initial view can be drawn with standard methods.
-//        var rotationHasOccurred : Bool = false
-//        if (newWidth != nil) {
-//            rotationHasOccurred = true
-//        }
-//
-//        print("Image View - Height: \(dataEntryImageView.frame.height). Width: \(dataEntryImageView.frame.width)")
-//        print("MinX: \(dataEntryImageView.frame.minX). MaxX: \(dataEntryImageView.frame.maxX)")
-//        print("MinY: \(dataEntryImageView.frame.minY). MaxY: \(dataEntryImageView.frame.maxY)")
-//        print("Table View - Height: \(labelsTableView.frame.height). Width: \(labelsTableView.frame.width)")
-//
-//        let numberOfPartitions = CGFloat(numberOfLabels)
-//        if (!rotationHasOccurred) { //No rotation, first time the view has been opened
-//            let partitionSize = (dataEntryImageView.frame.height)/numberOfPartitions
-//            if numberOfLabels > 1 { //No partitioning for only 1 label
-//                for partition in 1...(numberOfLabels - 1) {
-//                    // Coordinate system - top left corner of the image view is point (0, 0), width = 764, height = 619 points (in portrait orientation).
-//                    let partitionNumber = CGFloat(partition)
-//                    drawLineFrom(CGPoint(x: 0, y: (partitionSize*partitionNumber)), toPoint: CGPoint(x: dataEntryImageView.frame.width, y: (partitionSize*partitionNumber)))
-//                    //print("From Point: (0, \(partitionSize*partitionNumber)). To Point: (\(dataEntryImageView.frame.width), \(partitionSize*partitionNumber))")
-//
-//                    //Add a centered textLabel into each partition:
-//                    let product = 2 * partitionSize * partitionNumber - partitionSize
-//                    let textField = UITextField(frame: CGRect(x: ((dataEntryImageView.frame.width * 0.25)/2), y: ((product - 50)/2), width: (dataEntryImageView.frame.width * 0.75), height: 50))
-//                    textField.tag = partition //tag each textField for later reference
-//                    textField.placeholder = "Please enter a value for the \(openScope!.getLabelsForMK()![partition - 1])"
-//                    textField.textColor = UIColor.blackColor()
-//                    textField.backgroundColor = UIColor.clearColor()
-//                    textField.userInteractionEnabled = true //In IB, set user interaction = enabled for imageView as well or textField will not respond to touch!
-//                    dataEntryImageView.addSubview(textField)
-//                    dataEntryImageView.bringSubviewToFront(textField)
-//                    if partition == 1 { //The top-most label is the 1st responder
-//                        textField.becomeFirstResponder()
-//                    }
-//                }
-//            }
-//            //Generate the last textField - split the final partition in half (or the entire frame if there is only 1 label). Make the delegate = the VC.
-//            let lastPartitionTopPoint = dataEntryImageView.frame.height - partitionSize
-//            let lastTextFieldYPosition = (dataEntryImageView.frame.height + lastPartitionTopPoint - 50)/2
-//            let lastTextField = UITextField(frame: CGRect(x: ((dataEntryImageView.frame.width * 0.25)/2), y: lastTextFieldYPosition, width: dataEntryImageView.frame.width * 0.75, height: 50))
-//            lastTextField.textColor = UIColor.blackColor()
-//            lastTextField.backgroundColor = UIColor.clearColor()
-//            lastTextField.tag = 100 //allows us to reference textField in 'TFshouldReturn' function
-//            lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press the 'Return' key."
-//            lastTextField.delegate = self
-//            if (numberOfPartitions == 1) { //If there is only 1 label, the last label is also 1st responder
-//                lastTextField.becomeFirstResponder()
-//            }
-//            dataEntryImageView.addSubview(lastTextField)
-//            dataEntryImageView.bringSubviewToFront(lastTextField)
-//        } else { //Rotation has occurred while the TV & imageView are visible
-//            let imageViewWidth = newWidth! - 260
-//            let imageViewHeight = newHeight! - 100
-//            let partitionSize = (imageViewHeight)/numberOfPartitions
-//            if numberOfLabels > 1 {
-//                for partition in 1...(numberOfLabels - 1) {
-//                    let partitionNumber = CGFloat(partition)
-//                    drawLineFrom(CGPoint(x: 0, y: (partitionSize*partitionNumber)), toPoint: CGPoint(x: imageViewWidth, y: (partitionSize*partitionNumber)))
-//                    print("From Point: (0, \(partitionSize*partitionNumber)). To Point: (\(imageViewWidth), \(partitionSize*partitionNumber))")
-//
-//                    let product = 2 * partitionSize * partitionNumber - partitionSize
-//                    let textField = UITextField(frame: CGRect(x: ((imageViewWidth * 0.25)/2), y: ((product - 50)/2), width: (imageViewWidth * 0.75), height: 50))
-//                    textField.tag = partition
-//                    textField.placeholder = "Please enter a value for the \(openScope!.getLabelsForMK()![partition - 1])"
-//                    textField.textColor = UIColor.blackColor()
-//                    textField.backgroundColor = UIColor.clearColor()
-//                    textField.userInteractionEnabled = true
-//                    dataEntryImageView.addSubview(textField)
-//                    dataEntryImageView.bringSubviewToFront(textField)
-//                    if partition == 1 {
-//                        textField.becomeFirstResponder()
-//                    }
-//                }
-//            }
-//            let lastPartitionTopPoint = imageViewHeight - partitionSize
-//            let lastTextFieldYPosition = (imageViewHeight + lastPartitionTopPoint - 50)/2
-//            let lastTextField = UITextField(frame: CGRect(x: ((imageViewWidth * 0.25)/2), y: lastTextFieldYPosition, width: (imageViewWidth * 0.75), height: 50))
-//            lastTextField.textColor = UIColor.blackColor()
-//            lastTextField.backgroundColor = UIColor.clearColor()
-//            lastTextField.tag = 100
-//            if newWidth! < 1024 {
-//                lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press 'Return'."
-//            } else {
-//                lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press the 'Return' key."
-//            }
-//            lastTextField.delegate = self
-//            if (numberOfPartitions == 1) {
-//                lastTextField.becomeFirstResponder()
-//            }
-//            dataEntryImageView.addSubview(lastTextField)
-//            dataEntryImageView.bringSubviewToFront(lastTextField)
-//            newWidth = nil //Clear the rotation indicators so they will be refreshed
-//            newHeight = nil
-//        }
-//    }
-
 //MARK: - ViewController Drawing Code
 
 override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
@@ -216,11 +112,6 @@ override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
         drawLineFrom(lastPoint, toPoint: lastPoint)
     }
 }
-
-//  PatientNameEntryView.swift
-//  EMR App
-//  Created by Arnav Pondicherry  on 9/14/15.
-//  Copyright © 2015 Confluent Ideals. All rights reserved.
 
 // Whenever a view is loaded, after the program checks if the user is logged in, it will check if a patient file is opened. If no 'currentPatient' is found, this view will pop over the open view and force the user to either enter an existing patient's name & open the file or create a new file. In order for this view to be rendered, it must be called (in the VC) as a sub-view of the master view!
 // See the DataEntryModeVC for example of implementation
