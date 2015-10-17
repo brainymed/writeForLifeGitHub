@@ -3,44 +3,31 @@
 //  Created by Arnav Pondicherry  on 9/21/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
-// Controls the Data Entry portion of the app for information input into the EMR.
+// Controls the Data Entry portion of the app for information input -> EMR.
 
 import UIKit
 import CoreData
 
-class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
-    
-    var currentPatient: Patient? { //Open patient file
-        didSet {
-            if (currentPatient != nil) { //Patient file is open. Handle accordingly.
-                
-            } else { //No patient file is open. Configure view for opening a patient file.
-                configureViewForEntry("patientName")
-            }
-        }
-    }
+class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate, PatientSelectionViewControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
     
     var currentUser: String? //current user (HCP) who is logged in
     var openScope: EMRField? //handles MK identification & data mapping -> EMR
+    var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
-    @IBOutlet weak var patientNameTextField: UITextField!
-    @IBOutlet weak var patientNameEntryLabel: UILabel!
     @IBOutlet weak var fieldNameTextField: UITextField!
     @IBOutlet weak var fieldNameEntryLabel: UILabel!
-    @IBOutlet weak var openExistingFileButton: UIButton!
-    @IBOutlet weak var createNewFileButton: UIButton!
     @IBOutlet weak var currentPatientButton: UIButton!
     @IBOutlet weak var currentUserButton: UIButton!
     @IBOutlet weak var notificationsFeed: UILabel! //Convert notification feed -> scrolling set of TV cells instead of a text view
     
-    // CurrentUser & CurrentPatient Views (this can be achieved more cleanly using a popover segue):
+    //CurrentUser & CurrentPatient Views (this can be achieved more cleanly using a popover segue):
     @IBOutlet weak var patientInfoView: UIView!
     @IBOutlet weak var userInfoView: UIView!
     @IBOutlet weak var currentPatientLabel: UILabel!
     @IBOutlet weak var currentUserLabel: UILabel!
     
-    // Table View & Associated Side View:
+    //Table View & Associated Side View:
     @IBOutlet weak var labelsTableView: UITableView!
     @IBOutlet weak var dataEntryImageView: UIImageView!
     var tableViewCellLabels: [String]? //labels in TV cells based on entered MK
@@ -49,7 +36,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     var newHeight: CGFloat? //on rotation, the height of the incoming view
     var physicalOrROSView: PhysicalAndROSView? //renders Px or ROS view
     
-    // Template Buttons:
+    //Template Buttons:
     @IBOutlet weak var vitalsButton: UIButton!
     @IBOutlet weak var hpiButton: UIButton!
     @IBOutlet weak var medicationsButton: UIButton!
@@ -57,24 +44,37 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBOutlet weak var physicalButton: UIButton!
     @IBOutlet weak var rosButton: UIButton!
     
-    // Additional Item Rendering:
+    //DataEntryIV - Additional Item Rendering:
     @IBOutlet weak var plusButton: UIButton! //button for adding additional items in appropriate views
-    @IBOutlet weak var currentItemNumberLabel: UILabel! //label indicating how current item # for view
+    @IBOutlet weak var currentItemNumberLabel: UILabel! //label indicating current item # for view
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        patientNameTextField.becomeFirstResponder()
         
-        //Sets the VC as delegate & datasource for TV:
+        //Sets the DEMVC as delegate & datasource for TV:
         labelsTableView.delegate = self
         labelsTableView.dataSource = self
         labelsTableView.hidden = true
         dataEntryImageView.hidden = true
+        
+        //Configure fieldName entry view to start:
+        configureViewForEntry("fieldName")
     }
     
     override func viewDidAppear(animated: Bool) {
         if loggedIn == false {//If user isn't logged in, modally segue -> login screen. Need this line b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
             performSegueWithIdentifier("showLogin", sender: nil)
+        }
+        
+        if currentPatient == nil { //user must select patient to proceed
+            performSegueWithIdentifier("showPatientSelection", sender: nil)
+        }
+        
+        if (patientFileWasJustOpened == true) {
+            notificationsFeed.text = "Patient file has been opened for \((currentPatient?.name)!.uppercaseString)"
+            fadeIn()
+            fadeOut()
+            patientFileWasJustOpened = false
         }
         
         print("Current User (DEMVC): \(currentUser)")
@@ -89,16 +89,12 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //            self.loginStatusLabel.text = preferences.valueForKey("USERNAME") as? String
         //        }
         
-        if currentPatient == nil { //If there is no current patient, configure view for name entry
-            configureViewForEntry("patientName")
-        } else {
-            //Let app go to whichever screen it was previously on.
-        }
+        //Call the correct first responder depending on view status:
+        setFirstResponder()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     //MARK: - View Rotation
@@ -120,62 +116,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     //MARK: - Default View Configuration
     
-    @IBAction func createNewFileButtonClick(sender: AnyObject) {
-        //Create a new patient file:
-        let inputName = patientNameTextField.text!
-        //Perform predicate matching for new patient entry (not necessary when opening existing patient file b/c that data will come from EMR):
-        let fullNameFormat = ".* .*" //add optional portion for middle name
-        let matchPredicate = NSPredicate(format:"SELF MATCHES %@", fullNameFormat)
-        if (matchPredicate.evaluateWithObject(inputName)) {
-            currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
-            patientNameTextField.text = ""
-            configureViewForEntry("fieldName")
-            notificationsFeed.text = "New patient file created for \(inputName.uppercaseString)"
-            fadeIn()
-            fadeOut()
-        } else {
-            print("Please enter a full name")
-        }
-    }
-    
-    @IBAction func openExistingFileButtonClick(sender: AnyObject) {
-        //Open an existing patient file for the given name (check for patient) using the EMR patient name retrieval API or the persistent store:
-        let inputName = patientNameTextField.text!
-        currentPatient = Patient(name: inputName, insertIntoManagedObjectContext: managedObjectContext)
-        patientNameTextField.text = ""
-        configureViewForEntry("fieldName")
-        notificationsFeed.text = "Patient file opened for \(inputName.uppercaseString)"
-        fadeIn()
-        fadeOut()
-    }
-    
     func configureViewForEntry(desiredView: String) { //Configures view
         switch desiredView {
-        case "patientName": //Configure view to open a patient file
-            //Hide field name & field value entry views:
-            fieldNameTextField.hidden = true
-            fieldNameEntryLabel.hidden = true
+        case "fieldName": //Configure view for field name entry
+            //Hide fieldValue entry views:
             labelsTableView.hidden = true
             dataEntryImageView.hidden = true
-            
-            //Bring up patient name entry views:
-            patientNameTextField.hidden = false
-            patientNameEntryLabel.hidden = false
-            openExistingFileButton.hidden = false
-            createNewFileButton.hidden = false
-            patientNameTextField.becomeFirstResponder() //Set textField -> 1st responder
-        case "fieldName": //Configure view for field name entry
-            //If open, hide patient name entry views, field value entry views, & resign 1st responder:
-            if patientNameTextField.hidden == false {
-                patientNameTextField.resignFirstResponder()
-                patientNameTextField.hidden = true
-                patientNameEntryLabel.hidden = true
-                openExistingFileButton.hidden = true
-                createNewFileButton.hidden = true
-            } else if labelsTableView.hidden == false { //Hide TV & ImageView
-                labelsTableView.hidden = true
-                dataEntryImageView.hidden = true
-            }
+            plusButton.hidden = true
+            currentItemNumberLabel.hidden = true
             
             //Bring up 'Field Name' Entry Views, set delegate & 1st responder:
             fieldNameEntryLabel.hidden = false
@@ -183,7 +131,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             fieldNameTextField.delegate = self
             fieldNameTextField.becomeFirstResponder()
         case "fieldValue":
-            //Hide the open views & pull up the formatted TV & imageView:
+            //Hide the fieldName entry views & pull up the formatted TV & imageView:
             fieldNameEntryLabel.hidden = true
             fieldNameTextField.hidden = true
             fieldNameTextField.resignFirstResponder()
@@ -203,35 +151,20 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         textField.text = ""
         textField.resignFirstResponder()
         
-        if textField.tag == 1 { // sender is Field Name TF
-            //Configure behavior based on the value that was entered:
-            openScope = EMRField(inputWord: input!)
-            if (openScope!.matchFound()) {
-                //Check if 'currentPatient' exists:
-                if (currentPatient == nil) {//File is NOT open
-                    //This should never trigger (patient file must be open before anything takes place)!
-                    openScope = nil
-                    print("No patient file open")
-                } else {//'Current patient' exists & match is found for keyword
-                    //Open scope for NON-NAME field:
-                    if (openScope!.getFieldName() == "name") { //Should never be called.
-                        openScope = nil
-                        print("'Name' entered as field name")
-                        configureViewForEntry("fieldName")
-                    } else { //Open Scope (render view according to fieldName that was entered)
-                        print("Match found")
-                        notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
-                        fadeIn()
-                        fadeOut()
+        if textField.tag == 1 { // sender is fieldName text field
+            openScope = EMRField(inputWord: input!, currentPatient: currentPatient!)
+            if (openScope!.matchFound()) { //Open Scope & render view according to fieldName
+                print("Match found")
+                notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
+                fadeIn()
+                fadeOut()
                         
-                        //Check if the user requested a physical or ROS view:
-                        if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") { //Render Px or ROS View
-                            configurePhysicalOrROSView((openScope?.getFieldName())!)
-                        } else { //NOT a Px or ROS view
-                            tableViewCellLabels = openScope?.getLabelsForMK() //set the # of tableView cells according to the MK
-                            configureViewForEntry("fieldValue")
-                        }
-                    }
+                //Check if the user requested a physical or ROS view:
+                if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") { //Render Px or ROS View
+                    configurePhysicalOrROSView((openScope?.getFieldName())!)
+                } else { //NOT a Px or ROS view
+                    tableViewCellLabels = openScope?.getLabelsForMK() //set the # of tableView cells according to the MK
+                    configureViewForEntry("fieldValue")
                 }
             } else {//'matchFound' == nil
                 openScope = nil
@@ -253,13 +186,71 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             tableViewCellLabels = nil //clear array w/ labels
             configureViewForEntry("fieldName")
             openScope = nil //close the existing scope
+        } else if textField.tag == 200 { //sender is Px & ROS dataEntryView textField
+            switch input!.lowercaseString { //configure view based on input
+            case "g":
+                physicalOrROSView?.generalAppearanceButtonClick((physicalOrROSView?.generalAppearanceButton)!)
+            case "hn":
+                physicalOrROSView?.headAndNeckButtonClick((physicalOrROSView?.headAndNeckButton)!)
+            case "n":
+                physicalOrROSView?.neurologicalSystemButtonClick((physicalOrROSView?.neurologicalSystemButton)!)
+            case "p":
+                physicalOrROSView?.psychiatricButtonClick((physicalOrROSView?.psychiatricButton)!)
+            case "h":
+                physicalOrROSView?.cardiovascularSystemButtonClick((physicalOrROSView?.cardiovascularSystemButton)!)
+            case "l":
+                physicalOrROSView?.respiratorySystemButtonClick((physicalOrROSView?.respiratorySystemButton)!)
+            case "gi":
+                physicalOrROSView?.gastrointestinalSystemButtonClick((physicalOrROSView?.gastrointestinalSystemButton)!)
+            case "gu":
+                physicalOrROSView?.genitourinarySystemButtonClick((physicalOrROSView?.genitourinarySystemButton)!)
+            case "pe":
+                physicalOrROSView?.peripheralVascularSystemButtonClick((physicalOrROSView?.peripheralVascularSystemButton)!)
+            case "s":
+                physicalOrROSView?.spineAndBackButtonClick((physicalOrROSView?.spineAndBackButton)!)
+            case "m":
+                physicalOrROSView?.musculoskeletalSystemButtonClick((physicalOrROSView?.musculoskeletalSystemButton)!)
+            case "b":
+                physicalOrROSView?.breastButtonClick((physicalOrROSView?.breastButton)!)
+            default:
+                notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
+                fadeIn()
+                fadeOut()
+            }
         }
         return true
+    }
+    
+    func setFirstResponder() { //called any time DEM appears on screen, sets 1st responder
+        //When user returns to this screen, we want to bring up the previous 1st responder again:
+        if (fieldNameTextField.hidden == false) {
+            fieldNameTextField.becomeFirstResponder()
+        } else if (dataEntryImageView.hidden == false) { //reset 1st responder -> status @ switch
+            //Find every empty textField present in the view (i.e. any field w/o text in it) & set 1st responder to the empty field w/ the LOWEST tag #.
+            var emptySubviewTagArray: [Int] = []
+            var smallestTag: Int = 101 //starting value must be > than the largest possible tag (100)
+            for subview in dataEntryImageView.subviews {
+                if (subview as! UITextField).text == "" {
+                    emptySubviewTagArray.append(subview.tag)
+                }
+            }
+            for tagValue in emptySubviewTagArray {
+                if (tagValue < smallestTag) {
+                    smallestTag = tagValue
+                }
+            }
+            if (smallestTag != 101) {
+                dataEntryImageView.viewWithTag(smallestTag)?.becomeFirstResponder()
+            } else {
+                dataEntryImageView.viewWithTag(100)?.becomeFirstResponder()
+            }
+        }
     }
     
     //MARK: - Notification Feed Animations
     
     func fadeIn() { //Fades in the twitter feed instantly
+        self.view.bringSubviewToFront(notificationsFeed)
         UIView.animateWithDuration(1.0, delay: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
             self.notificationsFeed.alpha = 1.0
             }, completion: nil)
@@ -325,7 +316,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         return nil
     }
     
-    func renderDataEntryImageView(numberOfLabels: Int) { //Partitions imageView
+    func renderDataEntryImageView(numberOfLabels: Int) {
         for view in dataEntryImageView.subviews { //Before rendering, wipe out any old textLabels!
             view.removeFromSuperview()
         }
@@ -354,7 +345,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     func partitionImageViewForOrientation(numberOfLabels: Int, viewWidth: CGFloat, viewHeight: CGFloat) { //Handles partitioning based on width & height of the imageView
-        //If the entered field name allows for multiple sub-scopes, we will reveal our label & plus button:
+        //If current fieldName allows for multiple sub-scopes, reveal the label & plus button:
         if (openScope?.getCurrentItem() != nil) {
             plusButton.hidden = false
             currentItemNumberLabel.hidden = false
@@ -455,9 +446,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         fieldNameEntryLabel.hidden = true
         fieldNameTextField.hidden = true
         
-        //Render the L side of the custom view:
-        physicalOrROSView = PhysicalAndROSView(viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
+        //Render the custom view. Make sure to put in an adjustable frame (not static, but based on view dimensions)!
+        let physicalOrROSDataEntryView = PhysicalAndROSDataEntryView(frame: CGRect(x: 260, y: 100, width: 764, height: 619)) //allows 'Return' behavior to be configured
+        self.view.addSubview(physicalOrROSDataEntryView)
+        physicalOrROSDataEntryView.renderDefaultDataEntryView()
+        physicalOrROSDataEntryView.organSystemSelectionTextField.delegate = self
+        physicalOrROSView = PhysicalAndROSView(dataEntryView: physicalOrROSDataEntryView, viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
         self.view.addSubview(physicalOrROSView!)
+        
         
         //Bring back fieldName view after Px or ROS is closed
     }
@@ -516,7 +512,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     @IBAction func vitalsButtonClick(sender: AnyObject) {
         if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "vitals")
+            openScope = EMRField(inputWord: "vitals", currentPatient: currentPatient!)
             tableViewCellLabels = openScope?.getLabelsForMK()
             configureViewForEntry("fieldValue")
         } else { //In future, the template buttons should be disabled while no patient is entered.
@@ -534,7 +530,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     @IBAction func medicationsButtonClick(sender: AnyObject) {
         if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "medications")
+            openScope = EMRField(inputWord: "medications", currentPatient: currentPatient!)
             tableViewCellLabels = openScope?.getLabelsForMK()
             configureViewForEntry("fieldValue")
         } else { //In future, the template buttons should be disabled while no patient is entered.
@@ -544,7 +540,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     @IBAction func allergiesButtonClick(sender: AnyObject) {
         if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "allergies")
+            openScope = EMRField(inputWord: "allergies", currentPatient: currentPatient!)
             tableViewCellLabels = openScope?.getLabelsForMK()
             configureViewForEntry("fieldValue")
         } else { //In future, the template buttons should be disabled while no patient is entered.
@@ -554,8 +550,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     @IBAction func physicalButtonClick(sender: AnyObject) {
         if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "physical")
-            configurePhysicalOrROSView("physicalExam")
+            openScope = EMRField(inputWord: "physical", currentPatient: currentPatient!)
+            configurePhysicalOrROSView((openScope?.getFieldName())!)
         } else { //In future, the template buttons should be disabled while no patient is entered.
             print("Enter a patient first.")
         }
@@ -564,8 +560,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBAction func rosButtonClick(sender: AnyObject) {
         sendHTTPRequestToEMR()
         if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "ros")
-            configurePhysicalOrROSView("reviewOfSystems")
+            openScope = EMRField(inputWord: "ros", currentPatient: currentPatient!)
+            configurePhysicalOrROSView((openScope?.getFieldName())!)
         } else { //In future, the template buttons should be disabled while no patient is entered.
             print("Enter a patient first.")
         }
@@ -679,20 +675,33 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         }
     }
     
-    //MARK: - User Authentication
+    //MARK: - User Authentication & Patient Selection
     
     var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!
         didSet {
             if loggedIn == true { //Do nothing, go to DEM view.
-            } else {
-                self.performSegueWithIdentifier("showLogin", sender: self) //go to login screen
+            } else { //go to login screen
+                self.performSegueWithIdentifier("showLogin", sender: self)
             }
         }
     }
     
-    func didLoginSuccessfully() { //Delegate Method
+    func didLoginSuccessfully() { //Login Delegate Method
         loggedIn = true //Sets loginValue to true, which configures the default view
         dismissViewControllerAnimated(true, completion: nil) //When we first load the VC, the VC performs a segue & modally shows the login screen; when we call 'dismissVC' (after authentication is complete), it dismisses the modally presented screen.
+    }
+    
+    var currentPatient: Patient? { //Check for open patient file
+        didSet {
+            if (currentPatient != nil) { //Patient file is open. Let view render as defined elsewhere.
+            } else { //No patient file is open. Segue to patientSelectionVC
+                self.performSegueWithIdentifier("showPatientSelection", sender: nil)
+            }
+        }
+    }
+    
+    func patientFileHasBeenOpened() { //Patient Selection Delegate Method
+        dismissViewControllerAnimated(true, completion: nil)
     }
     
     //MARK: - Navigation
@@ -702,10 +711,13 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        //Before we segue, set the delegate property only if the login VC is about to be shown:
+        //Before we segue, set the delegate property depending on the destination VC:
         if segue.identifier == "showLogin" {
             let loginViewController = segue.destinationViewController as! LoginViewController
             loginViewController.delegate = self //set the DEM VC as delegate of the LoginVC
+        } else if segue.identifier == "showPatientSelection" {
+            let patientSelectionViewController = segue.destinationViewController as! PatientSelectionViewController
+            patientSelectionViewController.delegate = self
         }
     }
     

@@ -1,15 +1,16 @@
 //  EMRField.swift
 //  EMR App
-//
 //  Created by Arnav Pondicherry  on 9/15/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
+//This class takes in a user input & uses it to generate an EMR-compatible 'field name'.
+//Process: user inputs word -> checks if input matches an existing fieldName -> if it matches, the class generates a fieldName -> user inputs field value -> converts field value to correct data type ->
+
 import Foundation
 
-//This class takes in a user input & uses it to generate an EMR-compatible 'field name'.
-// Process: user inputs word -> checks if input matches an existing fieldName -> if it matches, the class generates a fieldName -> user inputs field value -> converts field value to correct data type ->
 class EMRField {
     private var match : Bool = false
+    private var currentPatient: Patient //assign open scope -> the current patient
     private var fieldName : String? //'fieldName' should always = nil when 'match' == FALSE
     private var fieldValue : AnyObject?
     private var tableViewLabels : [String]?
@@ -17,10 +18,11 @@ class EMRField {
     private var currentItemLabel : String? //for specific views, generates a (singular) label to indicate what item is currently open (e.g. "medication", "diagnosis", "allergy"). The label & counter should only exist simultaneously!
     var jsonDictToServer = Dictionary<String, [String : AnyObject]>() //dictionary containing user inputs being mapped -> server
     
-    init(inputWord: String) {
+    init(inputWord: String, currentPatient: Patient) {
+        self.currentPatient = currentPatient
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
         let lowercaseInput = inputWord.lowercaseString
-        let formatArray : [String] = ["^.*name$", "^dob$", "^date of birth$", "^test$", "^med.*$", "^blood pressure$", "^bp$", "^heart rate$", "^hr$", "^resp.*$", "^rr$", "^temp.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies"]
+        let formatArray : [String] = ["^dob$", "^date of birth$", "^test$", "^med.*$", "^blood pressure$", "^bp$", "^heart rate$", "^hr$", "^resp.*$", "^rr$", "^temp.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies"]
         var stopCounter = -1
         for format in formatArray {
             stopCounter += 1
@@ -38,32 +40,29 @@ class EMRField {
         
         //Use the value of the counter to determine when the loop stopped. Based on that value (which indicates the value in the 'formatArray' that matched the input, we assign a 'fieldName'.
         switch stopCounter {
-        case 0:
-            self.fieldName = "name"
-        case 1, 2:
-            print("Please enter the date in MM/DD/YYYY format.")
+        case 0, 1:
             self.fieldName = "dateOfBirth"
-        case 3:
+        case 2:
             self.fieldName = "testValue"
-        case 4:
+        case 3:
             self.fieldName = "medications"
             self.currentItemCounter = 1
             self.currentItemLabel = "Medication"
-        case 5, 6:
+        case 4, 5:
             self.fieldName = "bloodPressure"
-        case 7, 8:
+        case 6, 7:
             self.fieldName = "heartRate"
-        case 9, 10:
+        case 8, 9:
             self.fieldName = "respirations"
-        case 11:
+        case 10:
             self.fieldName = "temperature"
-        case 12:
+        case 11:
             self.fieldName = "vitals"
-        case 13:
+        case 12:
             self.fieldName = "physicalExam"
-        case 14:
+        case 13:
             self.fieldName = "reviewOfSystems"
-        case 15:
+        case 14:
             self.fieldName = "allergies"
         default:
             //If the counter's value is 1 greater than the length(formatArray), NO match was found.
@@ -87,7 +86,7 @@ class EMRField {
     }
     
     internal func setFieldValueForPatient(inputValue: String, forPatient patient: Patient) {
-        //Takes in a field value + patient & sets that FV for the appropriate field name in the persistent data store:
+        //Takes in a field value + patient & sets that FV for the appropriate field name in the persistent data store. Do we need to route the data through the currentPatient?
         if let field = self.fieldName {
             switch field {
             case "dateOfBirth":
@@ -95,6 +94,7 @@ class EMRField {
                 self.fieldValue = NSDate(dateString: inputValue)
             case "testValue":
                 patient.setValue(inputValue, forKey: field)
+                self.currentPatient.setValue(inputValue, forKey: field)
             case "medications":
                 //Add values to the existing medication & initialize a new medication object. We need to provide an easy & intuitive interface option for entry of data for EMR fields w/ multiple sub-parts.
                 patient.medications["medication1"]!["name"] = inputValue
@@ -118,7 +118,7 @@ class EMRField {
             case "allergies":
                 print("allergies")
             default:
-                NSLog("Error ('setFieldValue()')! This case shouldn't be triggered unless a case for 'fieldName' was missed")
+                NSLog("Error ('EMRField > setFieldValue()')! This case shouldn't be triggered unless a case for 'fieldName' was missed")
             }
         }
     }

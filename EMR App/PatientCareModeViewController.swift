@@ -39,7 +39,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     }
     
     override func viewDidAppear(animated: Bool) {
-        print("Current User (DEMVC): \(currentUser)")
+        print("Current User (PCMVC): \(currentUser)")
         print("Current Patient (PCMVC): \(currentPatient?.name)")
         if (currentPatient == nil) {
             //If there is no patient file open, force the user to open one (e.g. by selecting from list of the day's patients):
@@ -175,7 +175,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         //Checks if the input value matches an EMR field before mapping to it & opening a scope:
         if mltwTextLabel.text?.characters.count > 0 {
             
-            openScope = EMRField(inputWord: mltwTextLabel.text!) //Open a new scope
+            openScope = EMRField(inputWord: mltwTextLabel.text!, currentPatient: currentPatient!) //Open a new scope
             
             //For a given input, first we need to check if a patient file is currently open (whether 'currentPatient' exists. If not, we must next check if the user is inputting a MK for entry of a patient's name. If not, then the user must first input a patient name.
             //If currentPatient exists, then we need to check if the input word matches an EMR field name (this task is handled by the 'EMRFieldName' class).

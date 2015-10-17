@@ -26,17 +26,24 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
         return true
     }
     
-    // When the user selects a button to move between views, we will pass the currentPatient from the previous VC to the current VC. We don't need to check since currentPatient is optional in both cases, so it will simply pass 'nil' if no file is opened.
     func tabBarController(tabBarController: UITabBarController, didSelectViewController viewController: UIViewController) {
+        // When the user selects a button to move between views, we will pass the currentPatient from the previous VC to the current VC. We don't need to check since currentPatient is optional in both cases, so it will simply pass 'nil' if no file is opened.
         let dataEntryModeViewController = tabBarController.viewControllers![0] as! DataEntryModeViewController
         let patientCareModeViewController = tabBarController.viewControllers![1] as! PatientCareModeViewController
+        let dataExtractionModeViewController = tabBarController.viewControllers![2] as! DataExtractionModeViewController
         
-        if (viewController == dataEntryModeViewController) { //Transition: Patient Care -> Data Entry Mode
-            print("Sender: Patient Care Mode VC")
-            (viewController as! DataEntryModeViewController).currentPatient = patientCareModeViewController.currentPatient
+        if (viewController == dataEntryModeViewController) { //Transition: Data Extraction -> Data Entry
+            print("Sender: Data Extraction Mode VC")
+            (viewController as! DataEntryModeViewController).currentPatient = dataExtractionModeViewController.currentPatient
         }
         
-        if (viewController == patientCareModeViewController) { //Transition: Data Entry -> Patient Care Mode
+        if (viewController == dataExtractionModeViewController) { //Transition: Data Entry -> Extraction
+            print("Sender: Data Entry Mode VC")
+            (viewController as! DataExtractionModeViewController).currentPatient = dataEntryModeViewController.currentPatient
+        }
+        
+        if (viewController == patientCareModeViewController) { //Transition: Data Entry -> PCM
+            //Eliminate this in future when DEM can ONLY transition to Data Extraction Mode!
             print("Sender: Data Entry Mode VC")
             (viewController as! PatientCareModeViewController).currentPatient = dataEntryModeViewController.currentPatient
         }
@@ -44,8 +51,8 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
     
 }
 
-//Tells the TabBarController to respond to the supportedInterfaceOrientations & shouldAutorotate functions from the children VCs. 
 extension UITabBarController {
+    //Tells the TabBarController to respond to the supportedInterfaceOrientations & shouldAutorotate functions from the children VCs. 
     public override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
         if let selected = selectedViewController {
             return selected.supportedInterfaceOrientations()
