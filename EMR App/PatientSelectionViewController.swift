@@ -22,19 +22,13 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
     var bluetoothCentralManager = CBCentralManager()
+    
+    //Keyboard Detection:
     var keyboardSizeArray: [CGFloat] = []
     var keyboardAppearedHasFired: Bool?
     var bluetoothKeyboardAttached: Bool = false //true = BT keyboard, false = no BT keyboard
     
     @IBOutlet weak var patientNameTextField: UITextField!
-    
-    override var keyCommands: [UIKeyCommand]? {
-        let controlKey = UIKeyModifierFlags.Control
-        let shiftKey = UIKeyModifierFlags.Shift
-        let commandA = UIKeyCommand(input: "a", modifierFlags: [controlKey, shiftKey], action: "controlAKeyPressed:") //detects keyboard commands
-        let upArrow = UIKeyCommand(input: UIKeyInputUpArrow, modifierFlags: [], action: "upArrowKeyPressed:") //the modifierFlags array can contain 0 modifier flags or more than 1 (e.g. when creating a cmd + shift + "" shortcut
-        return [commandA, upArrow]
-    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -64,7 +58,6 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
         //Check if starting keyboard is BT or normal (if the variable exists/has been set, then the keyboardAppeared action has fired & we know the initial keyboard is NOT BT.
         if (keyboardAppearedHasFired == nil) { //BT keyboard
             bluetoothKeyboardAttached = true
-            print("BT Keyboard Attached? \(bluetoothKeyboardAttached)")
         }
     }
     
@@ -94,7 +87,7 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
     }
     
     func keyboardAppeared(notification: NSNotification) {
-        keyboardAppearedHasFired = true //check for 1st time view appears
+        keyboardAppearedHasFired = true //check variable for 1st time view appears
         let lastKeyboardSize = keyboardSizeArray.last
         let height: CGFloat = self.view.frame.size.height
         if (lastKeyboardSize > height) {
@@ -105,17 +98,7 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
         keyboardSizeArray = [] //clear for next sequence
     }
     
-    //MARK: - Custom Keyboard Shortcuts
-    
-    func controlAKeyPressed(command: UIKeyCommand) {
-        print("User entered control + A")
-    }
-    
-    func upArrowKeyPressed(command: UIKeyCommand) {
-        print("User hit up arrow key")
-    }
-    
-    //MARK: - Button Actions
+    //MARK: - Patient File Button Actions
     
     func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String) -> Bool { //Disable button press if the textField is empty
         let length = (textField.text?.characters.count)! - range.length + string.characters.count
@@ -132,7 +115,7 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
             currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
-            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> DEM
+            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> DEM
                 self.delegate?.currentPatient = currentPatient
                 self.delegate?.patientFileWasJustOpened = true
                 self.delegate?.patientFileHasBeenOpened()
@@ -148,7 +131,7 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
             currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
-            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> DEM
+            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> whichever view was used to close the patient file
                 self.delegate?.currentPatient = currentPatient
                 self.delegate?.patientFileWasJustOpened = true
                 self.delegate?.patientFileHasBeenOpened()

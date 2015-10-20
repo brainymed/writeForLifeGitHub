@@ -48,6 +48,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBOutlet weak var plusButton: UIButton! //button for adding additional items in appropriate views
     @IBOutlet weak var currentItemNumberLabel: UILabel! //label indicating current item # for view
     
+    //MARK: - Standard View Functions
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -59,6 +61,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         
         //Configure fieldName entry view to start:
         configureViewForEntry("fieldName")
+        
+        //Difficulty tracking the keyboard's status in this view. For some reason, the functions on this view are called in the patientSelection & Login views (probably b/c we segue modally), so there is interference. We might have to redefine. 
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -683,13 +687,31 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         didSet {
             if (currentPatient != nil) { //Patient file is open. Let view render as defined elsewhere.
             } else { //No patient file is open. Segue to patientSelectionVC
-                self.performSegueWithIdentifier("showPatientSelection", sender: nil)
+                self.performSegueWithIdentifier("showPatientSelection", sender: self)
             }
         }
     }
     
     func patientFileHasBeenOpened() { //Patient Selection Delegate Method
         dismissViewControllerAnimated(true, completion: nil)
+    }
+    
+    //MARK: - Custom Keyboard Shortcuts
+    
+    override var keyCommands: [UIKeyCommand]? { //special Apple API for defining keyboard shortcuts
+        let controlKey = UIKeyModifierFlags.Control
+        let shiftKey = UIKeyModifierFlags.Shift
+        let commandA = UIKeyCommand(input: "a", modifierFlags: [controlKey, shiftKey], action: "controlAKeyPressed:") //UIKeyCommand detects specified keyboard commands
+        let upArrow = UIKeyCommand(input: UIKeyInputUpArrow, modifierFlags: [], action: "upArrowKeyPressed:") //the modifierFlags array can contain 0 modifier flags or more than 1 (e.g. when creating a cmd + shift + "" shortcut
+        return [commandA, upArrow]
+    }
+    
+    func controlAKeyPressed(command: UIKeyCommand) {
+        print("User entered control + A")
+    }
+    
+    func upArrowKeyPressed(command: UIKeyCommand) {
+        print("User hit up arrow key")
     }
     
     //MARK: - Navigation

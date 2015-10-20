@@ -4,7 +4,6 @@
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
 // Controls the Patient Care Mode of the app (for handwritten information input & information extraction).
-// Use COLLECTION VIEW (lookup) potentially for handling widgets!!!
 
 import UIKit
 import CoreGraphics
@@ -17,7 +16,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     @IBOutlet weak var sendButton: UIButton!
     @IBOutlet weak var mltwTextLabel: UILabel!
     @IBOutlet weak var closeButton: UIButton!
-    @IBOutlet weak var openButton: UIButton!
     
     @IBOutlet weak var leftMarginView: UIView!
     @IBOutlet weak var rightMarginView: UIView!
@@ -29,6 +27,11 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     var newWidth: CGFloat?
     var newHeight: CGFloat?
+    
+    //Keyboard Detection:
+    var keyboardSizeArray: [CGFloat] = []
+    var keyboardAppearedHasFired: Bool?
+    var bluetoothKeyboardAttached: Bool = false //true = BT keyboard, false = no BT keyboard
     
     //MARK: - Default View Configuration
     
@@ -157,8 +160,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
                 let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                 alertController.addAction(ok)
                 self.presentViewController(alertController, animated: true, completion: nil)
-                closeButton.enabled = true //If file is open, user should have option to close it
-                openButton.enabled = false //Disable 'open' button until file is closed
             } else { //Patient was not found for the given name
                 let alertController = UIAlertController(title: "Error!", message: "No patient was found for the given name. Please enter an existing patient's name.", preferredStyle: .Alert)
                 let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
@@ -188,7 +189,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
                         dispatch_async(dispatch_get_main_queue(), { () -> Void in
                             self.mltwTextLabel.text = "Scope opened for <\(self.openScope?.getFieldName())>" //NOT WORKING
                         })
-                        openButton.enabled = false //Disables 'open' button while patient file is open
                         mapButton.enabled = false
                         sendButton.enabled = true //Enables send button while scope is open
                         print("New Patient - Scope Opened")
@@ -238,7 +238,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
                 //If there is no file open, the input fieldValue must (theoretically) be a patient name (else 'send' wouldn't be enabled). Initialize the currentPatient w/ the input name:
                 currentPatient = Patient(name: emrFieldValue, insertIntoManagedObjectContext: managedObjectContext)
                 saveManagedObjectContext()
-                closeButton.enabled = true //We enable the 'close' option when a patient file is open.
             } else {//Patient File Open
                 //Add the input information to the 'currentPatient' & save it to the MOC. Each value that is sent to the EMR must be formatted correctly (dates must be formatted as dates, ints as ints, etc.) - 'setFieldValue()' handles formatting.
                 openScope?.setFieldValueForPatient(emrFieldValue, forPatient: currentPatient!)
@@ -265,26 +264,25 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
             managedObjectContext.insertObject(patient) //Add new object to MOC
             managedObjectContext.deleteObject(currentPatient!) //Remove currentPatient from MOC
             saveManagedObjectContext() //saves MOC after changes have been made
-            currentPatient = nil //clear the currentPatient
         }
         
-        closeButton.enabled = false //disable 'close' button when the file is closed
         mapButton.enabled = true //enable 'map' to start cycle anew
         sendButton.enabled = false //disable 'send' to prevent data -> a closed scope
-        openButton.enabled = true //Re-enables 'open' button after current patient file is closed
         multiLineView.clear()
+        currentPatient = nil //clear the currentPatient
     }
     
     @IBAction func fetchButtonClick(sender: AnyObject) {
         fetchAllPatients()
+        performSegueWithIdentifier("showDEM", sender: self)
     }
     
-    //MARK: - User Authentication
+    //MARK: - User Authentication & Patient Selection
     
     var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!
         didSet {
             if loggedIn == true {
-                //Configure view appropriately:
+                //Configure view appropriately.
             } else {
                 self.performSegueWithIdentifier("showLogin", sender: self)
             }
@@ -292,7 +290,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     }
     
     @IBAction func logoutButtonClick(sender: AnyObject) {
-        closeFileButtonClick(sender) //Closes open patient file & resets buttons before logging out
         //Clear out existing user defaults:
         //        let appDomain = NSBundle.mainBundle().bundleIdentifier
         //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
@@ -308,7 +305,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         didSet {
             if (currentPatient != nil) { //Patient file is open. Let view render as defined elsewhere.
             } else { //No patient file is open. Segue to patientSelectionVC
-                self.performSegueWithIdentifier("showPatientSelection", sender: nil)
+                self.performSegueWithIdentifier("showPatientSelection", sender: self)
             }
         }
     }
@@ -317,9 +314,44 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         dismissViewControllerAnimated(true, completion: nil)
     }
     
+    //MARK: - Keyboard Tracking
+    
+    func keyboardChangedFrame(notification: NSNotification) { //fires when keyboard changes
+        let userInfo: NSDictionary = notification.userInfo!
+        let keyboardFrame: CGRect = (userInfo.objectForKey(UIKeyboardFrameEndUserInfoKey)?.CGRectValue)!
+        let keyboard: CGRect = self.view.convertRect(keyboardFrame, fromView: self.view.window)
+        let sum = keyboard.origin.y + keyboard.size.height
+        keyboardSizeArray.append(sum)
+    }
+    
+    func keyboardAppeared(notification: NSNotification) {
+        keyboardAppearedHasFired = true //check variable for 1st time view appears
+        let lastKeyboardSize = keyboardSizeArray.last
+        let height: CGFloat = self.view.frame.size.height
+        if (lastKeyboardSize > height) {
+            bluetoothKeyboardAttached = true
+        } else {
+            bluetoothKeyboardAttached = false
+        }
+        keyboardSizeArray = [] //clear for next sequence
+    }
+    
     //MARK: - Navigation
     
     override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
+        if (identifier == "showDEM") { //Check that BT keyboard is attached
+            //Add notifications the first time this view loads:
+            NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChangedFrame:", name: UIKeyboardWillChangeFrameNotification, object: nil)
+            NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardAppeared:", name: UIKeyboardWillShowNotification, object: nil)
+            
+            let alertController = UIAlertController(title: "Please Attach Bluetooth Keyboard!", message: "Please attach bluetooth keyboard before moving into Data Entry Mode.", preferredStyle: .Alert)
+            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in
+                //Check if BT keyboard is attached. Don't let user pass if it isn't.
+            })
+            alertController.addAction(ok)
+            self.presentViewController(alertController, animated: true, completion: nil)
+        }
+        NSNotificationCenter.defaultCenter().removeObserver(self) //clear observer before transition
         return true
     }
     
@@ -330,6 +362,10 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         } else if segue.identifier == "showPatientSelection" {
             let patientSelectionViewController = segue.destinationViewController as! PatientSelectionViewController
             patientSelectionViewController.delegate = self
+        } else if segue.identifier == "showDEM" { //Pass currentPatient & user before segue
+            let destinationVC = (segue.destinationViewController as! TabBarViewController)
+            let dataEntryModeVC = (destinationVC.viewControllers![0] as! DataEntryModeViewController)
+            dataEntryModeVC.currentPatient = self.currentPatient
         }
     }
     
