@@ -2128,6 +2128,7 @@
                         <viewControllerLayoutGuide type="bottom" id="cN6-ua-WJS"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="QKt-mu-bDt">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Pf0-3W-Wld">
@@ -2194,10 +2195,10 @@
                             <mask key="constraints">
                                 <exclude reference="FLl-CB-OHd"/>
                                 <exclude reference="k8G-15-AXW"/>
-                                <exclude reference="hQt-aW-QNc"/>
-                                <exclude reference="qbi-7f-Sgr"/>
                                 <exclude reference="3aw-it-Eh4"/>
                                 <exclude reference="Eme-96-sc8"/>
+                                <exclude reference="hQt-aW-QNc"/>
+                                <exclude reference="qbi-7f-Sgr"/>
                             </mask>
                         </variation>
                         <variation key="heightClass=regular-widthClass=regular">
@@ -2209,15 +2210,16 @@
                             <mask key="constraints">
                                 <include reference="FLl-CB-OHd"/>
                                 <include reference="k8G-15-AXW"/>
-                                <include reference="hQt-aW-QNc"/>
-                                <include reference="qbi-7f-Sgr"/>
                                 <include reference="3aw-it-Eh4"/>
                                 <include reference="Eme-96-sc8"/>
+                                <include reference="hQt-aW-QNc"/>
+                                <include reference="qbi-7f-Sgr"/>
                             </mask>
                         </variation>
                     </view>
                     <connections>
                         <outlet property="patientNameTextField" destination="DZy-X8-u9X" id="rno-mp-ebC"/>
+                        <segue destination="9pv-A4-QxB" kind="show" identifier="showPCM" id="Cl1-Fi-9nm"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="INy-eM-1IY" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2366,6 +2368,7 @@
         <image name="trashcan" width="64" height="64"/>
     </resources>
     <inferredMetricsTieBreakers>
+        <segue reference="u7Y-xg-7CH"/>
         <segue reference="5eD-Ag-YVD"/>
         <segue reference="Ob1-hb-La0"/>
     </inferredMetricsTieBreakers>

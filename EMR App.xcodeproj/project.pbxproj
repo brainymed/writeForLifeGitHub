@@ -39,6 +39,7 @@
 		B16E8A8A1BBCACBC00177BCB /* EMRDataParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16E8A891BBCACBC00177BCB /* EMRDataParser.swift */; settings = {ASSET_TAGS = (); }; };
 		B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17842A11BB0D22500C34C48 /* LoginViewController.swift */; settings = {ASSET_TAGS = (); }; };
 		B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */; settings = {ASSET_TAGS = (); }; };
+		B1860DE91BD5AE0400E35308 /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1860DE81BD5AE0400E35308 /* ExternalAccessory.framework */; };
 		B1889FAD1BA7667800344130 /* Patient+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */; settings = {ASSET_TAGS = (); }; };
 		B1A8585B1BC8845300DC94F9 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */; };
 		B1A8585D1BC884C100DC94F9 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */; };
@@ -114,6 +115,7 @@
 		B16E8A891BBCACBC00177BCB /* EMRDataParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EMRDataParser.swift; sourceTree = "<group>"; };
 		B17842A11BB0D22500C34C48 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabBarViewController.swift; sourceTree = "<group>"; };
+		B1860DE81BD5AE0400E35308 /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		B1889FAC1BA7667800344130 /* Patient+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Patient+CoreDataProperties.swift"; path = "../Patient+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhysicalAndROSView.swift; sourceTree = "<group>"; };
 		B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
@@ -136,6 +138,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1860DE91BD5AE0400E35308 /* ExternalAccessory.framework in Frameworks */,
 				B1A8585F1BC8853200DC94F9 /* JotTouchSDK.framework in Frameworks */,
 				B1A8585D1BC884C100DC94F9 /* CoreMotion.framework in Frameworks */,
 				B1A8585B1BC8845300DC94F9 /* CoreBluetooth.framework in Frameworks */,
@@ -194,6 +197,7 @@
 				B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */,
 				B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */,
 				B13773981B9D381A004C2EE2 /* CoreGraphics.framework */,
+				B1860DE81BD5AE0400E35308 /* ExternalAccessory.framework */,
 				B137737A1B9D351A004C2EE2 /* SystemConfiguration.framework */,
 				B137737C1B9D3528004C2EE2 /* Security.framework */,
 			);

@@ -53,6 +53,20 @@ class DataExtractionModeViewController: UIViewController, UITableViewDataSource,
         return true
     }
     
+    //MARK: - Notification Feed Animations
+    
+    func fadeIn() { //Fades in the twitter feed instantly
+        UIView.animateWithDuration(1.0, delay: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
+            self.notificationsFeed.alpha = 1.0
+            }, completion: nil)
+    }
+    
+    func fadeOut() { //Gradually fades out the twitter feed
+        UIView.animateWithDuration(1.0, delay: 3.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
+            self.notificationsFeed.alpha = 0.0
+            }, completion: nil)
+    }
+    
     //MARK: - User Authentication & Patient Selection
     
     var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!
@@ -82,17 +96,16 @@ class DataExtractionModeViewController: UIViewController, UITableViewDataSource,
         dismissViewControllerAnimated(true, completion: nil)
     }
     
-    //MARK: - Notification Feed Animations
+    //MARK: - Navigation
     
-    func fadeIn() { //Fades in the twitter feed instantly
-        UIView.animateWithDuration(1.0, delay: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
-            self.notificationsFeed.alpha = 1.0
-            }, completion: nil)
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "showLogin" {
+            let loginViewController = segue.destinationViewController as! LoginViewController
+            loginViewController.delegate = self
+        } else if segue.identifier == "showPatientSelection" {
+            let patientSelectionViewController = segue.destinationViewController as! PatientSelectionViewController
+            patientSelectionViewController.delegate = self
+        }
     }
-    
-    func fadeOut() { //Gradually fades out the twitter feed
-        UIView.animateWithDuration(1.0, delay: 3.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
-            self.notificationsFeed.alpha = 0.0
-            }, completion: nil)
-    }
+
 }

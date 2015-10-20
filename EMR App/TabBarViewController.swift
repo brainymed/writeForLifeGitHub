@@ -1,16 +1,49 @@
 //  TabBarViewController.swift
 //  EMR App
-//
 //  Created by Arnav Pondicherry  on 9/15/15.
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
+// Handles passing of information from view -> view & bluetooth device pairing/monitoring.
+
 import UIKit
+import CoreBluetooth
 
-class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
-
+class TabBarViewController: UITabBarController, UITabBarControllerDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
+    
+    var centralManager = CBCentralManager()
+    
     override func viewDidLoad() {
         //Set the delegate of the TabBarController to itself:
         self.delegate = self
+        centralManager = CBCentralManager(delegate: self, queue: nil)
+        centralManager.scanForPeripheralsWithServices(nil, options: nil)
+    }
+    
+    //MARK: - Bluetooth Functionality
+    
+    func centralManagerDidUpdateState(central: CBCentralManager) {
+        switch central.state {
+        case CBCentralManagerState.PoweredOff:
+            print("")
+        case CBCentralManagerState.PoweredOn:
+            print("")
+        default:
+            break
+        }
+    }
+    
+    func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
+        centralManager.connectPeripheral(peripheral, options: nil)
+        print("Peripheral Discovered: \(RSSI)")
+    }
+    
+    func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
+        print("Device connected to peripheral: \(peripheral.name)")
+        peripheral.delegate = self
+    }
+    
+    func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
+        print("Connection to peripheral failed")
     }
     
     // MARK: - Navigation

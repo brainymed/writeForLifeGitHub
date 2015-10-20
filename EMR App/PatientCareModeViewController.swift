@@ -10,7 +10,7 @@ import UIKit
 import CoreGraphics
 import CoreData
 
-class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate, LoginViewControllerDelegate {
+class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate, LoginViewControllerDelegate, PatientSelectionViewControllerDelegate {
     
     @IBOutlet weak var multiLineView: CustomMLTWView!
     @IBOutlet weak var mapButton: UIButton!
@@ -23,8 +23,8 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     @IBOutlet weak var rightMarginView: UIView!
     
     var currentUser: String?
+    var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
     var openScope: EMRField? //the currently open scope @ any given point in time; there can only be 1!
-    var currentPatient: Patient?
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
     var newWidth: CGFloat?
@@ -268,16 +268,6 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
             currentPatient = nil //clear the currentPatient
         }
         
-        if sender.tag == 1 { // We set the 'close' button's sender # == 1 in the storyboard!
-            //If the sender of the 'closeFile' action is the 'close' button, then we want to issue an alert to tell the user to enter a new patient name. If the sender is the 'logout' button, we want to simply logout.
-            let alertController = UIAlertController(title: "Patient File Closed!", message: "The current patient file has been closed. Please enter another patient name before proceeding.", preferredStyle: .Alert)
-            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-            alertController.addAction(ok)
-            self.presentViewController(alertController, animated: true, completion: nil)
-            
-            //Configure the view so that the user MUST enter a new patient name before proceeding:
-        }
-        
         closeButton.enabled = false //disable 'close' button when the file is closed
         mapButton.enabled = true //enable 'map' to start cycle anew
         sendButton.enabled = false //disable 'send' to prevent data -> a closed scope
@@ -314,6 +304,19 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         dismissViewControllerAnimated(true, completion: nil) //returns to PCM VC
     }
     
+    var currentPatient: Patient? { //Check for open patient file
+        didSet {
+            if (currentPatient != nil) { //Patient file is open. Let view render as defined elsewhere.
+            } else { //No patient file is open. Segue to patientSelectionVC
+                self.performSegueWithIdentifier("showPatientSelection", sender: nil)
+            }
+        }
+    }
+    
+    func patientFileHasBeenOpened() { //Patient Selection Delegate Method
+        dismissViewControllerAnimated(true, completion: nil)
+    }
+    
     //MARK: - Navigation
     
     override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
@@ -321,10 +324,12 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        //Before we segue, set the delegate property only if the login VC is about to be shown:
         if segue.identifier == "showLogin" {
             let loginViewController = segue.destinationViewController as! LoginViewController
-            loginViewController.delegate = self //we set the homescreen VC as the delegate of the LoginVC!
+            loginViewController.delegate = self
+        } else if segue.identifier == "showPatientSelection" {
+            let patientSelectionViewController = segue.destinationViewController as! PatientSelectionViewController
+            patientSelectionViewController.delegate = self
         }
     }
     

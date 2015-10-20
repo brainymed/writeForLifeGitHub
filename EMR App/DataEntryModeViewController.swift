@@ -642,19 +642,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     @IBAction func closePatientFileButtonClick(sender: AnyObject) {
         //Close the patient file by setting 'currentPatient' = nil:
-        if currentPatient != nil {
-            currentPatient = nil
-            let alertController = UIAlertController(title: "Success!", message: "Patient file was closed. Please open a new file before continuing.", preferredStyle: .Alert)
-            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-            alertController.addAction(ok)
-            self.presentViewController(alertController, animated: true, completion: nil)
-            configureViewForEntry("patientName")
-        } else {
-            let alertController = UIAlertController(title: "Error!", message: "No patient file is open.", preferredStyle: .Alert)
-            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-            alertController.addAction(ok)
-            self.presentViewController(alertController, animated: true, completion: nil)
-        }
+        currentPatient = nil
         patientInfoView.hidden = true
     }
     
