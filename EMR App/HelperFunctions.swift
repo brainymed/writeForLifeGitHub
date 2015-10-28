@@ -8,8 +8,7 @@
 import Foundation
 import CoreData
 
-func saveManagedObjectContext() { //Saves the MOC
-    let context = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+func saveManagedObjectContext(context: NSManagedObjectContext) { //Saves the MOC
     do {
         try context.save()
         print("MOC Save Successful.")
@@ -23,6 +22,24 @@ func clearPatientFromDataStore(patient: Patient) { //Removes the patient from th
     context.deleteObject(patient)
 }
 
+func clearAllPatientsFromDataStore() {
+    print("Clearing Patients...")
+    let context = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+    let entityDescription = NSEntityDescription.entityForName("Patient", inManagedObjectContext: context)
+    let request = NSFetchRequest()
+    request.entity = entityDescription
+    do {
+        let objects = try context.executeFetchRequest(request)
+        for object in objects {
+            context.deleteObject(object as! NSManagedObject)
+            print("object deleted")
+        }
+        saveManagedObjectContext(context)
+    } catch {
+        NSLog("Error. Execute fetch failed")
+    }
+}
+
 func fetchAllPatients() { //Returns all patients in Core Data store
     let context = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     let entityDescription = NSEntityDescription.entityForName("Patient", inManagedObjectContext: context)
@@ -34,7 +51,7 @@ func fetchAllPatients() { //Returns all patients in Core Data store
             print("Number of objects fetched: \(objects.count)")
             for result in objects {
                 let patient = result as! Patient
-                print("Name: \(patient.name). Test Val: \(patient.testValue). Vitals: \(patient.vitals). Medications: \(patient.medications).") //Will return optional
+                print("Name: \(patient.name). Test Val: \(patient.testValue). Vitals: \(patient.vitals). Medications: \(patient.medications). Allergies: \(patient.allergies).") //Will return optional
             }
         } else {
             print("No results found in the Core Data Store.")

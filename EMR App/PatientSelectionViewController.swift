@@ -11,17 +11,16 @@ protocol PatientSelectionViewControllerDelegate {
     //This delegate acts as follows: when the user selects a patient, we dismiss the patient selection screen, return to the home screen, & set the currentPatient. This protocol has 1 required property (currentPatient) & 1 method which is called when we select a patient.
     var currentPatient: Patient? { get set }
     var patientFileWasJustOpened: Bool { get set } //marker for display of notification
+    var fileWasOpenedOrCreated: String { get set } //checks if file was opened or created
     func patientFileHasBeenOpened()
 }
 
-class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAAccessoryDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
+class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
     
     var delegate: PatientSelectionViewControllerDelegate? //Delegate Stored Property
     var currentPatient: Patient?
     var properNameFormat: Bool = false
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
-    
-    var bluetoothCentralManager = CBCentralManager()
     
     //Keyboard Detection:
     var keyboardSizeArray: [CGFloat] = []
@@ -40,21 +39,6 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
     }
     
     override func viewDidAppear(animated: Bool) { //function is called AFTER the keyboard appears!
-        //Check if this picks up anything for Abhi's BT keyboard:
-        //        let manager = EAAccessoryManager.sharedAccessoryManager()
-        //        manager.registerForLocalNotifications()
-        //        print("Connected Accessories: \(manager.connectedAccessories)")
-        //        for accessory in manager.connectedAccessories {
-        //            print("Name: \(accessory)")
-        //        }
-        //
-        //        bluetoothCentralManager = CBCentralManager(delegate: self, queue: nil)
-        //        bluetoothCentralManager.scanForPeripheralsWithServices(nil, options: nil)
-        //        let peripheralArray = bluetoothCentralManager.retrieveConnectedPeripheralsWithServices([])
-        //        let otherArray = bluetoothCentralManager.retrievePeripheralsWithIdentifiers([])
-        //        print(peripheralArray)
-        //        print(otherArray)
-        
         //Check if starting keyboard is BT or normal (if the variable exists/has been set, then the keyboardAppeared action has fired & we know the initial keyboard is NOT BT.
         if (keyboardAppearedHasFired == nil) { //BT keyboard
             bluetoothKeyboardAttached = true
@@ -63,17 +47,6 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-    }
-    
-    func centralManagerDidUpdateState(central: CBCentralManager) {
-        switch central.state {
-        case CBCentralManagerState.PoweredOn:
-            print("BT powered on")
-        case CBCentralManagerState.PoweredOff:
-            print("BT powered off")
-        default:
-            print("Default BT switch")
-        }
     }
     
     //MARK: - Keyboard Tracking
@@ -114,16 +87,27 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
     @IBAction func openPatientFileButtonClick(sender: AnyObject) {
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
-            currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
             if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> DEM
-                self.delegate?.currentPatient = currentPatient
-                self.delegate?.patientFileWasJustOpened = true
-                self.delegate?.patientFileHasBeenOpened()
+                if let existingPatient = openPatientFile(patientNameTextField.text!) {
+                    currentPatient = existingPatient
+                    self.delegate?.currentPatient = currentPatient
+                    self.delegate?.patientFileWasJustOpened = true
+                    self.delegate?.fileWasOpenedOrCreated = "opened"
+                    self.delegate?.patientFileHasBeenOpened()
+                } else { //no patient found for given name
+                    patientNameTextField.becomeFirstResponder()
+                }
             } else { //No BT keyboard, segue -> PCM
-                performSegueWithIdentifier("showPCM", sender: self)
+                if let existingPatient = openPatientFile(patientNameTextField.text!) {
+                    currentPatient = existingPatient
+                    performSegueWithIdentifier("showPCM", sender: self)
+                } else { //no patient found for given name
+                    patientNameTextField.becomeFirstResponder()
+                }
             }
         } else {
             print("Enter patient name")
+            patientNameTextField.becomeFirstResponder()
         }
     }
     
@@ -134,13 +118,32 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate, EAA
             if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> whichever view was used to close the patient file
                 self.delegate?.currentPatient = currentPatient
                 self.delegate?.patientFileWasJustOpened = true
+                self.delegate?.fileWasOpenedOrCreated = "created"
                 self.delegate?.patientFileHasBeenOpened()
             } else { //No BT keyboard, segue -> PCM
                 performSegueWithIdentifier("showPCM", sender: self)
             }
         } else {
+            patientNameTextField.becomeFirstResponder()
             print("Enter patient name")
         }
+    }
+    
+    //MARK: - Keyboard Shortcuts
+    
+    override var keyCommands: [UIKeyCommand]? { //special Apple API for defining keyboard shortcuts
+        let controlKey = UIKeyModifierFlags.Control
+        let controlO = UIKeyCommand(input: "o", modifierFlags: [controlKey], action: "controlOKeyPressed:")
+        let controlC = UIKeyCommand(input: "c", modifierFlags: [controlKey], action: "controlCKeyPressed:")
+        return [controlO, controlC]
+    }
+    
+    func controlOKeyPressed(command: UIKeyCommand) {
+        openPatientFileButtonClick(self)
+    }
+    
+    func controlCKeyPressed(command: UIKeyCommand) {
+        createPatientFileButtonClick(self)
     }
     
     //MARK: - Navigation

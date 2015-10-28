@@ -10,6 +10,7 @@
 import UIKit
 
 class PhysicalAndROSView: UIView { //Handle orientation appropriately.
+    let applicationMode: String //check if class object was created by DEM or PCM, render view accordingly
     let index: Int //assign unique index to each image (used for rotating images)
     let viewChoice: String //check if the input query is for physical or ROS
     let gender: Int //check if the currentPatient is male or female (0 = male & 1 = female)
@@ -41,12 +42,13 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
     var dataEntrySectionArray: [String]? //array of sections to break down physical/ROS. Should be made nil after completing data entry for a given section!!!
     let bodyImageView = UIImageView()
     
-    init(dataEntryView: PhysicalAndROSDataEntryView, viewChoice: String, gender: Int, childOrAdult: Int) {
+    init(dataEntryView: PhysicalAndROSDataEntryView, applicationMode: String, viewChoice: String, gender: Int, childOrAdult: Int) {
+        self.dataEntryView = dataEntryView
+        self.applicationMode = applicationMode
         self.viewChoice = viewChoice
         self.gender = gender
         self.childOrAdult = childOrAdult
         self.rotated = false
-        self.dataEntryView = dataEntryView
         
         //Pick starting image for the view:
         if self.childOrAdult == 0 { //Patient is an adult

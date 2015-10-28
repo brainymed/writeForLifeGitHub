@@ -7,5 +7,7 @@ import Foundation
 import CoreData
 
 class Patient: NSManagedObject {
-    
+    var lastMedicationInserted: Int?
+    var lastAllergyInserted: Int?
+    var lastDiagnosisInserted: Int?
 }

@@ -17,32 +17,20 @@ class DataExtractionModeViewController: UIViewController, UITableViewDataSource,
     var currentUser: String? //current user (HCP) who is logged in
     var openScope: EMRField? //handles MK identification & data mapping -> EMR
     var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
+    var fileWasOpenedOrCreated: String = ""
     
-    //Keyboard Detection:
-    var keyboardSizeArray: [CGFloat] = []
-    var keyboardAppearedHasFired: Bool?
-    var bluetoothKeyboardAttached: Bool = false //true = BT keyboard, false = no BT keyboard
-    
-    //MARK: - Standard View Functions 
+    //MARK: - Standard View Functions
     
     override func viewDidLoad() {
         super.viewDidLoad()
         extractionQueryTextField.becomeFirstResponder()
         extractionQueryTextField.delegate = self
         notificationsFeed.alpha = 0
-        
-        //Add notifications 1st time this view loads so it can keep track throughout the view's life:
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChangedFrame:", name: UIKeyboardWillChangeFrameNotification, object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardAppeared:", name: UIKeyboardWillShowNotification, object: nil)
     }
     
     override func viewDidAppear(animated: Bool) {
         print("Current User (ExtractionMVC): \(currentUser)")
         print("Current Patient (ExtractionMVC): \(currentPatient?.name)")
-        
-        if (keyboardAppearedHasFired == nil) { //BT keyboard
-            bluetoothKeyboardAttached = true
-        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -82,44 +70,6 @@ class DataExtractionModeViewController: UIViewController, UITableViewDataSource,
             }, completion: nil)
     }
     
-    //MARK: - Keyboard Tracking
-    
-    func keyboardChangedFrame(notification: NSNotification) { //fires when keyboard changes
-        let userInfo: NSDictionary = notification.userInfo!
-        let keyboardFrame: CGRect = (userInfo.objectForKey(UIKeyboardFrameEndUserInfoKey)?.CGRectValue)!
-        let keyboard: CGRect = self.view.convertRect(keyboardFrame, fromView: self.view.window)
-        let sum = keyboard.origin.y + keyboard.size.height
-        keyboardSizeArray.append(sum)
-    }
-    
-    func keyboardAppeared(notification: NSNotification) {
-        keyboardAppearedHasFired = true //check variable for 1st time view appears
-        let lastKeyboardSize = keyboardSizeArray.last
-        let height: CGFloat = self.view.frame.size.height
-        if (lastKeyboardSize > height) {
-            bluetoothKeyboardAttached = true
-        } else { //if connection to BT keyboard is lost, call 'transitionToPCM()' function
-            bluetoothKeyboardAttached = false
-            transitionToPCM()
-        }
-        keyboardSizeArray = [] //clear for next sequence
-    }
-    
-    func transitionToPCM() {
-        //Handles changes in keyboard (BT vs. normal) status
-        let alertController = UIAlertController(title: "Connection to Keyboard Lost!", message: "Please reattach a keyboard and press 'OK'. If you wish to move into Patient Care Mode, press 'Redirect'.", preferredStyle: .Alert)
-        let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in
-            //Do nothing - if no keyboard is detected after pressing ok, the alert will pop again.
-        })
-        let redirect = UIAlertAction(title: "Redirect", style: .Default, handler: { (action) -> Void in
-            //Allow user to segue -> PCM
-            self.performSegueWithIdentifier("showPCM", sender: self)
-        })
-        alertController.addAction(ok)
-        alertController.addAction(redirect)
-        presentViewController(alertController, animated: true, completion: nil)
-    }
-
     //MARK: - User Authentication & Patient Selection
     
     var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!

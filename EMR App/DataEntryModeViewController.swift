@@ -13,6 +13,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     var currentUser: String? //current user (HCP) who is logged in
     var openScope: EMRField? //handles MK identification & data mapping -> EMR
     var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
+    var fileWasOpenedOrCreated: String = "" //checks if file was opened or created (for notification)
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
     @IBOutlet weak var fieldNameTextField: UITextField!
@@ -27,11 +28,11 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBOutlet weak var currentPatientLabel: UILabel!
     @IBOutlet weak var currentUserLabel: UILabel!
     
-    //Table View & Associated Side View:
+    //Table View & Data Entry ImageView:
     @IBOutlet weak var labelsTableView: UITableView!
     @IBOutlet weak var dataEntryImageView: UIImageView!
     var tableViewCellLabels: [String]? //labels in TV cells based on entered MK
-    let tableViewCellColors: [UIColor] = [UIColor.lightGrayColor(), UIColor.darkGrayColor(), UIColor.whiteColor(), UIColor.yellowColor()] //We will color code the labels to the partitions
+    var tableViewCellColors: [UIColor]? //color code the labels & partitions
     var newWidth: CGFloat? //on rotation, the width of the incoming view
     var newHeight: CGFloat? //on rotation, the height of the incoming view
     var physicalOrROSView: PhysicalAndROSView? //renders Px or ROS view
@@ -62,7 +63,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //Configure fieldName entry view to start:
         configureViewForEntry("fieldName")
         
-        //Difficulty tracking the keyboard's status in this view. For some reason, the functions on this view are called in the patientSelection & Login views (probably b/c we segue modally), so there is interference. We might have to redefine. 
+        //Difficulty tracking the keyboard's status in this view. For some reason, the functions on this view are called in the patientSelection & Login views (probably b/c we segue modally), so there is interference. We might have to redefine.
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -75,7 +76,11 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         }
         
         if (patientFileWasJustOpened == true) {
-            notificationsFeed.text = "Patient file has been opened for \((currentPatient?.name)!.uppercaseString)"
+            if (fileWasOpenedOrCreated == "opened") {
+                notificationsFeed.text = "Patient file has been opened for \((currentPatient?.name)!.uppercaseString)"
+            } else if (fileWasOpenedOrCreated == "created") {
+                notificationsFeed.text = "Patient file has been created for \((currentPatient?.name)!.uppercaseString)"
+            }
             fadeIn()
             fadeOut()
             patientFileWasJustOpened = false
@@ -103,7 +108,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     //MARK: - View Rotation
     
-    override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
+    override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) { //called when view rotates, yields NEW size
         if (UIDevice.currentDevice().orientation == UIDeviceOrientation.Portrait) {
             print("Device is now in Portrait. Width = \(size.width). Height = \(size.height)")
         } else {
@@ -129,16 +134,17 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             plusButton.hidden = true
             currentItemNumberLabel.hidden = true
             
-            //Bring up 'Field Name' Entry Views, set delegate & 1st responder:
+            //Bring up 'Field Name' Entry Views, set delegate:
             fieldNameEntryLabel.hidden = false
             fieldNameTextField.hidden = false
             fieldNameTextField.delegate = self
-            fieldNameTextField.becomeFirstResponder()
         case "fieldValue":
             //Hide the fieldName entry views & pull up the formatted TV & imageView:
             fieldNameEntryLabel.hidden = true
             fieldNameTextField.hidden = true
-            fieldNameTextField.resignFirstResponder()
+            fieldNameTextField.resignFirstResponder() //*
+            plusButton.hidden = true
+            currentItemNumberLabel.hidden = true
             renderDataEntryImageView(tableViewCellLabels!.count)
             labelsTableView.reloadData() //refreshes visible TV cells w/ existing data
             labelsTableView.hidden = false
@@ -146,16 +152,13 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         default:
             print("Error. Switch case triggered unknown statement")
         }
+        setFirstResponder()
     }
     
     func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior for 'RETURN' button
-        plusButton.hidden = true //re-hide plus button & itemLabel (in case they were opened)
-        currentItemNumberLabel.hidden = true
         let input = textField.text
-        textField.text = ""
         textField.resignFirstResponder()
-        
-        if textField.tag == 1 { // sender is fieldName text field
+        if textField.tag == 1 { //sender is fieldName text field
             openScope = EMRField(inputWord: input!, currentPatient: currentPatient!)
             if (openScope!.matchFound()) { //Open Scope & render view according to fieldName
                 print("Match found")
@@ -167,27 +170,35 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
                 if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") { //Render Px or ROS View
                     configurePhysicalOrROSView((openScope?.getFieldName())!)
                 } else { //NOT a Px or ROS view
-                    tableViewCellLabels = openScope?.getLabelsForMK() //set the # of tableView cells according to the MK
+                    (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())! //set the # of tableView cells according to the MK
                     configureViewForEntry("fieldValue")
                 }
             } else {//'matchFound' == nil
                 openScope = nil
                 print("No match found!")
-                //Keep the first responder here & accept a new field name entry:
-                configureViewForEntry("fieldName")
+                configureViewForEntry("fieldName") //re-render fieldName entry view
             }
         } else if textField.tag == 100 { //Sender is lastTextField from dataEntryImageView sending FVs
             //Obtain dictionary & notificationText containing input values; send dictionary -> central web server/persistent store & show notification, then configure the 'fieldName' view:
+            var error: Bool = false
+            var errorTagIndicator: Int = 0
             getInputValuesFromTextFields(input!, notificationString: { (let notification) in
-                self.notificationsFeed.text = notification //display all mapped values in feed
-                })
+                self.notificationsFeed.text = notification.2 //display all mapped values in feed
+                error = notification.0
+                errorTagIndicator = notification.1 //gives tag of the view which is empty
+            })
             for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
                 print("Dict: \(item): \(value)")
             }
             fadeIn()
             fadeOut()
-            dataEntryImageView.viewWithTag(1)?.resignFirstResponder() //resign 1st responder
+            if (error == true) { //block reconfiguration of the view if there was an error
+                dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
+                return false //block transition
+            }
             tableViewCellLabels = nil //clear array w/ labels
+            plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
+            currentItemNumberLabel.hidden = true
             configureViewForEntry("fieldName")
             openScope = nil //close the existing scope
         } else if textField.tag == 200 { //sender is Px & ROS dataEntryView textField
@@ -222,6 +233,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
                 fadeOut()
             }
         }
+        textField.text = "" //clear textField before proceeding
         return true
     }
     
@@ -230,12 +242,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         if (fieldNameTextField.hidden == false) {
             fieldNameTextField.becomeFirstResponder()
         } else if (dataEntryImageView.hidden == false) { //reset 1st responder -> status @ switch
-            //Find every empty textField present in the view (i.e. any field w/o text in it) & set 1st responder to the empty field w/ the LOWEST tag #.
+            //Find every empty textField present in dataEntryIV (i.e. any field w/o text in it) & set 1st responder to the empty field w/ the LOWEST tag #.
             var emptySubviewTagArray: [Int] = []
             var smallestTag: Int = 101 //starting value must be > than the largest possible tag (100)
-            for subview in dataEntryImageView.subviews {
-                if (subview as! UITextField).text == "" {
-                    emptySubviewTagArray.append(subview.tag)
+            for view in dataEntryImageView.subviews {
+                if let textField = (view as? UITextField) { //optional cast b/c some views in the dataEntryIV are of type UIView
+                    if textField.text == "" {
+                        emptySubviewTagArray.append(view.tag)
+                    }
                 }
             }
             for tagValue in emptySubviewTagArray {
@@ -282,10 +296,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         if let labelArray = tableViewCellLabels { //Partition TV based on # of cells
             cell.textLabel?.text = labelArray[indexPath.row]
             cell.textLabel?.textAlignment = NSTextAlignment.Center
-            cell.textLabel?.textColor = UIColor.blueColor()
-            cell.backgroundColor = tableViewCellColors[indexPath.row] //picks color from array, matched to color in partition
-            tableView.separatorColor = UIColor.whiteColor()
-            tableView.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
+            cell.textLabel?.textColor = UIColor.whiteColor()
+            cell.backgroundColor = tableViewCellColors![indexPath.row] //picks color from array (matched to color in partition)
             cell.separatorInset = UIEdgeInsetsZero
         }
         cell.selectionStyle = UITableViewCellSelectionStyle.None //When user taps on cell, it does not change in appearance
@@ -316,12 +328,12 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     func tableView(tableView: UITableView, willSelectRowAtIndexPath indexPath: NSIndexPath) -> NSIndexPath? {
-        //Disable selection of TV cells & prevent swiping functionality. User interaction is disabled from Interface Builder.
+        //Disable selection of TV cells/prevent swiping. User interaction is disabled from IB.
         return nil
     }
     
     func renderDataEntryImageView(numberOfLabels: Int) {
-        for view in dataEntryImageView.subviews { //Before rendering, wipe out any old textLabels!
+        for view in dataEntryImageView.subviews { //Before rendering, wipe out all old textLabels/views
             view.removeFromSuperview()
         }
         dataEntryImageView.image = nil //Clears any existing lines drawn in the view
@@ -351,6 +363,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     func partitionImageViewForOrientation(numberOfLabels: Int, viewWidth: CGFloat, viewHeight: CGFloat) { //Handles partitioning based on width & height of the imageView
         //If current fieldName allows for multiple sub-scopes, reveal the label & plus button:
         if (openScope?.getCurrentItem() != nil) {
+            openScope?.setLastItemEntered() //handles setting of the lastItemEntered if necessary
             plusButton.hidden = false
             currentItemNumberLabel.hidden = false
             let label = (openScope?.getCurrentItem()!.0)!
@@ -362,66 +375,81 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         let partitionSize = viewHeight/numberOfPartitions
         if numberOfLabels > 1 { //No partitioning for only 1 label
             for partition in 1...(numberOfLabels - 1) {
-                // Coordinate system - top left corner of the image view is point (0, 0).
+                // Coordinate system - top left corner of the dataEntryIV is point (0, 0).
                 let partitionNumber = CGFloat(partition)
-                drawLineFrom(CGPoint(x: 0, y: (partitionSize*partitionNumber)), toPoint: CGPoint(x: viewWidth, y: (partitionSize*partitionNumber)))
-                print("From Point: (0, \(partitionSize*partitionNumber)). To Point: (\(dataEntryImageView.frame.width), \(partitionSize*partitionNumber))")
                 
-                //Match partition color w/ the label color!!! We need to add a separate UIView to each partition, and then add a unique textLabel & background color to that view. Add a UIView to cover each partition, then a centered textLabel inside the view. View should be in the top left corner & extend entire length & width of partitioned area.
-//                let partitionView = UIView(frame: CGRect(x: 0, y: 0, width: 500, height: 300))
-//                partitionView.backgroundColor = tableViewCellColors[partition - 1]
+                //Match partition color w/ the label color!!! First add a separate UIView to each partition & then add a unique textLabel & background color to the view. The UIView sits in the top left corner & extends the entire length & width of partitioned area.
                 let product = 2 * partitionSize * partitionNumber - partitionSize
+                let partitionView = UIImageView(frame: CGRect(x: 0, y: ((product - partitionSize)/2), width: viewWidth, height: partitionSize))
+                partitionView.backgroundColor = tableViewCellColors![partition - 1]
                 let textField = UITextField(frame: CGRect(x: ((viewWidth * 0.25)/2), y: ((product - 50)/2), width: (viewWidth * 0.75), height: 50))
                 textField.tag = partition //tag each textField for later reference
-                textField.placeholder = "Please enter a value for the \(openScope!.getLabelsForMK()![partition - 1])"
-                textField.textColor = UIColor.blackColor()
+                let placeholderText = openScope?.getLabelsForMK().0![partition - 1]
+                textField.placeholder = "Please enter a value for the \(placeholderText!)"
+                textField.textColor = UIColor.whiteColor()
                 textField.backgroundColor = UIColor.clearColor()
                 textField.userInteractionEnabled = true //In IB, set user interaction = enabled for parent imageView as well or textField will not respond to touch!
+                
+                dataEntryImageView.addSubview(partitionView)
                 dataEntryImageView.addSubview(textField)
+                dataEntryImageView.sendSubviewToBack(partitionView)
                 dataEntryImageView.bringSubviewToFront(textField)
-                if partition == 1 { //The top-most label is the 1st responder
+                if (partition == 1) { //The top-most label is the 1st responder
                     textField.becomeFirstResponder()
                 }
+                let fromPoints = [CGPoint(x: 0, y: partitionView.frame.size.height), CGPoint(x: 0, y: 0)]
+                let toPoints = [CGPoint(x: partitionView.frame.size.width, y: partitionView.frame.size.height), CGPoint(x: 0, y: partitionView.frame.size.height)]
+                drawLine(partitionView, fromPoint: fromPoints, toPoint: toPoints) //2 lines
             }
         }
-        //Generate the last textField - split the final partition in half (or the entire frame if there is only 1 label). Make the delegate = the VC.
+        
+        //Generate the lastTextField & its background view. Set the lastTF's delegate -> VC.
         let lastPartitionTopPoint = viewHeight - partitionSize
+        let lastPartitionYPosition = (viewHeight + lastPartitionTopPoint - partitionSize)/2
+        let lastPartitionView = UIImageView(frame: CGRect(x: 0, y: lastPartitionYPosition, width: viewWidth, height: partitionSize))
+        lastPartitionView.backgroundColor = tableViewCellColors![numberOfLabels - 1]
         let lastTextFieldYPosition = (viewHeight + lastPartitionTopPoint - 50)/2
         let lastTextField = UITextField(frame: CGRect(x: ((viewWidth * 0.25)/2), y: lastTextFieldYPosition, width: (viewWidth * 0.75), height: 50))
-        lastTextField.textColor = UIColor.blackColor()
+        lastTextField.textColor = UIColor.whiteColor()
         lastTextField.backgroundColor = UIColor.clearColor()
-        lastTextField.tag = 100 //allows us to reference textField in 'TFshouldReturn' function
-        lastTextField.placeholder = "Enter a value for \(openScope!.getLabelsForMK()![numberOfLabels - 1]) & press the 'Return' key."
+        lastTextField.tag = 100 //allows us to reference lastTextField in 'TFshouldReturn' function
+        let placeholderText = openScope?.getLabelsForMK().0![numberOfLabels - 1]
+        lastTextField.placeholder = "Enter value for \(placeholderText!) & press the 'Return' key."
         lastTextField.delegate = self
-        if (numberOfPartitions == 1) { //If there is only 1 label, the last label is also 1st responder
+        if (numberOfPartitions == 1) { //if there is only 1 label, the lastTF is also 1st responder
             lastTextField.becomeFirstResponder()
         }
+        dataEntryImageView.addSubview(lastPartitionView)
         dataEntryImageView.addSubview(lastTextField)
+        dataEntryImageView.sendSubviewToBack(lastPartitionView)
         dataEntryImageView.bringSubviewToFront(lastTextField)
+        drawLine(lastPartitionView, fromPoint: [CGPoint(x: 0, y: 0)], toPoint: [CGPoint(x: 0, y: lastPartitionView.frame.size.height)]) //final vertical line
     }
     
-    func drawLineFrom(fromPoint: CGPoint, toPoint: CGPoint) {
+    func drawLine(imageView: UIImageView, fromPoint: [CGPoint], toPoint: [CGPoint]) { //accept an array of points so that multiple lines can be drawn. Make sure # fromPoints = # toPoints!
         //First, set up a context holding the image currently in the mainImageView.
-        UIGraphicsBeginImageContext(view.frame.size) //'View' specifies root view in the view hierarchy
+        UIGraphicsBeginImageContext(imageView.frame.size)
         let context = UIGraphicsGetCurrentContext()
-        dataEntryImageView.image?.drawInRect(CGRect(x: 0, y: 0, width: view.frame.size.width, height: view.frame.size.height))
+        imageView.image?.drawInRect(CGRect(x: 0, y: 0, width: view.frame.size.width, height: view.frame.size.height))
         
-        //Get the current touch point & then draw a line from the last point to the current point:
-        CGContextMoveToPoint(context, fromPoint.x, fromPoint.y)
-        CGContextAddLineToPoint(context, toPoint.x, toPoint.y)
+        //For each item in the array, get the current touch point & draw a line between points:
+        for i in 0...(fromPoint.count - 1) {
+            CGContextMoveToPoint(context, fromPoint[i].x, fromPoint[i].y)
+            CGContextAddLineToPoint(context, toPoint[i].x, toPoint[i].y)
+        }
         
         //Set the drawing parameters for line size & color:
         CGContextSetLineCap(context, .Round)
-        CGContextSetLineWidth(context, 0.5)
-        CGContextSetRGBStrokeColor(context, 1.0, 1.0, 1.0, 1.0)
+        CGContextSetLineWidth(context, 1.25)
+        CGContextSetRGBStrokeColor(context, 1.0, 1.0, 1.0, 1.0) //white color
         CGContextSetBlendMode(context, .Normal)
         
         //Draw the path:
         CGContextStrokePath(context)
         
         //Wrap up the drawing context to render the new line:
-        dataEntryImageView.image = UIGraphicsGetImageFromCurrentImageContext()
-        dataEntryImageView.alpha = 1.0
+        imageView.image = UIGraphicsGetImageFromCurrentImageContext()
+        imageView.alpha = 1.0
         UIGraphicsEndImageContext()
     }
     
@@ -430,18 +458,26 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         if (openScope?.getCurrentItem() != nil) { //Checks if fieldName has sub-scope
             //Construct the dictionary:
             let lastFieldText = (dataEntryImageView.viewWithTag(100) as? UITextField)?.text //Grab last textField's input value
+            var error: Bool = false
+            var errorTagIndicator: Int = 0
             getInputValuesFromTextFields(lastFieldText!, notificationString: { (let notification) -> Void in
-                self.notificationsFeed.text = notification
-                })
+                error = notification.0
+                errorTagIndicator = notification.1
+                self.notificationsFeed.text = notification.2
+            })
             fadeIn()
             fadeOut()
-            dataEntryImageView.viewWithTag(1)?.becomeFirstResponder() //Set 1st txtField as 1st responder
             
-            //Render the next item's label:
-            openScope?.incrementCurrentItemNumber() //increment counter for next item's label
-            let label = (openScope?.getCurrentItem()!.0)!
-            let count = (openScope?.getCurrentItem()!.1)!
-            currentItemNumberLabel.text = "\(label) \(count)"
+            if (error == false) {
+                dataEntryImageView.viewWithTag(1)?.becomeFirstResponder() //Set 1st txtField as 1st responder
+                //Render the next item's label:
+                openScope?.incrementCurrentItemNumber() //increment counter for next item's label
+                let label = (openScope?.getCurrentItem()!.0)!
+                let count = (openScope?.getCurrentItem()!.1)!
+                currentItemNumberLabel.text = "\(label) \(count)"
+            } else { //error occurred, don't switch views
+                dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
+            }
         }
     }
     
@@ -450,12 +486,12 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         fieldNameEntryLabel.hidden = true
         fieldNameTextField.hidden = true
         
-        //Render the custom view. Make sure to put in an adjustable frame (not static, but based on view dimensions)!
+        //Render the custom view. Make sure to put in an adjustable frame (not static, but based on the view dimensions)!
         let physicalOrROSDataEntryView = PhysicalAndROSDataEntryView(frame: CGRect(x: 260, y: 100, width: 764, height: 619)) //allows 'Return' behavior to be configured
         self.view.addSubview(physicalOrROSDataEntryView)
         physicalOrROSDataEntryView.renderDefaultDataEntryView()
         physicalOrROSDataEntryView.organSystemSelectionTextField.delegate = self
-        physicalOrROSView = PhysicalAndROSView(dataEntryView: physicalOrROSDataEntryView, viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
+        physicalOrROSView = PhysicalAndROSView(dataEntryView: physicalOrROSDataEntryView, applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
         self.view.addSubview(physicalOrROSView!)
         
         
@@ -464,111 +500,136 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     //MARK: - Capture User Inputs
     
-    func getInputValuesFromTextFields(lastFieldText: String, notificationString: (String -> Void)) {
+    func getInputValuesFromTextFields(lastFieldText: String, notificationString: ((Bool, Int, String) -> Void)) {
         //Grab the values entered in text fields for the notificationsFeed & mapping dictionary:
         var counter = 0
         var notificationText = ""
         let fieldName = (openScope?.getFieldName())!
+        var error: Bool = false //false = no error, true = error (empty field)
+        var errorTagIndicator: Int = 0
         
-        if (openScope?.getCurrentItem() != nil) { //fieldName has sub-scope (called by '+BtnClick')
-            //Construct the dictionary's custom key:
-            let label = (openScope?.getCurrentItem()!.0)!.lowercaseString
-            let currentItemCount = (openScope?.getCurrentItem()!.1)!
-            let currentItemKey = label + String(currentItemCount)
+        if (openScope?.generateCustomDictionaryKey() != nil) { //indicates that fieldName has sub-scopes (called by '+BtnClick')
+            let currentItemKey = (openScope?.generateCustomDictionaryKey())! //obtain custom key
             //Add the key into the jsonDict:
             openScope?.jsonDictToServer[fieldName]![currentItemKey] = Dictionary<String, AnyObject>()
-            var tempDict : [String : AnyObject] = (openScope?.jsonDictToServer[fieldName]![currentItemKey])! as! [String : AnyObject] //create temporary dict to assign value
-            for view in dataEntryImageView.subviews {
+            var tempDict: [String: AnyObject] = (openScope?.jsonDictToServer[fieldName]![currentItemKey])! as! [String: AnyObject] //create temporary dict to assign value
+            for view in dataEntryImageView.subviews { //iterate through the views & capture values
                 if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
                     let key = tableViewCellLabels![counter]
-                    let value = ((view as? UITextField)?.text)!
-                    tempDict[key] = value
-                    notificationText += key + ": " + value + "\n"
+                    let value = (view as? UITextField)?.text
+                    if (value == "") { //make sure no value is left empty, use predicates eventually
+                        error = true
+                        errorTagIndicator = view.tag
+                        notificationText = "Please enter a value for '\(key)'"
+                        break
+                    }
+                    if (value != nil) { //make sure cast from UIView -> TextField worked
+                        tempDict[key] = value //'key' = label from labelsArray, 'value' = txt input
+                        notificationText += key + ": " + value! + "\n"
+                    } else { //shouldn't trigger unless a UIView added to dataEntryIV has a tag (error)
+                        notificationText = "Error occurred. UIView in DataEntryIV has a tag when it shouldn't."
+                        error = true
+                    }
                     counter += 1
-                    (view as? UITextField)?.text = "" //clears the view's text
                 } else if (view.tag == 100) {//Grab last textField's input value
                     let key = (tableViewCellLabels?.last)!
                     tempDict[key] = lastFieldText
                     notificationText += key + ": " + lastFieldText
-                    (view as? UITextField)?.text = "" //clears the view's text
+                    if (lastFieldText == "") { //make sure no value is empty (w/ predicate eventually)
+                        error = true
+                        errorTagIndicator = view.tag
+                        notificationText = "Please enter a value for '\(key)'"
+                        break
+                    }
                 }
                 openScope?.jsonDictToServer[fieldName]![currentItemKey] = tempDict //Assign the temporary value in the temp dict -> jsonDictToServer @ end of each iteration
+            }
+            
+            if (error == false) {
+                for view in dataEntryImageView.subviews { //Clear the text in the textFields:
+                    (view as? UITextField)?.text = ""
+                }
+                
+                //Capture the last entered item's counter #, so that we will not overwrite the persistent data object if the user tries to enter more items. Note that if the user closes out of the patient file (& currentPatient is set -> nil), this counter is wiped & we start from 1 again when that same file is re-opened.
+                let countedField = (openScope?.getCurrentItem()!.0)!
+                let lastCounterNumber = (openScope?.getCurrentItem()!.1)! //capture last item that was entered
+                if (countedField == "Medication") {
+                    currentPatient?.lastMedicationInserted = lastCounterNumber //save value in Patient obj
+                } else if (countedField == "Allergy") {
+                    currentPatient?.lastAllergyInserted = lastCounterNumber //save value in Patient obj
+                }
             }
         } else { //fieldName does NOT have sub-scopes (only called by 'textFieldShouldReturn')
             for view in dataEntryImageView.subviews {
                 if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
                     let key = tableViewCellLabels![counter]
-                    let value = ((view as? UITextField)?.text)!
-                    openScope?.jsonDictToServer[fieldName]![key] = value
-                    notificationText += key + ": " + value + "\n"
+                    let value = (view as? UITextField)?.text
+                    if (value == "") { //make sure no value is left empty, use predicates eventually
+                        error = true
+                        errorTagIndicator = view.tag
+                        notificationText = "Please enter a value for '\(key)'"
+                        break
+                    }
+                    if (value != nil) { //make sure cast from UIView -> TextField worked
+                        openScope?.jsonDictToServer[fieldName]![key] = value
+                        notificationText += key + ": " + value! + "\n"
+                    } else { //shouldn't trigger unless a UIView added to dataEntryIV has a tag (error)
+                        notificationText = "Error occurred. UIView in DataEntryIV has a tag when it shouldn't."
+                        error = true
+                    }
                     counter += 1
                 } else if (view.tag == 100) {//Grab last textField's input value
                     let key = (tableViewCellLabels!.last)!
                     openScope?.jsonDictToServer[fieldName]![key] = lastFieldText
+                    if (lastFieldText == "") { //make sure no value is left empty
+                        error = true
+                        errorTagIndicator = view.tag
+                        notificationText = "Please enter a value for '\(key)'"
+                        break
+                    }
                     notificationText += key + ": " + lastFieldText
                 }
             }
         }
-        notificationString(notificationText) //Send back the closure containing the notification text
+        if (error == false) {
+            openScope?.setFieldValueForCurrentPatient()
+        }
+        notificationString(error, errorTagIndicator, notificationText) //Send back the closure containing the notification text & error + error indicator
     }
     
     //MARK: - Template-Selection View Configuration
     
     @IBAction func vitalsButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "vitals", currentPatient: currentPatient!)
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
+        openScope = EMRField(inputWord: "vitals", currentPatient: currentPatient!)
+        (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
+        configureViewForEntry("fieldValue")
     }
     
     @IBAction func hpiButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            //render appropriate view
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
+        //render appropriate view
     }
     
     @IBAction func medicationsButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "medications", currentPatient: currentPatient!)
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
+        openScope = EMRField(inputWord: "medications", currentPatient: currentPatient!)
+        (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
+        configureViewForEntry("fieldValue")
     }
     
     @IBAction func allergiesButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "allergies", currentPatient: currentPatient!)
-            tableViewCellLabels = openScope?.getLabelsForMK()
-            configureViewForEntry("fieldValue")
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
+        openScope = EMRField(inputWord: "allergies", currentPatient: currentPatient!)
+        (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
+        configureViewForEntry("fieldValue")
     }
     
     @IBAction func physicalButtonClick(sender: AnyObject) {
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "physical", currentPatient: currentPatient!)
-            configurePhysicalOrROSView((openScope?.getFieldName())!)
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
+        openScope = EMRField(inputWord: "physical", currentPatient: currentPatient!)
+        configurePhysicalOrROSView((openScope?.getFieldName())!)
     }
     
     @IBAction func rosButtonClick(sender: AnyObject) {
         sendHTTPRequestToEMR()
-        if (currentPatient != nil) {
-            openScope = EMRField(inputWord: "ros", currentPatient: currentPatient!)
-            configurePhysicalOrROSView((openScope?.getFieldName())!)
-        } else { //In future, the template buttons should be disabled while no patient is entered.
-            print("Enter a patient first.")
-        }
+        openScope = EMRField(inputWord: "ros", currentPatient: currentPatient!)
+        configurePhysicalOrROSView((openScope?.getFieldName())!)
     }
     
     //MARK: - Network Request
@@ -629,29 +690,41 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //Clicking this button configures the popup if it is hidden & closes the popup if it is visible:
         if userInfoView.hidden == true { //Reveal the view
             userInfoView.hidden = false //revealing view reveals all subviews too
-            currentUserLabel.text = "Current User: \(currentUser!)"
+            currentUserLabel.text = "Current User: \(currentUser)"
         } else { //Hide the view
             userInfoView.hidden = true
         }
     }
     
-    @IBAction func logoutButtonClick(sender: AnyObject) {
+    @IBAction func logoutButtonClick(sender: AnyObject) { //for now, will also clear scope/current patient
         //Clear out existing user defaults:
         //        let appDomain = NSBundle.mainBundle().bundleIdentifier
         //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
-        print("Logging Out")
+        
+        openScope = nil
         loggedIn = false //changes loggedIn value to trigger delegate methods
+        currentPatient = nil //clears current patient
+        configureViewForEntry("fieldName")
         userInfoView.hidden = true
+        
+        //For now we will have it clear the MOC as well:
+        clearAllPatientsFromDataStore()
+        fetchAllPatients()
     }
     
     @IBAction func closePatientFileButtonClick(sender: AnyObject) {
-        //Close the patient file by setting 'currentPatient' = nil:
+        //Close the patient file by setting 'currentPatient' = nil, setting any openScope to nil, and rendering the view for fieldName entry:
+        openScope = nil
         currentPatient = nil
+        configureViewForEntry("fieldName")
         patientInfoView.hidden = true
     }
     
     @IBAction func changeEMRButtonClick(sender: AnyObject) {
         // Later on, give user the option to log in to a different EMR (for users w/ multiple EMRs)
+        
+        //For now, fetch patients in data store for checking:
+        fetchAllPatients()
     }
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
@@ -687,7 +760,9 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         didSet {
             if (currentPatient != nil) { //Patient file is open. Let view render as defined elsewhere.
             } else { //No patient file is open. Segue to patientSelectionVC
-                self.performSegueWithIdentifier("showPatientSelection", sender: self)
+                if (loggedIn == true) { //Make sure that DEM is currently open
+                   self.performSegueWithIdentifier("showPatientSelection", sender: self)
+                }
             }
         }
     }
@@ -700,14 +775,16 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     override var keyCommands: [UIKeyCommand]? { //special Apple API for defining keyboard shortcuts
         let controlKey = UIKeyModifierFlags.Control
-        let shiftKey = UIKeyModifierFlags.Shift
-        let commandA = UIKeyCommand(input: "a", modifierFlags: [controlKey, shiftKey], action: "controlAKeyPressed:") //UIKeyCommand detects specified keyboard commands
+        //let shiftKey = UIKeyModifierFlags.Shift
+        let controlA = UIKeyCommand(input: "a", modifierFlags: [controlKey], action: "controlAKeyPressed:") //UIKeyCommand detects specified keyboard commands
         let upArrow = UIKeyCommand(input: UIKeyInputUpArrow, modifierFlags: [], action: "upArrowKeyPressed:") //the modifierFlags array can contain 0 modifier flags or more than 1 (e.g. when creating a cmd + shift + "" shortcut
-        return [commandA, upArrow]
+        return [controlA, upArrow]
     }
     
     func controlAKeyPressed(command: UIKeyCommand) {
-        print("User entered control + A")
+        if (openScope?.getCurrentItem() != nil) { //Ctrl+A can be used to add additional item
+            plusButtonClick(self)
+        }
     }
     
     func upArrowKeyPressed(command: UIKeyCommand) {
