@@ -23,7 +23,7 @@ class EMRField {
         self.currentPatient = currentPatient
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
         let lowercaseInput = inputWord.lowercaseString
-        let formatArray : [String] = ["^d.*o.*b.*$", "^test$", "^med.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies"]
+        let formatArray : [String] = ["^d.*o.*b.*$", "^test$", "^med.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies", "hpi"]
         var stopCounter = -1
         for format in formatArray {
             stopCounter += 1
@@ -59,6 +59,8 @@ class EMRField {
             self.fieldName = "allergies"
             self.currentItemCounter = 1
             self.currentItemLabel = "Allergy"
+        case 7:
+            self.fieldName = "historyOfPresentIllness"
         default:
             //If the counter's value is 1 greater than the length(formatArray), NO match was found.
             self.fieldName = nil
@@ -85,6 +87,8 @@ class EMRField {
                 tableViewLabels = [] //no labels - TV is not called
             case "allergies":
                 tableViewLabels = ["Allergen", "Reaction", "Severity"]
+            case "historyOfPresentIllness":
+                tableViewLabels = ["History of Present Illness"]
             default:
                 tableViewLabels = ["[getLabelsForMK - Default Switch (Error)"]
             }
@@ -200,6 +204,8 @@ class EMRField {
                             }
                             counter += 1
                         }
+                    case "historyOfPresentIllness":
+                        currentPatient.hpi = inputValuesArray[0]
                     default:
                         NSLog("Error in setFieldValue() - 'else' default statement")
                     }
