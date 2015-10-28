@@ -4,8 +4,6 @@
 //  Copyright © 2015 Confluent Ideals. All rights reserved.
 
 import UIKit
-import ExternalAccessory
-import CoreBluetooth
 
 protocol PatientSelectionViewControllerDelegate {
     //This delegate acts as follows: when the user selects a patient, we dismiss the patient selection screen, return to the home screen, & set the currentPatient. This protocol has 1 required property (currentPatient) & 1 method which is called when we select a patient.
@@ -15,7 +13,7 @@ protocol PatientSelectionViewControllerDelegate {
     func patientFileHasBeenOpened()
 }
 
-class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
+class PatientSelectionViewController: UIViewController {
     
     var delegate: PatientSelectionViewControllerDelegate? //Delegate Stored Property
     var currentPatient: Patient? = nil
@@ -45,10 +43,6 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
         }
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
     //MARK: - Keyboard Tracking
     
     func keyboardChangedFrame(notification: NSNotification) { //fires when keyboard changes
@@ -73,22 +67,18 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: - Patient File Button Actions
     
-    func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String) -> Bool { //Disable button press if the textField is empty
-        let length = (textField.text?.characters.count)! - range.length + string.characters.count
+    @IBAction func openPatientFileButtonClick(sender: AnyObject) {
         let whitespaceSet = NSCharacterSet.whitespaceCharacterSet()
-        if ((length > 0) && (textField.text?.stringByTrimmingCharactersInSet(whitespaceSet) != "")) {
+        let trimmedName = patientNameTextField.text?.stringByTrimmingCharactersInSet(whitespaceSet)
+        if (trimmedName != "") {
             properNameFormat = true
         } else {
             properNameFormat = false
         }
-        return true
-    }
-    
-    @IBAction func openPatientFileButtonClick(sender: AnyObject) {
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
             if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> DEM
-                if let existingPatient = openPatientFile(patientNameTextField.text!) {
+                if let existingPatient = openPatientFile(trimmedName!) {
                     currentPatient = existingPatient
                     self.delegate?.currentPatient = currentPatient
                     self.delegate?.patientFileWasJustOpened = true
@@ -102,7 +92,7 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
                     presentViewController(alertController, animated: true, completion: nil)
                 }
             } else { //No BT keyboard, segue -> PCM
-                if let existingPatient = openPatientFile(patientNameTextField.text!) {
+                if let existingPatient = openPatientFile(trimmedName!) {
                     currentPatient = existingPatient
                     performSegueWithIdentifier("showPCM", sender: self)
                 } else { //no patient found for given name
@@ -114,43 +104,50 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
                 }
             }
         } else {
-            print("Please enter a patient name.")
             patientNameTextField.becomeFirstResponder()
+            print("Please enter a patient name.")
         }
     }
     
     @IBAction func createPatientFileButtonClick(sender: AnyObject) {
+        let whitespaceSet = NSCharacterSet.whitespaceCharacterSet()
+        let trimmedName = patientNameTextField.text?.stringByTrimmingCharactersInSet(whitespaceSet)
+        if (trimmedName != "") {
+            properNameFormat = true
+        } else {
+            properNameFormat = false
+        }
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
             if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> whichever view was used to close the patient file
-                if (openPatientFile(patientNameTextField.text!) != nil) { //patient already exists
+                if (openPatientFile(trimmedName!) != nil) { //patient already exists
                     patientNameTextField.becomeFirstResponder()
                     let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
                     let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                     alertController.addAction(ok)
                     presentViewController(alertController, animated: true, completion: nil)
                 } else { //no patient found for given name
-                    currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
+                    currentPatient = Patient(name: trimmedName!, insertIntoManagedObjectContext: managedObjectContext)
                     self.delegate?.currentPatient = currentPatient
                     self.delegate?.patientFileWasJustOpened = true
                     self.delegate?.fileWasOpenedOrCreated = "created"
                     self.delegate?.patientFileHasBeenOpened()
                 }
             } else { //No BT keyboard, segue -> PCM
-                if (openPatientFile(patientNameTextField.text!) != nil) { //patient already exists
+                if (openPatientFile(trimmedName!) != nil) { //patient already exists
                     patientNameTextField.becomeFirstResponder()
                     let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
                     let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                     alertController.addAction(ok)
                     presentViewController(alertController, animated: true, completion: nil)
                 } else { //no patient found for given name
-                    currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
+                    currentPatient = Patient(name: trimmedName!, insertIntoManagedObjectContext: managedObjectContext)
                     performSegueWithIdentifier("showPCM", sender: self)
                 }
             }
         } else {
-            print("Please enter a patient name.")
             patientNameTextField.becomeFirstResponder()
+            print("Please enter a patient name.")
         }
     }
     

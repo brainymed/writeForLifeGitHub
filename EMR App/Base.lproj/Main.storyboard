@@ -2200,9 +2200,6 @@
                                         <include reference="hkS-pM-7cW"/>
                                     </mask>
                                 </variation>
-                                <connections>
-                                    <outlet property="delegate" destination="uuE-2f-Ok6" id="qFP-LJ-S1r"/>
-                                </connections>
                             </textField>
                         </subviews>
                         <animations/>
