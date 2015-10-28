@@ -3,6 +3,10 @@
 //Setting Layers: 
 textField.layer.zPosition = 1
 
+//Setting textField border
+textField.layer.borderWidth = 1.0 
+textField.layer.borderColor = UIColor.blackColor().CGColor
+
 //Grabbing input values for notification feed & dictionary:
 //            var jsonDictToServer = Dictionary<String, [String : AnyObject]>()
 //            jsonDictToServer[(openScope?.getFieldName())!] = Dictionary<String, AnyObject>()

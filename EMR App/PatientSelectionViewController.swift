@@ -18,7 +18,7 @@ protocol PatientSelectionViewControllerDelegate {
 class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
     
     var delegate: PatientSelectionViewControllerDelegate? //Delegate Stored Property
-    var currentPatient: Patient?
+    var currentPatient: Patient? = nil
     var properNameFormat: Bool = false
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
@@ -96,6 +96,10 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
                     self.delegate?.patientFileHasBeenOpened()
                 } else { //no patient found for given name
                     patientNameTextField.becomeFirstResponder()
+                    let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                    alertController.addAction(ok)
+                    presentViewController(alertController, animated: true, completion: nil)
                 }
             } else { //No BT keyboard, segue -> PCM
                 if let existingPatient = openPatientFile(patientNameTextField.text!) {
@@ -103,10 +107,14 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
                     performSegueWithIdentifier("showPCM", sender: self)
                 } else { //no patient found for given name
                     patientNameTextField.becomeFirstResponder()
+                    let alertController = UIAlertController(title: "Oops.", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                    alertController.addAction(ok)
+                    presentViewController(alertController, animated: true, completion: nil)
                 }
             }
         } else {
-            print("Enter patient name")
+            print("Please enter a patient name.")
             patientNameTextField.becomeFirstResponder()
         }
     }
@@ -114,18 +122,35 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
     @IBAction func createPatientFileButtonClick(sender: AnyObject) {
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
-            currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
             if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> whichever view was used to close the patient file
-                self.delegate?.currentPatient = currentPatient
-                self.delegate?.patientFileWasJustOpened = true
-                self.delegate?.fileWasOpenedOrCreated = "created"
-                self.delegate?.patientFileHasBeenOpened()
+                if (openPatientFile(patientNameTextField.text!) != nil) { //patient already exists
+                    patientNameTextField.becomeFirstResponder()
+                    let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
+                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                    alertController.addAction(ok)
+                    presentViewController(alertController, animated: true, completion: nil)
+                } else { //no patient found for given name
+                    currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
+                    self.delegate?.currentPatient = currentPatient
+                    self.delegate?.patientFileWasJustOpened = true
+                    self.delegate?.fileWasOpenedOrCreated = "created"
+                    self.delegate?.patientFileHasBeenOpened()
+                }
             } else { //No BT keyboard, segue -> PCM
-                performSegueWithIdentifier("showPCM", sender: self)
+                if (openPatientFile(patientNameTextField.text!) != nil) { //patient already exists
+                    patientNameTextField.becomeFirstResponder()
+                    let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
+                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                    alertController.addAction(ok)
+                    presentViewController(alertController, animated: true, completion: nil)
+                } else { //no patient found for given name
+                    currentPatient = Patient(name: patientNameTextField.text!, insertIntoManagedObjectContext: managedObjectContext)
+                    performSegueWithIdentifier("showPCM", sender: self)
+                }
             }
         } else {
+            print("Please enter a patient name.")
             patientNameTextField.becomeFirstResponder()
-            print("Enter patient name")
         }
     }
     

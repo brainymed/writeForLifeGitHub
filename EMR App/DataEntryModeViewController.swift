@@ -414,7 +414,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
                 let textField = UITextField(frame: CGRect(x: ((viewWidth * 0.25)/2), y: ((product - 50)/2), width: (viewWidth * 0.75), height: 50))
                 textField.tag = partition //tag each textField for later reference
                 let placeholderText = openScope?.getLabelsForMK().0![partition - 1]
-                textField.placeholder = "Please enter a value for the \(placeholderText!)"
+                textField.placeholder = "Enter a value for the \(placeholderText!) & press 'Tab'"
                 textField.textColor = UIColor.whiteColor()
                 textField.backgroundColor = UIColor.clearColor()
                 textField.userInteractionEnabled = true //In IB, set user interaction = enabled for parent imageView as well or textField will not respond to touch!
@@ -445,7 +445,10 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             let textView = UITextView(frame: CGRect(x: (viewWidth * 0.10), y: (viewHeight * 0.10), width: (viewWidth * 0.80), height: (viewHeight * 0.80)))
             textView.textColor = UIColor.whiteColor()
             textView.font = UIFont(name: "HelveticaNeue", size: 16) //change font size
-            textView.backgroundColor = UIColor(red: 40/255, green: 130/255, blue: 210/255, alpha: 1)
+            textView.backgroundColor = UIColor.clearColor()
+            textView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
+            textView.layer.borderWidth = 1.0 //set border
+            textView.layer.borderColor = UIColor.blackColor().CGColor //modify border color
             textView.tag = 100 //use same tag # to allow code reusability
             textView.becomeFirstResponder()
             dataEntryImageView.addSubview(textView)
@@ -457,7 +460,7 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             lastTextField.backgroundColor = UIColor.clearColor()
             lastTextField.tag = 100 //allows us to reference lastTextField in 'TFshouldReturn' function
             let placeholderText = openScope?.getLabelsForMK().0![numberOfLabels - 1]
-            lastTextField.placeholder = "Enter value for \(placeholderText!) & press the 'Return' key."
+            lastTextField.placeholder = "Enter a value for \(placeholderText!) & press the 'Return' key."
             lastTextField.delegate = self
             dataEntryImageView.addSubview(lastTextField)
             dataEntryImageView.bringSubviewToFront(lastTextField)
