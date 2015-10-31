@@ -20,6 +20,21 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     @IBOutlet weak var leftMarginView: UIView!
     @IBOutlet weak var rightMarginView: UIView!
     
+    //Buttons for PCM - depending on whether the user is entering info or extracting it, the displayed buttons will be different. We need a button to switch modes & clicking on this will display different buttons (it will change the image & the associated action based on some tracker variable that notes what mode the user is in). There may be different numbers of templates, so we might also have to hide some buttons.
+    @IBOutlet weak var modeSwitch: UISwitch!
+    @IBOutlet weak var firstButton: UIButton!
+    @IBOutlet weak var secondButton: UIButton!
+    @IBOutlet weak var thirdButton: UIButton!
+    @IBOutlet weak var fourthButton: UIButton!
+    @IBOutlet weak var fifthButton: UIButton!
+    @IBOutlet weak var firstButtonLabel: UILabel!
+    @IBOutlet weak var secondButtonLabel: UILabel!
+    @IBOutlet weak var thirdButtonLabel: UILabel!
+    @IBOutlet weak var fourthButtonLabel: UILabel!
+    @IBOutlet weak var fifthButtonLabel: UILabel!
+    
+    @IBOutlet weak var notificationsFeed: UILabel!
+    
     var currentUser: String?
     var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
     var fileWasOpenedOrCreated: String = ""
@@ -31,27 +46,30 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     //Keyboard Detection:
     var keyboardSizeArray: [CGFloat] = []
-    var keyboardAppearedHasFired: Bool?
     var bluetoothKeyboardAttached: Bool = false //true = BT keyboard, false = no BT keyboard
+    var segueButtonHasBeenClicked: Bool = false //while true, it blocks further clicks of the segue button
     @IBOutlet weak var keyboardCheckTextField: UITextField!
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     //MARK: - Default View Configuration
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        keyboardCheckTextField.alpha = 0
+        keyboardCheckTextField.hidden = true
         initializeMLTW()
         configureStylus()
         
         //Add notifications the first time this view loads:
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChangedFrame:", name: UIKeyboardWillChangeFrameNotification, object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardAppeared:", name: UIKeyboardWillShowNotification, object: nil)
     }
     
     override func viewDidAppear(animated: Bool) {
         print("Current User (PCMVC): \(currentUser)")
         print("Current Patient (PCMVC): \(currentPatient?.name)")
-        keyboardCheckTextField.becomeFirstResponder()
+        notificationsFeed.text = "Current Patient: \((currentPatient?.name)!)"
+        fadeIn()
+        fadeOut()
+        modeSwitch(self) //set the template buttons according to the switch's state
     }
     
     override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) { //Handle view rotation
@@ -60,6 +78,21 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    //MARK: - Notification Feed Animations
+    
+    func fadeIn() { //Fades in the twitter feed instantly
+        self.view.bringSubviewToFront(notificationsFeed)
+        UIView.animateWithDuration(1.0, delay: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
+            self.notificationsFeed.alpha = 1.0
+            }, completion: nil)
+    }
+    
+    func fadeOut() { //Gradually fades out the twitter feed
+        UIView.animateWithDuration(1.0, delay: 3.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
+            self.notificationsFeed.alpha = 0.0
+            }, completion: nil)
     }
     
     //MARK: - Jot Touch Config
@@ -96,10 +129,10 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         //Configure Guidelines:
         multiLineView.guidelineFirstPosition = 70.0 //changes position of the top-most line drawn on the view (the value given is the distance from the top of the view)
         multiLineView.guidelinesHeight = 70.0 //sets distance between the guidelines
-        multiLineView.guidelinesColor = UIColor.blueColor() //sets color of guidelines
+        multiLineView.guidelinesColor = UIColor.blackColor() //sets color of guidelines
         
         //Configure Interface:
-        multiLineView.inputViewBackgroundColor = UIColor(red: 0.45, green: 0.0, blue: 0.0, alpha: 0.2) //Customize background for MLTW View to make it look like a cream-colored notebook
+        multiLineView.inputViewBackgroundColor = UIColor(red: 0.0, green: 0.33, blue: 0.75, alpha: 0.2) //Customize background for MLTW View to make the pages of the notebook light blue
         multiLineView.inkThickness = 2.0 //Thickness of pen strokes
         
         //Configure Auto-Scrolling:
@@ -146,6 +179,74 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     func multiLineView(view: MLTWMultiLineView!, didFailConfigurationWithError error: NSError!) {
         NSLog("Failed configuration: %@", error.localizedDescription)
+    }
+    
+    //MARK: - Template Buttons
+    
+    @IBAction func modeSwitch(sender: AnyObject) { //switches from extraction -> entry mode
+        if (modeSwitch.on) { //render 'Entry' mode buttons/labels
+            firstButton.setImage(UIImage(named: "Template Icon - Vitals"), forState: UIControlState.Normal)
+            firstButtonLabel.text = "Vitals"
+            secondButton.setImage(UIImage(named: "Template Icon - Physical"), forState: UIControlState.Normal)
+            secondButtonLabel.text = "Physical"
+            thirdButton.setImage(UIImage(named: "Template Icon - ROS"), forState: UIControlState.Normal)
+            thirdButtonLabel.text = "ROS"
+            fourthButton.setImage(UIImage(named: "pencil"), forState: UIControlState.Normal)
+            fourthButtonLabel.text = "Fourth"
+            fifthButton.setImage(UIImage(named: "pencil"), forState: UIControlState.Normal)
+            fifthButtonLabel.text = "Fifth"
+        } else { //render 'Extraction' mode buttons & labels
+            firstButton.setImage(UIImage(named: "Template Icon - Vitals"), forState: UIControlState.Normal)
+            firstButtonLabel.text = "Latest Vitals"
+            secondButton.setImage(UIImage(named: "pencil"), forState: UIControlState.Normal)
+            secondButtonLabel.text = "Lab Values"
+            thirdButton.setImage(UIImage(named: "pencil"), forState: UIControlState.Normal)
+            thirdButtonLabel.text = "Imaging"
+            fourthButton.setImage(UIImage(named: "pencil"), forState: UIControlState.Normal)
+            fourthButtonLabel.text = "Progress Notes"
+            fifthButton.setImage(UIImage(named: "Template Icon - Meds"), forState: UIControlState.Normal)
+            fifthButtonLabel.text = "Medication List"
+        }
+    }
+    
+    @IBAction func firstButtonClick(sender: AnyObject) {
+        if (modeSwitch.on) {
+            //perform first entry button functionality
+        } else {
+            //perform first extraction button functionality
+        }
+    }
+    
+    @IBAction func secondButtonClick(sender: AnyObject) {
+        if (modeSwitch.on) {
+            //perform 2nd entry button functionality
+        } else {
+            //perform 2nd extraction button functionality
+        }
+    }
+    
+    @IBAction func thirdButtonClick(sender: AnyObject) {
+        if (modeSwitch.on) {
+            //perform 3rd entry button functionality
+        } else {
+            //perform 3rd extraction button functionality
+        }
+    }
+    
+    @IBAction func fourthButtonClick(sender: AnyObject) {
+        if (modeSwitch.on) {
+            //perform 4th entry button functionality
+        } else {
+            //perform 4th extraction button functionality
+        }
+    }
+    
+    @IBAction func fifthButtonClick(sender: AnyObject) {
+        if (modeSwitch.on) {
+            //perform 5th entry button functionality
+        } else {
+            //perform 5th extraction button functionality
+        }
     }
     
     //MARK: - Side Panel Buttons*
@@ -279,8 +380,11 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     @IBAction func fetchButtonClick(sender: AnyObject) {
         fetchAllPatients()
-        if (shouldPerformSegueWithIdentifier("showDEM", sender: self) == true) {
-            performSegueWithIdentifier("showDEM", sender: self)
+        keyboardCheckTextField.becomeFirstResponder()
+        if (self.segueButtonHasBeenClicked == false) { //proceed only if button has not been clicked yet
+            segueButtonHasBeenClicked = true
+            activityIndicator.startAnimating()
+            NSTimer.scheduledTimerWithTimeInterval(3, target: self, selector: "delayedKeyboardCheck:", userInfo: nil, repeats: false) //delay keyboard check to give time for keyboard to pop up
         }
     }
     
@@ -327,43 +431,34 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         let userInfo: NSDictionary = notification.userInfo!
         let keyboardFrame: CGRect = (userInfo.objectForKey(UIKeyboardFrameEndUserInfoKey)?.CGRectValue)!
         let keyboard: CGRect = self.view.convertRect(keyboardFrame, fromView: self.view.window)
-        let sum = keyboard.origin.y + keyboard.size.height
-        keyboardSizeArray.append(sum)
+        keyboardSizeArray.append(keyboard.size.height)
     }
     
-    func keyboardAppeared(notification: NSNotification) {
-        print("PCM - keyboard appeared")
-        keyboardAppearedHasFired = true //check variable for 1st time view appears
-        let lastKeyboardSize = keyboardSizeArray.last
-        let height: CGFloat = self.view.frame.size.height
-        if (lastKeyboardSize > height) {
-            bluetoothKeyboardAttached = true
-        } else {
-            bluetoothKeyboardAttached = false
+    func delayedKeyboardCheck(timer: NSTimer) {
+        activityIndicator.stopAnimating()
+        if (shouldPerformSegueWithIdentifier("showDEM", sender: self) == true) {
+            performSegueWithIdentifier("showDEM", sender: self)
         }
         keyboardSizeArray = [] //clear for next sequence
-        print("BT Keyboard? \(bluetoothKeyboardAttached)")
+        segueButtonHasBeenClicked = false //reset the checker to enable the button to be clicked again
     }
     
     //MARK: - Navigation
     
     override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
-        //This function is NOT being called!
-        if (identifier == "showDEM") { //Check that BT keyboard is attached
-            print("ID")
-            if (bluetoothKeyboardAttached == false) { //No BT keyboard attached
-                let alertController = UIAlertController(title: "Please Attach Bluetooth Keyboard!", message: "Please attach bluetooth keyboard before moving into Data Entry Mode.", preferredStyle: .Alert)
-                let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in
-                    //Check if BT keyboard is attached. Don't let user pass if it isn't.
-                })
+        if (identifier == "showDEM") { //Check for keyboard before transitioning
+            keyboardCheckTextField.resignFirstResponder() //banish keyboard if it is visible
+            let lastKeyboardSize = keyboardSizeArray.last
+            if (lastKeyboardSize == 0.0) { //keyboard size = 0.0 -> BT keyboard
+                return true
+            } else { //keyboard size > 0 -> no BT keyboard
+                let alertController = UIAlertController(title: "Warning!", message: "Please attach a bluetooth keyboard to your device before transitioning into Data Entry Mode.", preferredStyle: .Alert)
+                let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                 alertController.addAction(ok)
                 self.presentViewController(alertController, animated: true, completion: nil)
                 return false
-            } else { //BT keyboard attached
-                return true
             }
-        } else {
-            print("NOt ID")
+        } else { //should never be called
             return true
         }
     }
@@ -375,9 +470,9 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         } else if segue.identifier == "showPatientSelection" {
             let patientSelectionViewController = segue.destinationViewController as! PatientSelectionViewController
             patientSelectionViewController.delegate = self
-        } else if segue.identifier == "showDEM" { //pass currentPatient & user before segue
-            //This function is being called
+        } else if segue.identifier == "showDEM" { //pass currentPatient & user before segue & set 'openedPCM' to false
             let destinationVC = (segue.destinationViewController as! TabBarViewController)
+            destinationVC.pcmIsOpen = false
             let dataEntryModeVC = (destinationVC.viewControllers![0] as! DataEntryModeViewController)
             dataEntryModeVC.currentPatient = self.currentPatient
         }
