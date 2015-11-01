@@ -35,8 +35,8 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
     let spineAndBackButton: PhysicalAndROSOrganSystemButton
     let musculoskeletalSystemButton: PhysicalAndROSOrganSystemButton
     let psychiatricButton: PhysicalAndROSOrganSystemButton
-    let endocrineSystemButton: PhysicalAndROSOrganSystemButton
-    let hematopoieticSystemButton: PhysicalAndROSOrganSystemButton
+//    let endocrineSystemButton: PhysicalAndROSOrganSystemButton
+//    let hematopoieticSystemButton: PhysicalAndROSOrganSystemButton
     
     var dataEntryLabelArray: [String]? //array of labels used to populate the R side view for data entry
     var dataEntrySectionArray: [String]? //array of sections to break down physical/ROS. Should be made nil after completing data entry for a given section!!!
@@ -82,10 +82,10 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         peripheralVascularSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 57.5, y: 550, width: 85, height: 30))
         musculoskeletalSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 157, y: 226, width: 30, height: 30))
         psychiatricButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 132, y: 62, width: 50, height: 30))
-        endocrineSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 0, y: 0, width: 50, height: 30))
-        hematopoieticSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 80, y: 0, width: 50, height: 30))
+//        endocrineSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 0, y: 0, width: 50, height: 30))
+//        hematopoieticSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 80, y: 0, width: 50, height: 30))
         
-        self.buttonsArray = [generalAppearanceButton, headAndNeckButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, breastButton, spineAndBackButton, peripheralVascularSystemButton, musculoskeletalSystemButton, psychiatricButton, hematopoieticSystemButton, endocrineSystemButton]
+        self.buttonsArray = [generalAppearanceButton, headAndNeckButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, breastButton, spineAndBackButton, peripheralVascularSystemButton, musculoskeletalSystemButton, psychiatricButton]
         self.buttonLabelsArray = ["General", "H&N", "Neuro", "Heart", "Lungs", "GI", "GU", "Breast", "Spine", "Peripheral", "MS", "Psych"]
         
         super.init(frame: CGRect(x: 60, y: 100, width: 200, height: 619)) //only call super.init AFTER initializing instance variables
@@ -115,8 +115,8 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         peripheralVascularSystemButton.addTarget(self, action: "peripheralVascularSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         musculoskeletalSystemButton.addTarget(self, action: "musculoskeletalSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         psychiatricButton.addTarget(self, action: "psychiatricButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-        hematopoieticSystemButton.addTarget(self, action: "hematopoieticSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-        endocrineSystemButton.addTarget(self, action: "endocrineSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+//        hematopoieticSystemButton.addTarget(self, action: "hematopoieticSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+//        endocrineSystemButton.addTarget(self, action: "endocrineSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         
         generalButtonConfiguration()
     }
@@ -397,7 +397,7 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         } else if self.viewChoice == "reviewOfSystems" {
             dataEntryLabelArray = ["Hyperglycemia", "Polydipsia", "Polyuria", "Heat/Cold Intolerance", "Excessive Sweating", "Loss of Hair/Increased Hair", "Skin Dryness", "Increased/Decreased Body Fat", "Menstrual Irregularity", "Other"]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(endocrineSystemButton)
+        //self.dataEntryView.renderDataEntryViewForOrganSystemButton(endocrineSystemButton)
     }
     
     func hematopoieticSystemButtonClick(sender: UIButton) {
@@ -407,6 +407,6 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         } else if self.viewChoice == "reviewOfSystems" {
             dataEntryLabelArray = ["Anemia", "Paleness", "Weakness", "Blood Loss", "Easy Bruising or Bleeding", "Other"]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(hematopoieticSystemButton)
+        //self.dataEntryView.renderDataEntryViewForOrganSystemButton(hematopoieticSystemButton)
     }
 }

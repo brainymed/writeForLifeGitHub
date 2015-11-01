@@ -37,6 +37,11 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
     func keyboardAppeared(notification: NSNotification) {
         let dataEntryModeVC = (self.viewControllers![0] as! DataEntryModeViewController)
         let dataExtractionModeVC = (self.viewControllers![1] as! DataExtractionModeViewController)
+        let entryModeUser = dataEntryModeVC.currentUser
+        let entryModePatient = dataEntryModeVC.currentPatient
+        let extractionModeUser = dataExtractionModeVC.currentUser
+        let extractionModePatient = dataExtractionModeVC.currentPatient
+        
         if ((dataEntryModeVC.transitionedToDifferentView == true) || (dataExtractionModeVC.transitionedToDifferentView == true)) { //checks if either DEMVC has transitioned
             //do nothing if the currently visible view is not a DEM
         } else {
@@ -46,13 +51,17 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
                 bluetoothKeyboardAttached = true
             } else {
                 if (currentVC == "DataEntryMode") { //current VC is dataEntryMode
-                    NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false) //create time delay for checking if keyboard is attached
-                    print("currentVC: DataEntryMVC")
-                    transitionToPCM()
+                    if ((entryModeUser != nil) && (entryModePatient != nil)) { //make sure user & patient are set
+                        NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false) //create time delay for checking if keyboard is attached
+                        print("currentVC: DataEntryMVC")
+                        transitionToPCM()
+                    }
                 } else { //current VC is dataExtractionMode
-                    NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false)
-                    print("currentVC: DataExtractionMVC")
-                    transitionToPCM()
+                    if ((extractionModeUser != nil) && (extractionModePatient != nil)) {
+                        NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false)
+                        print("currentVC: DataExtractionMVC")
+                        transitionToPCM()
+                    }
                 }
                 bluetoothKeyboardAttached = false
             }

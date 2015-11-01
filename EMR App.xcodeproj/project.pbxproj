@@ -345,8 +345,8 @@
 		B1889FB51BA777C000344130 /* Custom Views */ = {
 			isa = PBXGroup;
 			children = (
-				B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */,
 				B1B8F8DE1BCEC6FC00B6CC6D /* PhysicalAndROSOrganSystemButton.swift */,
+				B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */,
 				B1B083061BCEE56F0093E990 /* PhysicalAndROSDataEntryView.swift */,
 			);
 			name = "Custom Views";

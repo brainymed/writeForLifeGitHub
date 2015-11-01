@@ -526,7 +526,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     func configurePhysicalOrROSView(requestedView: String) {
-        //Hide open views
+        //Hide open views:
         fieldNameEntryLabel.hidden = true
         fieldNameTextField.hidden = true
         

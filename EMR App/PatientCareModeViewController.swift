@@ -431,7 +431,8 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         let userInfo: NSDictionary = notification.userInfo!
         let keyboardFrame: CGRect = (userInfo.objectForKey(UIKeyboardFrameEndUserInfoKey)?.CGRectValue)!
         let keyboard: CGRect = self.view.convertRect(keyboardFrame, fromView: self.view.window)
-        keyboardSizeArray.append(keyboard.size.height)
+        let sum = keyboard.origin.y + keyboard.size.height
+        keyboardSizeArray.append(sum)
     }
     
     func delayedKeyboardCheck(timer: NSTimer) {
@@ -447,11 +448,12 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
         if (identifier == "showDEM") { //Check for keyboard before transitioning
-            keyboardCheckTextField.resignFirstResponder() //banish keyboard if it is visible
             let lastKeyboardSize = keyboardSizeArray.last
-            if (lastKeyboardSize == 0.0) { //keyboard size = 0.0 -> BT keyboard
+            let height: CGFloat = self.view.frame.size.height
+            if (lastKeyboardSize > height) {
                 return true
-            } else { //keyboard size > 0 -> no BT keyboard
+            } else { //no BT keyboard
+                keyboardCheckTextField.resignFirstResponder() //banish keyboard pop-up
                 let alertController = UIAlertController(title: "Warning!", message: "Please attach a bluetooth keyboard to your device before transitioning into Data Entry Mode.", preferredStyle: .Alert)
                 let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                 alertController.addAction(ok)
