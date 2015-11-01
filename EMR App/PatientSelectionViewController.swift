@@ -5,18 +5,11 @@
 
 import UIKit
 
-protocol PatientSelectionViewControllerDelegate {
-    //This delegate acts as follows: when the user selects a patient, we dismiss the patient selection screen, return to the home screen, & set the currentPatient. This protocol has 1 required property (currentPatient) & 1 method which is called when we select a patient.
-    var currentPatient: Patient? { get set }
-    var patientFileWasJustOpened: Bool { get set } //marker for display of notification
-    var fileWasOpenedOrCreated: String { get set } //checks if file was opened or created
-    func patientFileHasBeenOpened()
-}
-
 class PatientSelectionViewController: UIViewController {
     
-    var delegate: PatientSelectionViewControllerDelegate? //Delegate Stored Property
     var currentPatient: Patient? = nil
+    var currentUser: String?
+    var fileWasOpenedOrCreated: String = "" //checks if new or existing patient file was opened
     var properNameFormat: Bool = false
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
@@ -77,13 +70,11 @@ class PatientSelectionViewController: UIViewController {
         }
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
-            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> DEM
+            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> DEM
                 if let existingPatient = openPatientFile(trimmedName!) {
                     currentPatient = existingPatient
-                    self.delegate?.currentPatient = currentPatient
-                    self.delegate?.patientFileWasJustOpened = true
-                    self.delegate?.fileWasOpenedOrCreated = "opened"
-                    self.delegate?.patientFileHasBeenOpened()
+                    fileWasOpenedOrCreated = "opened"
+                    performSegueWithIdentifier("showDEM", sender: self)
                 } else { //no patient found for given name
                     patientNameTextField.becomeFirstResponder()
                     let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
@@ -94,6 +85,7 @@ class PatientSelectionViewController: UIViewController {
             } else { //No BT keyboard, segue -> PCM
                 if let existingPatient = openPatientFile(trimmedName!) {
                     currentPatient = existingPatient
+                    fileWasOpenedOrCreated = "opened"
                     performSegueWithIdentifier("showPCM", sender: self)
                 } else { //no patient found for given name
                     patientNameTextField.becomeFirstResponder()
@@ -119,7 +111,7 @@ class PatientSelectionViewController: UIViewController {
         }
         if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
-            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, follow delegate -> whichever view was used to close the patient file
+            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> DEM
                 if (openPatientFile(trimmedName!) != nil) { //patient already exists
                     patientNameTextField.becomeFirstResponder()
                     let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
@@ -128,10 +120,8 @@ class PatientSelectionViewController: UIViewController {
                     presentViewController(alertController, animated: true, completion: nil)
                 } else { //no patient found for given name
                     currentPatient = Patient(name: trimmedName!, insertIntoManagedObjectContext: managedObjectContext)
-                    self.delegate?.currentPatient = currentPatient
-                    self.delegate?.patientFileWasJustOpened = true
-                    self.delegate?.fileWasOpenedOrCreated = "created"
-                    self.delegate?.patientFileHasBeenOpened()
+                    fileWasOpenedOrCreated = "created"
+                    performSegueWithIdentifier("showDEM", sender: self)
                 }
             } else { //No BT keyboard, segue -> PCM
                 if (openPatientFile(trimmedName!) != nil) { //patient already exists
@@ -142,6 +132,7 @@ class PatientSelectionViewController: UIViewController {
                     presentViewController(alertController, animated: true, completion: nil)
                 } else { //no patient found for given name
                     currentPatient = Patient(name: trimmedName!, insertIntoManagedObjectContext: managedObjectContext)
+                    fileWasOpenedOrCreated = "created"
                     performSegueWithIdentifier("showPCM", sender: self)
                 }
             }
@@ -173,7 +164,18 @@ class PatientSelectionViewController: UIViewController {
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if (segue.identifier == "showPCM") { //Pass current patient
             let patientCareModeViewController = (segue.destinationViewController as! PatientCareModeViewController)
+            patientCareModeViewController.currentUser = self.currentUser
             patientCareModeViewController.currentPatient = self.currentPatient
+            patientCareModeViewController.patientFileWasJustOpened = true
+            patientCareModeViewController.fileWasOpenedOrCreated = self.fileWasOpenedOrCreated
+        } else if (segue.identifier == "showDEM") { //-> data entry mode
+            let tabBarViewController = (segue.destinationViewController as! TabBarViewController)
+            let dataEntryModeViewController = (tabBarViewController.viewControllers![0]) as! DataEntryModeViewController
+            dataEntryModeViewController.currentUser = self.currentUser
+            dataEntryModeViewController.currentPatient = self.currentPatient
+            dataEntryModeViewController.patientFileWasJustOpened = true //marker for notification display
+            dataEntryModeViewController.fileWasOpenedOrCreated = self.fileWasOpenedOrCreated
+            dataEntryModeViewController.transitionedToDifferentView = false
         }
     }
     

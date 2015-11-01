@@ -4,16 +4,8 @@
 
 import UIKit
 
-protocol LoginViewControllerDelegate {
-    //This delegate acts as follows: when the user enters a username & pwd, if we successfully validate those credentials, we dismiss the login screen, return to the home screen, & change the text field. This protocol has 1 required variable (currentUser) & 1 method which is called when we login & want move away from the login VC. We also want some other object to act as a delegate to the login VC to dismiss it when it is done doing the login work, so we need a delegate STORED PROPERTY (in the VC code)!
-    var currentUser: String? { get set }
-    func didLoginSuccessfully()
-}
-
 class LoginViewController: UIViewController, UITextFieldDelegate {
-    //This view will also be used to control access to DEM vs. PCM by checking for bluetooth keyboard.
     
-    var delegate: LoginViewControllerDelegate? //Delegate Stored Property
     var currentUser: String?
     
     //Keyboard Detection:
@@ -67,15 +59,13 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
     @IBAction func loginButtonClick(sender: AnyObject) {
         //When the button is tapped, authenticate the username & pwd against EMR:
         if usernameField.text?.lowercaseString == "a" && passwordField.text == "a" {
-            //Pass the currently logged in user to the open VC:
-            currentUser = usernameField.text
-            if (bluetoothKeyboardAttached == true) { //use delegation to return -> the view that loggedOut
-                delegate?.currentUser = currentUser //sets the current user for the delegate VC
-                delegate?.didLoginSuccessfully() //Call the delegate method to dismiss VC
+            currentUser = usernameField.text //set the currentUser
+            if (bluetoothKeyboardAttached == true) { //segue -> DEM
+               performSegueWithIdentifier("showDEM", sender: self)
             } else { //segue -> PCM
                 performSegueWithIdentifier("showPCM", sender: self)
             }
-        } else {//Use the alert controller to display a failure message.
+        } else { //use the alert controller to display a failure message.
             let alertController = UIAlertController(title: "Error!", message: "Incorrect username or password.", preferredStyle: .Alert)
             let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in
                 self.passwordField.text = ""
@@ -109,6 +99,11 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         if (segue.identifier == "showPCM") {
             let patientCareModeViewController = (segue.destinationViewController as! PatientCareModeViewController)
             patientCareModeViewController.currentUser = self.currentUser
+        } else if (segue.identifier == "showDEM") {
+            let tabBarViewController = (segue.destinationViewController as! TabBarViewController)
+            let dataEntryModeViewController = (tabBarViewController.viewControllers![0]) as! DataEntryModeViewController
+            dataEntryModeViewController.currentUser = self.currentUser
+            dataEntryModeViewController.transitionedToDifferentView = false
         }
     }
 

@@ -29,7 +29,8 @@ class PhysicalAndROSDataEntryView: UIView {
         
         //Add label, textField & button:
         let dataEntryInstructionsLabel = UILabel(frame: CGRect(x: 150, y: 140, width: 500, height: 150))
-        let closeViewButton = UIButton(frame: CGRect(x: 600, y: 50, width: 80, height: 30))
+        let closeViewButton = UIButton(frame: CGRect(x: 600, y: 50, width: 120, height: 30))
+        let escapeViewButton = UIButton(frame: CGRect(x: 50, y: 50, width: 80, height: 30))
         self.organSystemSelectionTextField.frame = CGRect(x: 150, y: 300, width: 300, height: 50)
         self.addSubview(dataEntryInstructionsLabel)
         self.addSubview(closeViewButton)
@@ -51,22 +52,28 @@ class PhysicalAndROSDataEntryView: UIView {
         //Configure closeView Button:
         closeViewButton.setTitle("Close View", forState: UIControlState.Normal)
         closeViewButton.addTarget(self, action: "closeViewButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        
+        //Configure Escape Button (returns to humanBodyImage):
+        closeViewButton.setTitle("Escape", forState: UIControlState.Normal)
+        closeViewButton.addTarget(self, action: "escapeButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        
     }
-    
-//    func textFieldWasTapped(sender: AnyObject) {
-//        organSystemSelectionTextField.becomeFirstResponder()
-//    }
     
     //MARK: - Organ System Button Rendering
     
     func renderDataEntryViewForOrganSystemButton(sender: PhysicalAndROSOrganSystemButton) {
-        
+        //Remove the human body from view & take the whole screen to render the interface
     }
     
-    //MARK: - Close Open View
+    //MARK: - Close & Escape Actions
     
     func closeViewButtonClick(sender: UIButton) {
-        //Remove views from main view & returns the app to the 'fieldName' view
+        //Remove views from main view & return the app to the default view (depends on application mode)
+        print("Button tapped")
+    }
+    
+    func escapeButtonClick(sender: UIButton) {
+        //Return to split view w/ human body:
         print("Button tapped")
     }
     

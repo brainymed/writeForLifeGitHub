@@ -12,64 +12,47 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
     
     //Keyboard Detection:
     var keyboardSizeArray: [CGFloat] = []
-    var keyboardAppearedHasFired: Bool?
     var bluetoothKeyboardAttached: Bool = true //true = BT keyboard, false = no BT keyboard. Default is true b/c any segue to this view would require that the BT keyboard is attached.
     var alertController: UIAlertController? //ensures only 1 alert is presented @ a time
     var currentVC: String = "DataEntryMode"
-    var pcmIsOpen: Bool? //if false, then PCM is NOT open; if true, PCM is open. The variable is set to false when the view loads (as soon as the app opens). If no BT keyboard is detected & we segue -> PCM, we need to set this to true. If we segue -> PCM from DEM, then this variable will also be set to true. When we return, the variable should be set to false.
     
     override func viewDidLoad() {
-        //Set the delegate of the TabBarController to itself:
-        self.delegate = self
+        self.delegate = self //set the delegate of the TabBarController to itself
         
         //Add notifications the first time this view loads:
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChangedFrame:", name: UIKeyboardWillChangeFrameNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardAppeared:", name: UIKeyboardWillShowNotification, object: nil)
-        self.pcmIsOpen = false
     }
     
     //MARK: - Keyboard Tracking
     
     func keyboardChangedFrame(notification: NSNotification) { //fires when keyboard changes
-        if (pcmIsOpen == false) { //call only when PCM is not open
-            let userInfo: NSDictionary = notification.userInfo!
-            let keyboardFrame: CGRect = (userInfo.objectForKey(UIKeyboardFrameEndUserInfoKey)?.CGRectValue)!
-            let keyboard: CGRect = self.view.convertRect(keyboardFrame, fromView: self.view.window)
-            let sum = keyboard.origin.y + keyboard.size.height
-            keyboardSizeArray.append(sum)
-        }
+        let userInfo: NSDictionary = notification.userInfo!
+        let keyboardFrame: CGRect = (userInfo.objectForKey(UIKeyboardFrameEndUserInfoKey)?.CGRectValue)!
+        let keyboard: CGRect = self.view.convertRect(keyboardFrame, fromView: self.view.window)
+        let sum = keyboard.origin.y + keyboard.size.height
+        keyboardSizeArray.append(sum)
     }
     
     func keyboardAppeared(notification: NSNotification) {
-        if (pcmIsOpen == false) { //call only when PCM is not open
-            let dataEntryModeVC = (self.viewControllers![0] as! DataEntryModeViewController)
-            let dataExtractionModeVC = (self.viewControllers![1] as! DataExtractionModeViewController)
-            let entryModeLoggedIn = dataEntryModeVC.loggedIn
-            let extractionModeLoggedIn = dataExtractionModeVC.loggedIn
-            let entryModePatient = dataEntryModeVC.currentPatient
-            let extractionModePatient = dataExtractionModeVC.currentPatient
-            
+        let dataEntryModeVC = (self.viewControllers![0] as! DataEntryModeViewController)
+        let dataExtractionModeVC = (self.viewControllers![1] as! DataExtractionModeViewController)
+        if ((dataEntryModeVC.transitionedToDifferentView == true) || (dataExtractionModeVC.transitionedToDifferentView == true)) { //checks if either DEMVC has transitioned
+            //do nothing if the currently visible view is not a DEM
+        } else {
             let lastKeyboardSize = keyboardSizeArray.last
             let height: CGFloat = self.view.frame.size.height
             if (lastKeyboardSize > height) {
                 bluetoothKeyboardAttached = true
             } else {
                 if (currentVC == "DataEntryMode") { //current VC is dataEntryMode
-                    if ((entryModeLoggedIn == true) && (entryModePatient != nil)) { //make sure login & patientSelection screens aren't open
-                        NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false) //create time delay for checking if keyboard is attached
-                        print("currentVC: DataEntryMVC")
-                        transitionToPCM()
-                    } else {
-                        print("DataEntryMVC: Not Logged In or Patient Not Set")
-                    }
+                    NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false) //create time delay for checking if keyboard is attached
+                    print("currentVC: DataEntryMVC")
+                    transitionToPCM()
                 } else { //current VC is dataExtractionMode
-                    if ((extractionModeLoggedIn == true) && (extractionModePatient != nil)) {
-                        NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false)
-                        print("currentVC: DataExtractionMVC")
-                        transitionToPCM()
-                    } else {
-                        print("DataExtractMVC: Not Logged In or Patient Not Set")
-                    }
+                    NSTimer.scheduledTimerWithTimeInterval(1.5, target: self, selector: "delayKeyboardCheck:", userInfo: nil, repeats: false)
+                    print("currentVC: DataExtractionMVC")
+                    transitionToPCM()
                 }
                 bluetoothKeyboardAttached = false
             }
@@ -77,7 +60,7 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
         }
     }
     
-    func delayKeyboardCheck(timer: NSTimer) { //Fires [] seconds after being called by keyboardAppeared()
+    func delayKeyboardCheck(timer: NSTimer) { //Fires after delay after being called by keyboardAppeared()
         //The longer the delay, the longer the normal keyboard is visible to the user; but it also gives time for the system to recognize the BT keyboard if the OK button is pressed. As time decreases, the keyboard disappears faster but the BT keyboard is recognized too slowly, so additional popups appear.
         if (bluetoothKeyboardAttached == false) {
             transitionToPCM()
@@ -116,14 +99,12 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
             currentVC = "DataEntryMode" //set the current VC variable
             (viewController as! DataEntryModeViewController).currentPatient = dataExtractionModeViewController.currentPatient
             (viewController as! DataEntryModeViewController).currentUser = dataExtractionModeViewController.currentUser
-            (viewController as! DataEntryModeViewController).loggedIn = true
         }
         
         if (viewController == dataExtractionModeViewController) { //Transition: Data Entry -> Extraction
             currentVC = "DataExtractionMode" //set the current VC variable
             (viewController as! DataExtractionModeViewController).currentPatient = dataEntryModeViewController.currentPatient
             (viewController as! DataExtractionModeViewController).currentUser = dataEntryModeViewController.currentUser
-            (viewController as! DataExtractionModeViewController).loggedIn = true
         }
     }
     
@@ -133,15 +114,15 @@ class TabBarViewController: UITabBarController, UITabBarControllerDelegate {
         let dataExtractionModeViewController = self.viewControllers![1] as! DataExtractionModeViewController
         let patientCareModeViewController = segue.destinationViewController as! PatientCareModeViewController
         
-        if (currentVC == "DataEntryMode") {
-            patientCareModeViewController.currentPatient = dataEntryModeViewController.currentPatient
-            patientCareModeViewController.currentUser = dataEntryModeViewController.currentUser
-        } else if (currentVC == "DataExtractionMode") {
-            patientCareModeViewController.currentPatient = dataExtractionModeViewController.currentPatient
-            patientCareModeViewController.currentUser = dataEntryModeViewController.currentUser
+        if (segue.identifier == "showPCM") {
+            if (currentVC == "DataEntryMode") {
+                patientCareModeViewController.currentPatient = dataEntryModeViewController.currentPatient
+                patientCareModeViewController.currentUser = dataEntryModeViewController.currentUser
+            } else if (currentVC == "DataExtractionMode") {
+                patientCareModeViewController.currentPatient = dataExtractionModeViewController.currentPatient
+                patientCareModeViewController.currentUser = dataEntryModeViewController.currentUser
+            }
         }
-        patientCareModeViewController.loggedIn = true
-        self.pcmIsOpen = true //set indicator that the current view is PCM
     }
     
 }

@@ -8,19 +8,19 @@
 import UIKit
 import CoreData
 
-class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate, PatientSelectionViewControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
+class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
     
-    var currentUser: String? //current user (HCP) who is logged in
     var openScope: EMRField? //handles MK identification & data mapping -> EMR
     var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
     var fileWasOpenedOrCreated: String = "" //checks if file was opened or created (for notification)
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+    var transitionedToDifferentView: Bool = false //false = currently in DEM, true = segued away
     
     @IBOutlet weak var fieldNameTextField: UITextField!
     @IBOutlet weak var fieldNameEntryLabel: UILabel!
     @IBOutlet weak var currentPatientButton: UIButton!
     @IBOutlet weak var currentUserButton: UIButton!
-    @IBOutlet weak var notificationsFeed: UILabel! //Convert notification feed -> scrolling set of TV cells instead of a text view
+    @IBOutlet weak var notificationsFeed: UILabel! //Convert notification feed -> scrolling set of TV cells instead of a label?
     
     //CurrentUser & CurrentPatient Views (this can be achieved more cleanly using a popover segue):
     @IBOutlet weak var patientInfoView: UIView!
@@ -62,16 +62,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         
         //Configure fieldName entry view to start:
         configureViewForEntry("fieldName")
-        
-        //Difficulty tracking the keyboard's status in this view. For some reason, the functions on this view are called in the patientSelection & Login views (probably b/c we segue modally), so there is interference. We might have to redefine.
     }
     
     override func viewDidAppear(animated: Bool) {
-        if loggedIn == false {//If user isn't logged in, modally segue -> login screen. Need this line b/c 'didSet' function is NOT called when we initially set value of 'loggedIn'.
+        if (currentUser == nil) {//If user isn't logged in, modally segue -> login screen.
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
-        if currentPatient == nil { //user must select patient to proceed
+        if (currentPatient == nil) { //user must select patient to proceed
             performSegueWithIdentifier("showPatientSelection", sender: nil)
         }
         
@@ -86,8 +84,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
             patientFileWasJustOpened = false
         }
         
-        print("Current User (DEMVC): \(currentUser)")
-        print("Current Patient (DEMVC): \(currentPatient?.name)")
+        print("Current User (DEnMVC): \(currentUser)")
+        print("Current Patient (DEnMVC): \(currentPatient?.name)")
         
         //Alternative way to authenticate using user defaults:
         //        let preferences : NSUserDefaults = NSUserDefaults.standardUserDefaults()
@@ -730,14 +728,14 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBAction func currentPatientButtonClick(sender: AnyObject) {
         userInfoView.hidden = true
         //Clicking this button configures the popup if it is hidden & closes the popup if it is visible:
-        if patientInfoView.hidden == true { //Reveal the view
-            patientInfoView.hidden = false //Note: revealing view reveals all subviews too
+        if patientInfoView.hidden == true { //reveal the view
+            patientInfoView.hidden = false //revealing the view reveals all subviews too
             if currentPatient != nil {
                 currentPatientLabel.text = "Current Patient: \(currentPatient!.name)"
             } else {
                 currentPatientLabel.text = "No Patient File Open"
             }
-        } else { //Hide the view
+        } else { //hide the view
             patientInfoView.hidden = true
         }
     }
@@ -745,9 +743,9 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     @IBAction func currentUserButtonClick(sender: AnyObject) {
         patientInfoView.hidden = true
         //Clicking this button configures the popup if it is hidden & closes the popup if it is visible:
-        if userInfoView.hidden == true { //Reveal the view
+        if (userInfoView.hidden == true) { //reveal the view
             userInfoView.hidden = false //revealing view reveals all subviews too
-            currentUserLabel.text = "Current User: \(currentUser)"
+            currentUserLabel.text = "Current User: \(currentUser!)"
         } else { //Hide the view
             userInfoView.hidden = true
         }
@@ -759,8 +757,8 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
         //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
         
         openScope = nil
-        loggedIn = false //changes loggedIn value to trigger delegate methods
-        currentPatient = nil //clears current patient
+        currentUser = nil //clears currentUser to trigger segue
+        currentPatient = nil //clears currentPatient
         configureViewForEntry("fieldName")
         userInfoView.hidden = true
         
@@ -799,33 +797,24 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     
     //MARK: - User Authentication & Patient Selection
     
-    var loggedIn : Bool = true { //When we want login functionality, set it to FALSE!!!
+    var currentUser: String? = "Arnav" { //When we want login functionality, set this to nil!!!
         didSet {
-            if loggedIn == true { //Do nothing, go to DEM view.
+            if (currentUser != nil) { //do nothing, go to DEM view.
             } else { //go to login screen
-                self.performSegueWithIdentifier("showLogin", sender: self)
+                performSegueWithIdentifier("showLogin", sender: self)
             }
         }
     }
     
-    func didLoginSuccessfully() { //Login Delegate Method
-        loggedIn = true //Sets loginValue to true, which configures the default view
-        dismissViewControllerAnimated(true, completion: nil) //When we first load the VC, the VC performs a segue & modally shows the login screen; when we call 'dismissVC' (after authentication is complete), it dismisses the modally presented screen.
-    }
-    
-    var currentPatient: Patient? { //Check for open patient file
+    var currentPatient: Patient? { //check if patient file is open
         didSet {
             if (currentPatient != nil) { //Patient file is open. Let view render as defined elsewhere.
-            } else { //No patient file is open. Segue to patientSelectionVC
-                if (loggedIn == true) { //Make sure that DEM is currently open
-                   self.performSegueWithIdentifier("showPatientSelection", sender: self)
+            } else { //No patient file is open, segue -> patientSelectionVC
+                if (currentUser != nil) { //make sure that logout button wasn't clicked
+                   performSegueWithIdentifier("showPatientSelection", sender: self)
                 }
             }
         }
-    }
-    
-    func patientFileHasBeenOpened() { //Patient Selection Delegate Method
-        dismissViewControllerAnimated(true, completion: nil)
     }
     
     //MARK: - Custom Keyboard Shortcuts
@@ -865,13 +854,12 @@ class DataEntryModeViewController: UIViewController, LoginViewControllerDelegate
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        //Before we segue, set the delegate property depending on the destination VC:
-        if segue.identifier == "showLogin" {
-            let loginViewController = segue.destinationViewController as! LoginViewController
-            loginViewController.delegate = self //set the DEM VC as delegate of the LoginVC
-        } else if segue.identifier == "showPatientSelection" {
-            let patientSelectionViewController = segue.destinationViewController as! PatientSelectionViewController
-            patientSelectionViewController.delegate = self
+        if (segue.identifier == "showPatientSelection") {
+            let patientSelectionVC = (segue.destinationViewController as! PatientSelectionViewController)
+            patientSelectionVC.currentUser = self.currentUser
+            transitionedToDifferentView = true
+        } else if (segue.identifier == "showLogin") {
+            transitionedToDifferentView = true
         }
     }
     
