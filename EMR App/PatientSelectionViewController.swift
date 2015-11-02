@@ -119,7 +119,7 @@ class PatientSelectionViewController: UIViewController {
                     alertController.addAction(ok)
                     presentViewController(alertController, animated: true, completion: nil)
                 } else { //no patient found for given name
-                    currentPatient = Patient(name: trimmedName!, insertIntoManagedObjectContext: managedObjectContext)
+                    currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
                     fileWasOpenedOrCreated = "created"
                     performSegueWithIdentifier("showDEM", sender: self)
                 }
@@ -131,7 +131,7 @@ class PatientSelectionViewController: UIViewController {
                     alertController.addAction(ok)
                     presentViewController(alertController, animated: true, completion: nil)
                 } else { //no patient found for given name
-                    currentPatient = Patient(name: trimmedName!, insertIntoManagedObjectContext: managedObjectContext)
+                    currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
                     fileWasOpenedOrCreated = "created"
                     performSegueWithIdentifier("showPCM", sender: self)
                 }

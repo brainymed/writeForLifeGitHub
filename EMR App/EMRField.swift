@@ -23,7 +23,7 @@ class EMRField {
         self.currentPatient = currentPatient
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
         let lowercaseInput = inputWord.lowercaseString
-        let formatArray : [String] = ["^d.*o.*b.*$", "^test$", "^med.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies", "hpi"]
+        let formatArray : [String] = ["^med.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies", "hpi", "create"]
         var stopCounter = -1
         for format in formatArray {
             stopCounter += 1
@@ -42,25 +42,23 @@ class EMRField {
         //Use the value of the counter to determine when the loop stopped. Based on that value (which indicates the value in the 'formatArray' that matched the input, we assign a 'fieldName'.
         switch stopCounter {
         case 0:
-            self.fieldName = "dateOfBirth"
-        case 1:
-            self.fieldName = "testValue"
-        case 2:
             self.fieldName = "medications"
             self.currentItemCounter = 1
             self.currentItemLabel = "Medication"
-        case 3:
+        case 1:
             self.fieldName = "vitals"
-        case 4:
+        case 2:
             self.fieldName = "physicalExam"
-        case 5:
+        case 3:
             self.fieldName = "reviewOfSystems"
-        case 6:
+        case 4:
             self.fieldName = "allergies"
             self.currentItemCounter = 1
             self.currentItemLabel = "Allergy"
-        case 7:
+        case 5:
             self.fieldName = "historyOfPresentIllness"
+        case 6:
+            self.fieldName = "createPatient"
         default:
             //If the counter's value is 1 greater than the length(formatArray), NO match was found.
             self.fieldName = nil
@@ -72,11 +70,6 @@ class EMRField {
             
             //Set the tableViewLabels array for the fieldName:
             switch currentField {
-            case "dateOfBirth":
-                //Causing problems when I try to print the DOB:
-                tableViewLabels = ["Date Of Birth"]
-            case "testValue":
-                tableViewLabels = ["Test Value", "Test Value"]
             case "medications":
                 tableViewLabels = ["Medication Name", "Route", "Dosage", "Frequency"]
             case "vitals":
@@ -89,6 +82,9 @@ class EMRField {
                 tableViewLabels = ["Allergen", "Reaction", "Severity"]
             case "historyOfPresentIllness":
                 tableViewLabels = ["History of Present Illness"]
+            case "createPatient": //max # of labels that can fit in the view is 12 (from the looks of it)
+                tableViewLabels = ["firstName", "lastName", "dob", "gender", "homePhone", "mobilePhone", "email", "address1", "address2", "city", "state", "zip"] //dict labels
+                //tableViewLabels = ["First Name", "Last Name", "Date of Birth", "Gender", "Home Phone", "Mobile Phone", "Email", "Address Line 1", "Address Line 2", "City", "State", "Zip"] //user visible labels
             default:
                 tableViewLabels = ["[getLabelsForMK - Default Switch (Error)"]
             }
@@ -189,11 +185,6 @@ class EMRField {
                         inputValuesArray.append(inputValue)
                     }
                     switch field {
-                    case "dateOfBirth":
-                        //Causing problems when I try to print the DOB:
-                        currentPatient.dateOfBirth = NSDate(dateString: inputValuesArray[0])
-                    case "testValue":
-                        currentPatient.testValue = inputValuesArray[0]
                     case "vitals":
                         for input in inputValuesArray {
                             let label = labelsArray[counter]
@@ -206,6 +197,17 @@ class EMRField {
                         }
                     case "historyOfPresentIllness":
                         currentPatient.hpi = inputValuesArray[0]
+                    case "createPatient":
+                        //We only save the gender & DOB -> persistent store. All other values are NOT stored (only passed -> server)
+                        for input in inputValuesArray {
+                            let label = labelsArray[counter]
+                            if (label == "Sex") { //store value in persistent obj
+                                print("Input Gender: \(input)")
+                            } else if (label == "Date Of Birth") { //store value in persistent obj
+                                print("Input DOB: \(input)")
+                            }
+                            counter += 1
+                        }
                     default:
                         NSLog("Error in setFieldValue() - 'else' default statement")
                     }

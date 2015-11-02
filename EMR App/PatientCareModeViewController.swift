@@ -9,7 +9,7 @@ import UIKit
 import CoreGraphics
 import CoreData
 
-class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate {
+class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate, PhysicalAndROSDelegate {
     
     @IBOutlet weak var multiLineView: CustomMLTWView!
     @IBOutlet weak var mapButton: UIButton!
@@ -57,6 +57,10 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         keyboardCheckTextField.hidden = true
         initializeMLTW()
         configureStylus()
+        leftMarginView.layer.borderWidth = 1.0
+        leftMarginView.layer.borderColor = UIColor.blackColor().CGColor
+        rightMarginView.layer.borderWidth = 1.0
+        rightMarginView.layer.borderColor = UIColor.blackColor().CGColor
         
         //Add notifications the first time this view loads:
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChangedFrame:", name: UIKeyboardWillChangeFrameNotification, object: nil)
@@ -64,13 +68,13 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     override func viewDidAppear(animated: Bool) {
         print("Current User (PCMVC): \(currentUser)")
-        print("Current Patient (PCMVC): \(currentPatient?.name)")
+        print("Current Patient (PCMVC): \(currentPatient?.fullName)")
         
         if (patientFileWasJustOpened == true) {
             if (fileWasOpenedOrCreated == "opened") {
-                notificationsFeed.text = "Patient file has been opened for \((currentPatient?.name)!.uppercaseString)"
+                notificationsFeed.text = "Patient file has been opened for \((currentPatient?.fullName)!.uppercaseString)"
             } else if (fileWasOpenedOrCreated == "created") {
-                notificationsFeed.text = "Patient file has been created for \((currentPatient?.name)!.uppercaseString)"
+                notificationsFeed.text = "Patient file has been created for \((currentPatient?.fullName)!.uppercaseString)"
             }
             fadeIn()
             fadeOut()
@@ -270,7 +274,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
             let resultOfSearch = openPatientFile(patientName!)
             if (resultOfSearch != nil) { //Patient was found for the given name
                 currentPatient = resultOfSearch
-                let alertController = UIAlertController(title: "Success!", message: "Patient file was opened for \(currentPatient!.name).", preferredStyle: .Alert)
+                let alertController = UIAlertController(title: "Success!", message: "Patient file was opened for \(currentPatient!.fullName).", preferredStyle: .Alert)
                 let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
                 alertController.addAction(ok)
                 self.presentViewController(alertController, animated: true, completion: nil)
@@ -348,19 +352,13 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     @IBAction func sendButtonClick(sender: AnyObject) {
         if (openScope!.matchFound()) && ((mltwTextLabel.text?.characters.count)! > 0) {
             let emrFieldValue = mltwTextLabel.text!
-            if (currentPatient == nil) {//No Patient File Open
-                //If there is no file open, the input fieldValue must (theoretically) be a patient name (else 'send' wouldn't be enabled). Initialize the currentPatient w/ the input name:
-                currentPatient = Patient(name: emrFieldValue, insertIntoManagedObjectContext: managedObjectContext)
-                saveManagedObjectContext(managedObjectContext)
-            } else {//Patient File Open
-                //Add the input information to the 'currentPatient' & save it to the MOC. Each value that is sent to the EMR must be formatted correctly (dates must be formatted as dates, ints as ints, etc.) - 'setFieldValue()' handles formatting.
-                openScope?.setFieldValueForCurrentPatient()
-                saveManagedObjectContext(managedObjectContext)
-            }
+            //Add the input information to the 'currentPatient' & save it to the MOC. Each value that is sent to the EMR must be formatted correctly (dates must be formatted as dates, ints as ints, etc.) - 'setFieldValue()' handles formatting.
+            openScope?.setFieldValueForCurrentPatient()
+            saveManagedObjectContext(managedObjectContext)
             print(currentPatient)
             multiLineView.clear()
             dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                self.mltwTextLabel.text = "<\(emrFieldValue)> was mapped to '\(self.openScope?.getFieldName())' for \(self.currentPatient?.name)" //NOT WORKING
+                self.mltwTextLabel.text = "<\(emrFieldValue)> was mapped to '\(self.openScope?.getFieldName())' for \(self.currentPatient?.fullName)" //NOT WORKING
             })
             openScope = nil //Clears the scope to prepare for the next map/send cycle
             sendButton.enabled = false //Disables 'send' after scope is closed
@@ -394,6 +392,12 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
             activityIndicator.startAnimating()
             NSTimer.scheduledTimerWithTimeInterval(3, target: self, selector: "delayedKeyboardCheck:", userInfo: nil, repeats: false) //delay keyboard check to give time for keyboard to pop up
         }
+    }
+    
+    //MARK: - Physical/ROS View Configuration
+    
+    func physicalOrROSViewWasClosed() {
+        //render view appropriately after Px/ROS view is closed
     }
     
     //MARK: - User Authentication & Patient Selection

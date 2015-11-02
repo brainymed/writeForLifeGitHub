@@ -8,7 +8,7 @@
 import UIKit
 import CoreData
 
-class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
+class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate, PhysicalAndROSDelegate {
     
     var openScope: EMRField? //handles MK identification & data mapping -> EMR
     var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
@@ -69,15 +69,17 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
+        currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext) //disable when doing live testing
+        
         if (currentPatient == nil) { //user must select patient to proceed
             performSegueWithIdentifier("showPatientSelection", sender: nil)
         }
         
         if (patientFileWasJustOpened == true) {
             if (fileWasOpenedOrCreated == "opened") {
-                notificationsFeed.text = "Patient file has been opened for \((currentPatient?.name)!.uppercaseString)"
+                notificationsFeed.text = "Patient file has been opened for \((currentPatient?.fullName)!.uppercaseString)"
             } else if (fileWasOpenedOrCreated == "created") {
-                notificationsFeed.text = "Patient file has been created for \((currentPatient?.name)!.uppercaseString)"
+                notificationsFeed.text = "Patient file has been created for \((currentPatient?.fullName)!.uppercaseString)"
             }
             fadeIn()
             fadeOut()
@@ -85,7 +87,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         }
         
         print("Current User (DEnMVC): \(currentUser)")
-        print("Current Patient (DEnMVC): \(currentPatient?.name)")
+        print("Current Patient (DEnMVC): \(currentPatient?.fullName)")
         
         //Alternative way to authenticate using user defaults:
         //        let preferences : NSUserDefaults = NSUserDefaults.standardUserDefaults()
@@ -194,15 +196,17 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
                 dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
                 return false //block transition
             }
+            print("Sending dictionary to EMR...")
+            sendHTTPRequestToEMR() //*testing, send data -> server when user presses enter
             tableViewCellLabels = nil //clear array w/ labels
             plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
             currentItemNumberLabel.hidden = true
             configureViewForEntry("fieldName")
             openScope = nil //close the existing scope
-        } else if textField.tag == 200 { //sender is Px & ROS dataEntryView textField
+        } else if textField.tag == 200 { //sender is Px & ROS dataEntryView organSystemTextField
             switch input!.lowercaseString { //configure view based on input
             case "g":
-                physicalOrROSView?.generalAppearanceButtonClick((physicalOrROSView?.generalAppearanceButton)!)
+                physicalOrROSView?.constitutionalButtonClick((physicalOrROSView?.constitutionalButton)!)
             case "hn":
                 physicalOrROSView?.headAndNeckButtonClick((physicalOrROSView?.headAndNeckButton)!)
             case "n":
@@ -218,14 +222,15 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             case "gu":
                 physicalOrROSView?.genitourinarySystemButtonClick((physicalOrROSView?.genitourinarySystemButton)!)
             case "pe":
-                physicalOrROSView?.peripheralVascularSystemButtonClick((physicalOrROSView?.peripheralVascularSystemButton)!)
+                physicalOrROSView?.integumentarySystemButtonClick((physicalOrROSView?.integumentarySystemButton)!)
             case "s":
-                physicalOrROSView?.spineAndBackButtonClick((physicalOrROSView?.spineAndBackButton)!)
-            case "m":
+                physicalOrROSView?.backButtonClick((physicalOrROSView?.backButton)!)
+            case "ms":
                 physicalOrROSView?.musculoskeletalSystemButtonClick((physicalOrROSView?.musculoskeletalSystemButton)!)
             case "b":
                 physicalOrROSView?.breastButtonClick((physicalOrROSView?.breastButton)!)
             default:
+                physicalOrROSView?.organSystemSelectionTextField.becomeFirstResponder()
                 notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
                 fadeIn()
                 fadeOut()
@@ -412,7 +417,8 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
                 let textField = UITextField(frame: CGRect(x: ((viewWidth * 0.25)/2), y: ((product - 50)/2), width: (viewWidth * 0.75), height: 50))
                 textField.tag = partition //tag each textField for later reference
                 let placeholderText = openScope?.getLabelsForMK().0![partition - 1]
-                textField.placeholder = "Enter a value for the \(placeholderText!) & press 'Tab'"
+                let placeholder = "Enter a value for the \(placeholderText!) & press 'Tab'"
+                textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.yellowColor()]) //change placeholder color
                 textField.textColor = UIColor.whiteColor()
                 textField.backgroundColor = UIColor.clearColor()
                 textField.userInteractionEnabled = true //In IB, set user interaction = enabled for parent imageView as well or textField will not respond to touch!
@@ -458,7 +464,8 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             lastTextField.backgroundColor = UIColor.clearColor()
             lastTextField.tag = 100 //allows us to reference lastTextField in 'TFshouldReturn' function
             let placeholderText = openScope?.getLabelsForMK().0![numberOfLabels - 1]
-            lastTextField.placeholder = "Enter a value for \(placeholderText!) & press the 'Return' key."
+            let placeholder = "Enter a value for \(placeholderText!) & press the 'Return' key."
+            lastTextField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.yellowColor()]) //set placeholder text color
             lastTextField.delegate = self
             dataEntryImageView.addSubview(lastTextField)
             dataEntryImageView.bringSubviewToFront(lastTextField)
@@ -531,14 +538,17 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         fieldNameTextField.hidden = true
         
         //Render the custom view. Make sure to put in an adjustable frame (not static, but based on the view dimensions)!
-        let physicalOrROSDataEntryView = PhysicalAndROSDataEntryView(frame: CGRect(x: 260, y: 100, width: 764, height: 619)) //allows 'Return' behavior to be configured
-        self.view.addSubview(physicalOrROSDataEntryView)
-        physicalOrROSDataEntryView.renderDefaultDataEntryView()
-        physicalOrROSDataEntryView.organSystemSelectionTextField.delegate = self
-        physicalOrROSView = PhysicalAndROSView(dataEntryView: physicalOrROSDataEntryView, applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
+        physicalOrROSView = PhysicalAndROSView(applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
+        physicalOrROSView?.delegate = self
         self.view.addSubview(physicalOrROSView!)
+        physicalOrROSView?.organSystemSelectionTextField.delegate = self
         
         //Bring back fieldName view after Px or ROS is closed
+    }
+    
+    func physicalOrROSViewWasClosed() {
+        //Renders view for fieldName entry:
+        configureViewForEntry("fieldName")
     }
     
     //MARK: - Capture User Inputs
@@ -682,7 +692,6 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     @IBAction func rosButtonClick(sender: AnyObject) {
-        sendHTTPRequestToEMR()
         openScope = EMRField(inputWord: "ros", currentPatient: currentPatient!)
         configurePhysicalOrROSView((openScope?.getFieldName())!)
     }
@@ -690,36 +699,10 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     //MARK: - Network Request
     
     func sendHTTPRequestToEMR() {
-        let url = NSURL(string: "https://api.athenahealth.com/preview1/1/practiceinfo")
-        let dataParser = EMRDataParser(url: url!)
+        let dataParser = EMRDataParser(openScope: openScope!)
         dataParser.ParseJSON {
             (let returnedEMRData) in
-            if let data = returnedEMRData {
-                print("Total Count: \(data.totalCount)")
-                print("Practice Info: \(data.practiceInfo)")
-                if let practiceInfo = data.practiceInfo {
-                    let value = practiceInfo[0]
-                    let id = value["practiceid"]
-                    print("Practice ID: \(id)\n")
-                }
-            }
-        }
-        
-        let url2 = NSURL(string: "https://api.athenahealth.com/preview1/195900/departments?limit=10&offset=1&providerlist=false&showalldepartments=false")
-        let dataParser2 = EMRDataParser(url: url2!)
-        dataParser2.ParseJSON {
-            (let returnedEMRData) in
-            if let data = returnedEMRData {
-                print("\nTotal Count: \(data.totalCount)")
-                if let depts = data.departments {
-                    var departmentIDs : [AnyObject] = []
-                    for department in depts {
-                        let departmentID = department["departmentid"]
-                        departmentIDs.append(departmentID!)
-                    }
-                    print("\nDepartment ID #s: \(departmentIDs)")
-                }
-            }
+            print("Patient ID: \(returnedEMRData?.patientID)")
         }
     }
     
@@ -731,7 +714,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         if patientInfoView.hidden == true { //reveal the view
             patientInfoView.hidden = false //revealing the view reveals all subviews too
             if currentPatient != nil {
-                currentPatientLabel.text = "Current Patient: \(currentPatient!.name)"
+                currentPatientLabel.text = "Current Patient: \(currentPatient!.fullName)"
             } else {
                 currentPatientLabel.text = "No Patient File Open"
             }
@@ -823,14 +806,21 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         let controlKey = UIKeyModifierFlags.Control
         //let shiftKey = UIKeyModifierFlags.Shift
         let controlA = UIKeyCommand(input: "a", modifierFlags: [controlKey], action: "controlAKeyPressed:") //UIKeyCommand detects specified keyboard commands
+        let escape = UIKeyCommand(input: UIKeyInputEscape, modifierFlags: [], action: "escapeKeyPressed:")
         let controlRArrow = UIKeyCommand(input: UIKeyInputRightArrow, modifierFlags: controlKey, action: "controlRightArrowKeyPressed:") //for HPI data capture
         let upArrow = UIKeyCommand(input: UIKeyInputUpArrow, modifierFlags: [], action: "upArrowKeyPressed:") //the modifierFlags array can contain 0 modifier flags or more than 1 (e.g. when creating a cmd + shift + "" shortcut
-        return [controlA, upArrow, controlRArrow]
+        return [controlA, escape, upArrow, controlRArrow]
     }
     
     func controlAKeyPressed(command: UIKeyCommand) {
         if (openScope?.getCurrentItem() != nil) { //Ctrl+A can be used to add additional item
             plusButtonClick(self)
+        }
+    }
+    
+    func escapeKeyPressed(command: UIKeyCommand) {
+        if (openScope?.getFieldName() == "physicalExam") || (openScope?.getFieldName() == "reviewOfSystems") {
+            //make sure escape button is visible (check which view is configured)
         }
     }
     

@@ -186,3 +186,146 @@ class PatientNameEntryView: UIView {
         }
     }
 }
+
+//MARK: - Organ System Labels (from Schwartz text)
+func constitutionalButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["General Appearance", "Alert?", "Awake?", "Oriented?", "Distress?", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Fatigue", "Weight Loss", "Weight Gain", "Loss of Appetite", "Energy Level", "Fever", "Sweating", "Other"]
+    }
+}
+
+func headAndNeckButtonClick(sender: UIButton) {
+    self.dataEntrySectionArray = ["General", "Eyes", "Ears", "Nose", "Mouth"]
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Scalp", "Lymph Nodes", "Thyroid", "Carotids", "Trachea", "PERRLA", "EOMI", "Visual Fields", "Visual Acuity", "Ophthalmoscopic Exam", "Auditory Acuity", "Otoscopic Exam", "Nasal Septum", "Sense of Smell", "Sinus Pain", "Facial Sensation", "Lips", "Gums", "Teeth", "Palate Deviation", "Tongue Deviation", "Gag Reflex","Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Headache", "Head Injury", "Facial Pain", "Sinus Infection", "!!!Visual Changes", "Corrective Lenses", "Diplopia", "Blurred Vision", "Halos?", "Tearing", "Inflammation", "Discharge", "Spots", "Photophobia", "Eye Pain", "Trauma", "Cataracts", "Glaucoma", "!!!Deafness", "Tinnitus", "Ear Pain", "Discharge", "Infections", "!!!Change in Smell", "Obstruction", "Discharge", "Post-nasal Drip", "Epistaxis", "Trauma", "Nose Pain", "!!!Soreness", "Bleeding", "Ulcers", "Dentition", "Dentures", "Hoarseness", "Sore Throat", "Dysphagia", "Odynophagia", "!!!Masses", "Swollen Glands", "Stiffness", "Goiter", "Tenderness", "Trauma", "Other"]
+    }
+}
+
+func neurologicalSystemButtonClick(sender: UIButton) {
+    self.dataEntrySectionArray = ["General Neuro", "Muscular", "Sensory", "Cerebellar/Vestibular"]
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Mental Status", "Cranial Nerve Exam", "Orientation to Person/Place/Time", "Memory", "Muscle Strength", "Muscle Tone", "Reflexes", "Joint Position Sense", "Touch Discrimination", "Vibration Sense", "Rapid Alternating Movements", "Gait", "Romberg Test", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Personality Changes", "Loss of Consciousness", "Memory Changes", "Syncope", "Aphasia", "Dysarthria", "Seizures", "Dizziness/Lightheadedness", "!!!Weakness/Paralysis", "Tremors", "Involuntary Movements", "Poor Coordination", "!!!Anesthesia", "Paresthesia", "Hyperesthesia", "!!!Loss of Balance", "Ataxia", "Vertigo", "Nystagmus", "Other"]
+    }
+}
+
+func cardiovascularSystemButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Chest Appearance", "Heart Sounds", "Murmurs", "JVD", "PMI", "Ventricular Heave/Thrills", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Chest Pain", "Dyspnea on Exertion", "Orthopnea", "Cough", "Palpitations", "Abnormal Rhythm", "Other"]
+    }
+}
+
+func respiratorySystemButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Tactile Fremitus", "Lung Sounds", "Wheezes?", "Rales?", "Ronchi?", "Percussion", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Chest Pain", "Dyspnea", "Cough", "Sputum", "Wheezing", "Bronchitis", "Pneumonia", "Other"]
+    }
+}
+
+func gastrointestinalSystemButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Appearance", "Tenderness", "Distension", "Bowel Sounds", "Hepatomegaly", "Splenomegaly", "Ascites", "Aortic/Renal Bruit", "Hernias", "Hepatojugular Reflex", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Heartburn", "Nausea", "Vomiting", "Abdominal Pain", "Distension", "Gas", "Bowel Habits", "Bowel Quality", "Jaundice", "Fatty Food Intolerane", "Other"]
+    }
+}
+
+func genitourinarySystemButtonClick(sender: UIButton) { //Gender choice changes labels
+    if self.viewChoice == "physicalExam" {
+        if self.gender == 0 { //Male patient
+            dataEntryLabelArray = ["Appearance", "Perineum", "Other"]
+        } else { //Female patient
+            dataEntryLabelArray = ["Dysuria", "Urgency", "Frequency", "Polyuria", "Nocturia", "Difficulty Initiating Stream", "Decrease in Force", "Incontinence", "Flank Pain", "Suprapubic Pain", "Hematuria", "Kidney Stones", "Groin Swelling", "Trauma", "UTI", "!!!Lesions", "Itching", "Discharge", "Pain on Intercourse", "Other"]
+        }
+    } else if self.viewChoice == "reviewOfSystems" {
+        if self.gender == 0 { //Male patient
+            dataEntryLabelArray = ["Appearance", "Perineum", "Inguinal Nodes", "Scrotum", "Other"]
+        } else { //Female patient
+            dataEntryLabelArray = ["Dysuria", "Urgency", "Frequency", "Polyuria", "Nocturia", "Difficulty Initiating Stream", "Decrease in Force", "Incontinence", "Flank Pain", "Suprapubic Pain", "Hematuria", "Kidney Stones", "Groin Swelling", "Trauma", "!!!Lesions", "Discharge", "Impotence", "Penile Pain", "Scrotal Masses", "Testicular Masses", "Prostate Problems", "Other"]
+        }
+    }
+}
+
+func breastButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Masses", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Knows Self-Exam?", "Tenderness", "Asymmetry", "Mass", "Nipple Discharge", "Milky Discharge", "Change in Size", "Other"]
+    }
+}
+
+func backButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Edema", "Sacroiliac Joint Tenderness", "Costovertebral Angle Tenderness", "Posture", "Spine Appearance"]
+}
+
+func peripheralVascularSystemButtonClick(sender: UIButton) {
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Edema", "Carotid Bruit", "Femoral Bruit", "Radial Pulse", "Femoral Pulse", "Dorsalis Pedis Pulse", "Posterior Tibial Pulse", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Cyanosis/Discoloration", "Ankle/Leg Swelling", "Leg Pain on Walking", "Varicose Veins", "Hair Loss in Extremities", "Other"]
+    }
+}
+
+func musculoskeletalSystemButtonClick(sender: UIButton) {
+    self.dataEntrySectionArray = ["Skin", "Muscles", "Joints"]
+    if self.viewChoice == "physicalExam" {
+        dataEntryLabelArray = ["Joint Swelling/Edema", "Joint Redness", "Range of Motion", "Other"]
+    } else if self.viewChoice == "reviewOfSystems" {
+        dataEntryLabelArray = ["Rash", "Itching", "Color Change", "Lesions/Ulcerations", "Changes in Moles/Spots", "Redness", "!!!Arthralgia", "Joint Inflammation", "Joint Stiffness", "Joint Pain", "Limiting of Motion", "!!!Back Pain", "Neck Pain", "Muscle Pain", "Muscle Weakness", "Atrophy", "!!!Bone Pain", "Fractures", "Other"]
+}
+
+func psychiatricButtonClick(sender: UIButton) {
+    dataEntryLabelArray = ["Suicidal Ideation", "Psychotic Symptoms", "Other"]
+}
+
+func endocrineSystemButtonClick(sender: UIButton) {
+    dataEntryLabelArray = ["Hyperglycemia", "Polydipsia", "Polyuria", "Heat/Cold Intolerance", "Excessive Sweating", "Loss of Hair/Increased Hair", "Skin Dryness", "Increased/Decreased Body Fat", "Menstrual Irregularity", "Other"]
+}
+
+func hematologicLymphaticSystemButtonClick(sender: UIButton) {
+    dataEntryLabelArray = ["Anemia", "Paleness", "Weakness", "Blood Loss", "Easy Bruising or Bleeding", "Other"]
+}
+
+//Networking code -> Athena API
+//        let url = NSURL(string: "https://api.athenahealth.com/preview1/1/practiceinfo")
+//        let dataParser = EMRDataParser(url: url!)
+//        dataParser.ParseJSON {
+//            (let returnedEMRData) in
+//            if let data = returnedEMRData {
+//                print("Total Count: \(data.totalCount)")
+//                print("Practice Info: \(data.practiceInfo)")
+//                if let practiceInfo = data.practiceInfo {
+//                    let value = practiceInfo[0]
+//                    let id = value["practiceid"]
+//                    print("Practice ID: \(id)\n")
+//                }
+//            }
+//        }
+
+//        let url2 = NSURL(string: "https://api.athenahealth.com/preview1/195900/departments?limit=10&offset=1&providerlist=false&showalldepartments=false")
+//        let dataParser2 = EMRDataParser(url: url2!)
+//        dataParser2.ParseJSON {
+//            (let returnedEMRData) in
+//            if let data = returnedEMRData {
+//                print("\nTotal Count: \(data.totalCount)")
+//                if let depts = data.departments {
+//                    var departmentIDs : [AnyObject] = []
+//                    for department in depts {
+//                        let departmentID = department["departmentid"]
+//                        departmentIDs.append(departmentID!)
+//                    }
+//                    print("\nDepartment ID #s: \(departmentIDs)")
+//                }
+//            }
+//        }
+
+

@@ -28,7 +28,7 @@ class DataExtractionModeViewController: UIViewController, UITableViewDataSource,
     
     override func viewDidAppear(animated: Bool) {
         print("Current User (ExtractionMVC): \(currentUser)")
-        print("Current Patient (ExtractionMVC): \(currentPatient?.name)")
+        print("Current Patient (ExtractionMVC): \(currentPatient?.fullName)")
     }
 
     override func didReceiveMemoryWarning() {

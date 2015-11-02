@@ -6,10 +6,18 @@
 // Upon rotation, we want to - swap the image, hide certain buttons & reveal others, & reposition the rotation button from one side to the other. We will layer all of the buttons on the view & selectively hide them.
 //Create Auto-Layout constraints programmatically!!!
 //Should we set the view to nil after it is closed out? What if user wants to enter some info, leave & then come back. All saved information will be erased. At what point do we set the object to nil???
+//We will generate one large view to cover the entire screen. On this large view, in default we will have the body image view & the default rendering of the dataEntryView. When a button is tapped, we will then remove the bodyImageView & render the dataEntryView in full.
 
 import UIKit
 
+protocol PhysicalAndROSDelegate {
+    //This delegate acts as follows: when the user hits the 'Close View' button, it calls a function in the delegate (DEM & PCMVC) that renders the view appropriately!
+    func physicalOrROSViewWasClosed()
+}
+
 class PhysicalAndROSView: UIView { //Handle orientation appropriately.
+    var delegate: PhysicalAndROSDelegate? //Delegate Stored Property
+
     let applicationMode: String //check if class object was created by DEM or PCM, render view accordingly
     let index: Int //assign unique index to each image (used for rotating images)
     let viewChoice: String //check if the input query is for physical or ROS
@@ -18,32 +26,42 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
     var imageName: String
     var rotated: Bool //checks if rotation has occurred
     let rotationButton = UIButton()
-    let dataEntryView: PhysicalAndROSDataEntryView //the R side of the view
     
     //Organ System Buttons:
-    let buttonsArray: [UIButton]
-    let buttonLabelsArray: [String]
-    let generalAppearanceButton: PhysicalAndROSOrganSystemButton
-    let neurologicalSystemButton: PhysicalAndROSOrganSystemButton
-    let headAndNeckButton: PhysicalAndROSOrganSystemButton
-    let cardiovascularSystemButton: PhysicalAndROSOrganSystemButton
-    let respiratorySystemButton: PhysicalAndROSOrganSystemButton
-    let gastrointestinalSystemButton: PhysicalAndROSOrganSystemButton
-    let genitourinarySystemButton: PhysicalAndROSOrganSystemButton
-    let peripheralVascularSystemButton: PhysicalAndROSOrganSystemButton
-    let breastButton: PhysicalAndROSOrganSystemButton
-    let spineAndBackButton: PhysicalAndROSOrganSystemButton
-    let musculoskeletalSystemButton: PhysicalAndROSOrganSystemButton
-    let psychiatricButton: PhysicalAndROSOrganSystemButton
-//    let endocrineSystemButton: PhysicalAndROSOrganSystemButton
-//    let hematopoieticSystemButton: PhysicalAndROSOrganSystemButton
+    let rosButtonsArray: [UIButton]
+    let rosButtonLabelsArray: [String]
+    let physicalButtonsArray: [UIButton]
+    let physicalButtonLabelsArray: [String]
     
-    var dataEntryLabelArray: [String]? //array of labels used to populate the R side view for data entry
+    let neurologicalSystemButton: PhysicalAndROSOrganSystemButton //
+    let cardiovascularSystemButton: PhysicalAndROSOrganSystemButton //
+    let respiratorySystemButton: PhysicalAndROSOrganSystemButton //Px -> 'lungs'
+    let gastrointestinalSystemButton: PhysicalAndROSOrganSystemButton //Px -> 'abdomen'
+    let genitourinarySystemButton: PhysicalAndROSOrganSystemButton //Px -> split into male & female
+    let musculoskeletalSystemButton: PhysicalAndROSOrganSystemButton //
+    let psychiatricButton: PhysicalAndROSOrganSystemButton //
+    let integumentarySystemButton: PhysicalAndROSOrganSystemButton //Px -> 'skin'
+    let constitutionalButton: PhysicalAndROSOrganSystemButton //
+    let eyesButton: PhysicalAndROSOrganSystemButton //
+    let enmtButton: PhysicalAndROSOrganSystemButton //
+    
+    let endocrineSystemButton: PhysicalAndROSOrganSystemButton //ROS only
+    let hematologicLymphaticSystemButton: PhysicalAndROSOrganSystemButton //ROS only
+    let allergicImmunologicSystemButton: PhysicalAndROSOrganSystemButton //ROS only
+    
+    let headAndNeckButton: PhysicalAndROSOrganSystemButton //Px only -> split into 'head' & 'neck'
+    let breastButton: PhysicalAndROSOrganSystemButton //Px only
+    let backButton: PhysicalAndROSOrganSystemButton //Px only
+    let chaperoneButton: PhysicalAndROSOrganSystemButton //Px only
+    let rectalSystemButton: PhysicalAndROSOrganSystemButton //Px only
+    
+    var dataEntryLabelArray: [String: AnyObject]? //array of labels used to populate the R side view for data entry
     var dataEntrySectionArray: [String]? //array of sections to break down physical/ROS. Should be made nil after completing data entry for a given section!!!
     let bodyImageView = UIImageView()
+    var dataEntryView = UIView() //handles all data entry
+    var organSystemSelectionTextField = UITextField() //textField in default dataEntryView
     
-    init(dataEntryView: PhysicalAndROSDataEntryView, applicationMode: String, viewChoice: String, gender: Int, childOrAdult: Int) {
-        self.dataEntryView = dataEntryView
+    init(applicationMode: String, viewChoice: String, gender: Int, childOrAdult: Int) {
         self.applicationMode = applicationMode
         self.viewChoice = viewChoice
         self.gender = gender
@@ -70,7 +88,7 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         }
         
         //Initialize all of the custom organ system buttons:
-        generalAppearanceButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 10, y: 62, width: 55, height: 30))
+        constitutionalButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 10, y: 62, width: 55, height: 30))
         headAndNeckButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 79, y: 79.5, width: 40, height: 25))
         neurologicalSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 73, y: 12, width: 50, height: 30))
         cardiovascularSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 103, y: 137, width: 50, height: 30))
@@ -78,32 +96,43 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         gastrointestinalSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 81.5, y: 238, width: 35, height: 30))
         genitourinarySystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 81.5, y: 310, width: 35, height: 30))
         breastButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 103, y: 187, width: 50, height: 30))
-        spineAndBackButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 77, y: 180, width: 50, height: 30))
-        peripheralVascularSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 57.5, y: 550, width: 85, height: 30))
+        backButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 77, y: 180, width: 50, height: 30))
         musculoskeletalSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 157, y: 226, width: 30, height: 30))
         psychiatricButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 132, y: 62, width: 50, height: 30))
-//        endocrineSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 0, y: 0, width: 50, height: 30))
-//        hematopoieticSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 80, y: 0, width: 50, height: 30))
+        endocrineSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 110, y: 300, width: 70, height: 30))
+        integumentarySystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 57.5, y: 550, width: 65, height: 30))
+        eyesButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 120, y: 0, width: 55, height: 30))
+        enmtButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 120, y: 100, width: 55, height: 30))
+        chaperoneButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 120, y: 150, width: 55, height: 30))
+        rectalSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 77, y: 300, width: 55, height: 30))
+        allergicImmunologicSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 90, y: 400, width: 100, height: 30))
+        hematologicLymphaticSystemButton = PhysicalAndROSOrganSystemButton(frame: CGRect(x: 90, y: 500, width: 80, height: 30))
         
-        self.buttonsArray = [generalAppearanceButton, headAndNeckButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, breastButton, spineAndBackButton, peripheralVascularSystemButton, musculoskeletalSystemButton, psychiatricButton]
-        self.buttonLabelsArray = ["General", "H&N", "Neuro", "Heart", "Lungs", "GI", "GU", "Breast", "Spine", "Peripheral", "MS", "Psych"]
+        //Divide buttons according to their views:
+        rosButtonsArray = [endocrineSystemButton, hematologicLymphaticSystemButton, allergicImmunologicSystemButton, constitutionalButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, integumentarySystemButton, musculoskeletalSystemButton, psychiatricButton, eyesButton, enmtButton]
+        rosButtonLabelsArray = ["Endocrine", "Hematologic/Lymphatic", "Allergic/Immune", "Constitutional", "Neuro", "CV", "Resp", "GI", "GU", "Integ", "MS", "Psych", "Eyes", "ENMT"]
+        physicalButtonsArray = [chaperoneButton, rectalSystemButton, breastButton, backButton, headAndNeckButton, constitutionalButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, integumentarySystemButton, musculoskeletalSystemButton, psychiatricButton, eyesButton, enmtButton]
+        physicalButtonLabelsArray = ["Chaperone", "Rectal", "Breast", "Back", "H&N", "Constitutional", "Neuro", "Heart", "Lungs", "Abdomen", "GU", "Skin", "MS", "Psych", "Eyes", "ENMT"]
         
-        super.init(frame: CGRect(x: 60, y: 100, width: 200, height: 619)) //only call super.init AFTER initializing instance variables
+        super.init(frame: CGRect(x: 60, y: 100, width: 964, height: 619)) //only call super.init AFTER initializing instance variables, set frame to length of screen (minus the margins) dynamically
         
-        //Add imageView, dataEntryView, & background color:
-        self.backgroundColor = UIColor.lightGrayColor()
+        //Add imageView & dataEntryView:
+        bodyImageView.backgroundColor = UIColor.lightGrayColor()
+        bodyImageView.userInteractionEnabled = true
         self.addSubview(bodyImageView)
-        self.bodyImageView.frame = self.bounds
-        self.bodyImageView.image = UIImage(named: self.imageName)!
+        self.addSubview(dataEntryView)
+        bodyImageView.frame = CGRect(x: 0, y: 0, width: 200, height: 619)
+        bodyImageView.image = UIImage(named: self.imageName)!
+        dataEntryView.frame = CGRect(x: 200, y: 0, width: 764, height: 619)
         
         //rotationButton view & action:
         rotationButton.frame = CGRectMake(150, 560, 35, 35)
         rotationButton.setImage(UIImage(named: "rotate.png"), forState: UIControlState.Normal)
         rotationButton.addTarget(self, action: "rotationButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-        self.insertSubview(rotationButton, aboveSubview: bodyImageView)
+        bodyImageView.addSubview(rotationButton)
         
         //Create button actions:
-        generalAppearanceButton.addTarget(self, action: "generalAppearanceButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        constitutionalButton.addTarget(self, action: "constitutionalButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         headAndNeckButton.addTarget(self, action: "headAndNeckButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         neurologicalSystemButton.addTarget(self, action: "neurologicalSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         cardiovascularSystemButton.addTarget(self, action: "cardiovascularSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
@@ -111,14 +140,20 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         breastButton.addTarget(self, action: "breastButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         gastrointestinalSystemButton.addTarget(self, action: "gastrointestinalSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         genitourinarySystemButton.addTarget(self, action: "genitourinarySystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-        spineAndBackButton.addTarget(self, action: "spineAndBackButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-        peripheralVascularSystemButton.addTarget(self, action: "peripheralVascularSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        backButton.addTarget(self, action: "backButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        integumentarySystemButton.addTarget(self, action: "integumentarySystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         musculoskeletalSystemButton.addTarget(self, action: "musculoskeletalSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         psychiatricButton.addTarget(self, action: "psychiatricButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-//        hematopoieticSystemButton.addTarget(self, action: "hematopoieticSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
-//        endocrineSystemButton.addTarget(self, action: "endocrineSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        endocrineSystemButton.addTarget(self, action: "endocrineSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        eyesButton.addTarget(self, action: "eyesButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        enmtButton.addTarget(self, action: "enmtButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        chaperoneButton.addTarget(self, action: "chaperoneButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        rectalSystemButton.addTarget(self, action: "rectalSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        allergicImmunologicSystemButton.addTarget(self, action: "allergicImmunologicSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        hematologicLymphaticSystemButton.addTarget(self, action: "hematologicLymphaticSystemButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
         
-        generalButtonConfiguration()
+        generalButtonConfiguration() //set up the organSystem buttons
+        renderDefaultDataEntryView() //set up the default dataEntryView
     }
     
     required init?(coder aDecoder: NSCoder) { //called when view is reconstituted from nib???
@@ -129,15 +164,28 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
     
     private func generalButtonConfiguration() {
         var counter = 0
-        for button in self.buttonsArray {
-            button.setTitle(buttonLabelsArray[counter], forState: UIControlState.Normal)
-            button.titleLabel?.font = UIFont.boldSystemFontOfSize(15) //bold font
-            button.titleLabel?.adjustsFontSizeToFitWidth = true
-            button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
-            button.backgroundColor = UIColor.redColor()
-            self.insertSubview(button, aboveSubview: self.bodyImageView)
-            button.alpha = 0.39
-            counter += 1
+        if (self.viewChoice == "physicalExam") {
+            for button in self.physicalButtonsArray { //draw all buttons for a given view
+                button.setTitle(physicalButtonLabelsArray[counter], forState: UIControlState.Normal)
+                button.titleLabel?.font = UIFont.boldSystemFontOfSize(15) //bold font
+                button.titleLabel?.adjustsFontSizeToFitWidth = true
+                button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
+                button.backgroundColor = UIColor.redColor()
+                bodyImageView.addSubview(button)
+                button.alpha = 0.39
+                counter += 1
+            }
+        } else if (self.viewChoice == "reviewOfSystems") {
+            for button in self.rosButtonsArray { //draw all buttons for a given view
+                button.setTitle(rosButtonLabelsArray[counter], forState: UIControlState.Normal)
+                button.titleLabel?.font = UIFont.boldSystemFontOfSize(15) //bold font
+                button.titleLabel?.adjustsFontSizeToFitWidth = true
+                button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
+                button.backgroundColor = UIColor.redColor()
+                bodyImageView.addSubview(button)
+                button.alpha = 0.39
+                counter += 1
+            }
         }
         
         if (gender == 1 && childOrAdult == 0) { //Reveal breastButton for adult females
@@ -145,66 +193,75 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
         } else {
             breastButton.hidden = true
         }
-        spineAndBackButton.hidden = true
+        backButton.hidden = true
+        rectalSystemButton.hidden = true
     }
     
     private func configureButtonVisualsOnSelection(sender: UIButton) {
-        //Handle how other buttons look & respond while a button is currently selected:
-        for button in buttonsArray {
-            if button == sender { //set the selected button to green AFTER user is done using it
-                button.backgroundColor = UIColor.greenColor()
-                button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
-            } else { //grey out & disable(?) all other buttons
-                //button.enabled = false //remember to enable the buttons after the view is closed for the open button
-                button.setTitleColor(UIColor.grayColor(), forState: UIControlState.Normal)
-                button.backgroundColor = UIColor.redColor() //in future, we will want to allow completed buttons to keep their changed color
-                rotationButton.enabled = false //Disable rotation button on selection to prevent rotation while info is being entered
-            }
-        }
+        //Handle how other buttons look & respond while a button is currently selected. We may only need to highlight the button after something has been selected & data has been entered.
+//        for button in buttonsArray {
+//            if button == sender { //set the selected button to green AFTER user is done using it
+//                button.backgroundColor = UIColor.greenColor()
+//                button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
+//            } else { //grey out & disable(?) all other buttons
+//                //button.enabled = false //remember to enable the buttons after the view is closed for the open button
+//                button.setTitleColor(UIColor.grayColor(), forState: UIControlState.Normal)
+//                button.backgroundColor = UIColor.redColor() //in future, we will want to allow completed buttons to keep their changed color
+//                rotationButton.enabled = false //Disable rotation button on selection to prevent rotation while info is being entered
+//            }
+//        }
     }
     
-    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) { //restore view to normal state if touch is not on button
-        let touch = touches.first
-        let touchLocation = touch!.locationInView(self)
-        
-        let rotationButtonFrame = CGRectMake(150, 560, 35, 35)
-        let generalAppearanceButtonFrame = CGRectMake(10, 62, 55, 30)
-        let headAndNeckButtonFrame = CGRectMake(79, 79.5, 40, 25)
-        let neurologicalSystemButtonFrame = CGRectMake(73, 12, 50, 30)
-        let cardiovascularSystemButtonFrame = CGRectMake(103, 137, 50, 30)
-        let respiratorySystemButtonFrame = CGRectMake(45, 156, 50, 30)
-        let breastButtonFrame = CGRectMake(103, 187, 50, 30)
-        let gastrointestinalSystemButtonFrame = CGRectMake(81.5, 238, 35, 30)
-        let genitourinarySystemButtonFrame = CGRectMake(81.5, 310, 35, 30)
-        let spineAndBackButtonFrame = CGRectMake(77, 180, 50, 30)
-        let peripheralVascularSystemButtonFrame = CGRectMake(57.5, 550, 85, 30)
-        let musculoskeletalSystemButtonFrame = CGRectMake(157, 226, 30, 30)
-        let psychiatricButtonFrame = CGRectMake(132, 62, 50, 30)
-        let framesArray = [rotationButtonFrame, generalAppearanceButtonFrame, headAndNeckButtonFrame, neurologicalSystemButtonFrame, cardiovascularSystemButtonFrame, respiratorySystemButtonFrame, breastButtonFrame, gastrointestinalSystemButtonFrame, genitourinarySystemButtonFrame, spineAndBackButtonFrame, peripheralVascularSystemButtonFrame, musculoskeletalSystemButtonFrame, psychiatricButtonFrame]
-        
-        var touchOnButton = false
-        for frame in framesArray {
-            if (CGRectContainsPoint(frame, touchLocation)) {
-                touchOnButton = true
-                break
-            }
-        }
-        
-        if touchOnButton == false {
-            for button in buttonsArray {
-                button.backgroundColor = UIColor.redColor()
-                button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
-            }
-            rotationButton.enabled = true
-        }
-    }
+//    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) { //restore view to normal state if touch is not on button
+//        //Might not need this code b/c we are rendering the view & eliminating the bodyImageView.
+//        let touch = touches.first
+//        let touchLocation = touch!.locationInView(self)
+//        
+//        let rotationButtonFrame = CGRectMake(150, 560, 35, 35)
+//        let generalAppearanceButtonFrame = CGRectMake(10, 62, 55, 30)
+//        let headAndNeckButtonFrame = CGRectMake(79, 79.5, 40, 25)
+//        let neurologicalSystemButtonFrame = CGRectMake(73, 12, 50, 30)
+//        let cardiovascularSystemButtonFrame = CGRectMake(103, 137, 50, 30)
+//        let respiratorySystemButtonFrame = CGRectMake(45, 156, 50, 30)
+//        let breastButtonFrame = CGRectMake(103, 187, 50, 30)
+//        let gastrointestinalSystemButtonFrame = CGRectMake(81.5, 238, 35, 30)
+//        let genitourinarySystemButtonFrame = CGRectMake(81.5, 310, 35, 30)
+//        let spineAndBackButtonFrame = CGRectMake(77, 180, 50, 30)
+//        let peripheralVascularSystemButtonFrame = CGRectMake(57.5, 550, 85, 30)
+//        let musculoskeletalSystemButtonFrame = CGRectMake(157, 226, 30, 30)
+//        let psychiatricButtonFrame = CGRectMake(132, 62, 50, 30)
+//        let framesArray = [rotationButtonFrame, generalAppearanceButtonFrame, headAndNeckButtonFrame, neurologicalSystemButtonFrame, cardiovascularSystemButtonFrame, respiratorySystemButtonFrame, breastButtonFrame, gastrointestinalSystemButtonFrame, genitourinarySystemButtonFrame, spineAndBackButtonFrame, peripheralVascularSystemButtonFrame, musculoskeletalSystemButtonFrame, psychiatricButtonFrame]
+//        
+//        var touchOnButton = false
+//        for frame in framesArray {
+//            if (CGRectContainsPoint(frame, touchLocation)) {
+//                touchOnButton = true
+//                break
+//            }
+//        }
+//        
+//        if touchOnButton == false {
+//            for button in buttonsArray {
+//                button.backgroundColor = UIColor.redColor()
+//                button.setTitleColor(UIColor.blackColor(), forState: UIControlState.Normal)
+//            }
+//            rotationButton.enabled = true
+//        }
+//    }
     
     //MARK: - Body Image Rotation
     
     func rotationButtonClick(sender: UIButton) { //Renders rotated image
         //Enable & Disable Corresponding Buttons:
-        let frontViewButtonsArray = [generalAppearanceButton, headAndNeckButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, breastButton, peripheralVascularSystemButton, musculoskeletalSystemButton, psychiatricButton]
-        let backViewButtonsArray = [spineAndBackButton]
+        var frontViewButtonsArray: [UIButton] = []
+        var backViewButtonsArray: [UIButton] = []
+        if (self.viewChoice == "physicalExam") {
+            backViewButtonsArray = [backButton, rectalSystemButton]
+            frontViewButtonsArray = [chaperoneButton, breastButton, headAndNeckButton, constitutionalButton, neurologicalSystemButton, cardiovascularSystemButton, respiratorySystemButton, gastrointestinalSystemButton, genitourinarySystemButton, integumentarySystemButton, musculoskeletalSystemButton, psychiatricButton, eyesButton, enmtButton]
+        } else if (self.viewChoice == "reviewOfSystems") {
+            frontViewButtonsArray = rosButtonsArray
+            backViewButtonsArray = []
+        }
         if self.rotated == false { //rotation from front -> back
             for button in frontViewButtonsArray {
                 button.hidden = true
@@ -259,154 +316,301 @@ class PhysicalAndROSView: UIView { //Handle orientation appropriately.
     
     //MARK: - Organ System Button Actions
     
-    func generalAppearanceButtonClick(sender: UIButton) { //add data for the labels & sections array, allowing this information to be accessed in the 'partitionView' function in DEMVC. Labels depend on viewchoice.
+    func constitutionalButtonClick(sender: UIButton) {
+        //***Important: these buttons are a great place for counters to check what items are clicked on & which ones are not & adjust the interface accordingly.
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["General Appearance", "Alert?", "Awake?", "Oriented?", "Distress?", "Other"]
+            dataEntrySectionArray = ["General Appearance", "Level of Distress", "Ambulation"] //how to match labels -> sections? Keep an 'Additional Notes' option for every section (when it is tapped, open a text field).
+            dataEntryLabelArray = ["General Appearance": ["Cachectic", "Too Thin", "Overweight", "Obese", "Morbidly Obese", "Additional Notes"], "Level of Distress": ["Distress", "Acutely Ill", "Chronically Ill", "Additional Notes"], "Ambulation": ["Limited Ambulation", "Ambulation with Cane", "Ambulation with Walker", "In Wheelchair", "Additional Notes"]] //if 'distress' is selected, ask for how much distress (textField)
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Fatigue", "Weight Loss", "Weight Gain", "Loss of Appetite", "Energy Level", "Fever", "Sweating", "Other"]
+            dataEntrySectionArray = ["Constitution"]
+            dataEntryLabelArray = ["Constitution": ["Fever", "Night Sweats", "Weight gain", "Weight loss", "Exercise Intolerance", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(generalAppearanceButton)
+        renderDataEntryViewForOrganSystemButton(constitutionalButton)
     }
     
     func headAndNeckButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
-        self.dataEntrySectionArray = ["General", "Eyes", "Ears", "Nose", "Mouth"] //how to match labels -> sections? Not everything will fit, so maybe use a R arrow key to scroll between sections? Keep an 'other' option for every section!
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Scalp", "Lymph Nodes", "Thyroid", "Carotids", "Trachea", "PERRLA", "EOMI", "Visual Fields", "Visual Acuity", "Ophthalmoscopic Exam", "Auditory Acuity", "Otoscopic Exam", "Nasal Septum", "Sense of Smell", "Sinus Pain", "Facial Sensation", "Lips", "Gums", "Teeth", "Palate Deviation", "Tongue Deviation", "Gag Reflex","Other"]
-        } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Headache", "Head Injury", "Facial Pain", "Sinus Infection", "!!!Visual Changes", "Corrective Lenses", "Diplopia", "Blurred Vision", "Halos?", "Tearing", "Inflammation", "Discharge", "Spots", "Photophobia", "Eye Pain", "Trauma", "Cataracts", "Glaucoma", "!!!Deafness", "Tinnitus", "Ear Pain", "Discharge", "Infections", "!!!Change in Smell", "Obstruction", "Discharge", "Post-nasal Drip", "Epistaxis", "Trauma", "Nose Pain", "!!!Soreness", "Bleeding", "Ulcers", "Dentition", "Dentures", "Hoarseness", "Sore Throat", "Dysphagia", "Odynophagia", "!!!Masses", "Swollen Glands", "Stiffness", "Goiter", "Tenderness", "Trauma", "Other"]
+            dataEntrySectionArray = ["Head", "Neck", "Lymph Nodes", "Thyroid"]
+            dataEntryLabelArray = ["Head": ["Macrocephaly", "Microcephaly", "Evidence of Injury", "Additional Notes"], "Neck": ["Pain with Motion", "Tender", "Deviated Trachea", "Cervical Mass", "Crepitus", "Nuchal Rigidity", "Muscle Rigidity", "Additional Notes"], "Lymph Nodes": ["Cervical LAD", "Supraclavicular LAD", "Axillary LAD", "Inguinal LAD", "Additional Notes"], "Thyroid": ["Thyromegaly", "Tenderness", "Palpable Nodule", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(headAndNeckButton)
+        renderDataEntryViewForOrganSystemButton(headAndNeckButton)
     }
     
     func neurologicalSystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
-        self.dataEntrySectionArray = ["General Neuro", "Muscular", "Sensory", "Cerebellar/Vestibular"]
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Mental Status", "Cranial Nerve Exam", "Orientation to Person/Place/Time", "Memory", "Muscle Strength", "Muscle Tone", "Reflexes", "Joint Position Sense", "Touch Discrimination", "Vibration Sense", "Rapid Alternating Movements", "Gait", "Romberg Test", "Other"]
+            dataEntrySectionArray = ["Gait & Station", "Cranial Nerves", "Sensation", "Reflexes", "Coordination & Cerebellum"]
+            dataEntryLabelArray = ["Gait & Station": ["Irregular Gait", "Wide-Based Gait", "Waddling", "Additional Notes"], "Cranial Nerves": ["Abnormal", "Additional Notes"], "Sensation": ["Abnormal", "Abnormal Monofilament Test", "Additional Notes"], "Reflexes": ["Abnormal DTRs", "Asymmetric", "Diminished", "Additional Notes"], "Coordination & Cerebellum": ["Finger-to-Nose Impaired", "Resting Tremor", "Intention Tremor", "Romberg Sign", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Personality Changes", "Loss of Consciousness", "Memory Changes", "Syncope", "Aphasia", "Dysarthria", "Seizures", "Dizziness/Lightheadedness", "!!!Weakness/Paralysis", "Tremors", "Involuntary Movements", "Poor Coordination", "!!!Anesthesia", "Paresthesia", "Hyperesthesia", "!!!Loss of Balance", "Ataxia", "Vertigo", "Nystagmus", "Other"]
+            dataEntrySectionArray = ["Neuro"]
+            dataEntryLabelArray = ["Neuro": ["Loss of Consciousness", "Weakness", "Numbness", "Seizures", "Dizziness", "Migraines", "Headaches", "Tremor", "Restless Legs", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(neurologicalSystemButton)
+        renderDataEntryViewForOrganSystemButton(neurologicalSystemButton)
     }
     
     func cardiovascularSystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Chest Appearance", "Heart Sounds", "Murmurs", "JVD", "PMI", "Ventricular Heave/Thrills", "Other"]
+            dataEntrySectionArray = ["Apical Impulse", "Heart Auscultation", "Neck Vessels", "Pulses Including Femoral/Pedal"]
+            dataEntryLabelArray = ["Apical Impulse": ["Displaced", "Accentuated", "Additional Notes"], "Heart Auscultation": ["Bradycardia", "Tachycardia", "Regularly Irregular Rhythm", "Irregularly Irregular Rhythm", "Murmur", "Rub", "Gallop", "Click", "SEM", "S2 with Physiologic Splitting", "Additional Notes"], "Neck Vessels": ["Carotid Bruit", "JVD", "Hepatojugular Reflex", "Additional Notes"], "Pulses Including Femoral/Pedal": ["Diminished", "Absent", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Chest Pain", "Dyspnea on Exertion", "Orthopnea", "Cough", "Palpitations", "Abnormal Rhythm", "Other"]
+            dataEntrySectionArray = ["CV"]
+            dataEntryLabelArray = ["CV": ["Chest Pain", "Arm Pain on Exertion", "Shortness of Breath when Walking", "Shortness of Breath when Lying Down", "Palpitations", "Known Heart Murmur", "Light-headedness on Standing", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(cardiovascularSystemButton)
+        renderDataEntryViewForOrganSystemButton(cardiovascularSystemButton)
     }
     
     func respiratorySystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Tactile Fremitus", "Lung Sounds", "Wheezes?", "Rales?", "Ronchi?", "Percussion", "Other"]
+            dataEntrySectionArray = ["Respiratory Effort", "Percussion", "Auscultation"]
+            dataEntryLabelArray = ["Respiratory Effort": ["Dypneic", "Tachypneic", "Use of Accessory Muscles", "Intercostal Retractions", "Additional Notes"], "Percussion": ["Dullness or Flatness", "Hyperresonance", "Additional Notes"], "Auscultation": ["Decreased Breath Sounds", "Diminished Air Movement", "Inspiratory Wheezing", "Expiratory Wheezing", "Dry Rales/Crackles", "Wet Rales/Crackles", "Rhonchi", "Rales/Crackles on Left", "Rales/Crackles on Right", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Chest Pain", "Dyspnea", "Cough", "Sputum", "Wheezing", "Bronchitis", "Pneumonia", "Other"]
+            dataEntrySectionArray = ["Respiratory"]
+            dataEntryLabelArray = ["Respiratory": ["Cough", "Wheezing", "Shortness of Breath", "Coughing up Blood", "Sleep Apnea", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(respiratorySystemButton)
+        renderDataEntryViewForOrganSystemButton(respiratorySystemButton)
     }
     
     func gastrointestinalSystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Appearance", "Tenderness", "Distension", "Bowel Sounds", "Hepatomegaly", "Splenomegaly", "Ascites", "Aortic/Renal Bruit", "Hernias", "Hepatojugular Reflex", "Other"]
+            dataEntrySectionArray = ["Bowel Sounds", "Inspection & Palpation", "Liver", "Spleen", "Hernia"]
+            dataEntryLabelArray = ["Bowel Sounds": ["Increased", "Diminished", "Absent", "High Pitched", "Additional Notes"], "Inspection & Palpation": ["Distended", "Epigastric Tenderness", "LUQ Tenderness", "RUQ Tenderness", "LLQ Tenderness", "RLQ Tenderness", "Suprapubic Tenderness", "Guarding", "Rebound Tenderness", "Mass", "CVA Tenderness", "Additional Notes"], "Liver": ["Tenderness", "Hepatomegaly", "Additional Notes"], "Spleen": ["Tenderness", "Splenomegaly", "Additional Notes"], "Hernia": ["Inguinal", "Periumbilical", "Incisional", "Ventral", "Additional Notes"]] //don't like CVA tenderness here (should be in back)!
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Heartburn", "Nausea", "Vomiting", "Abdominal Pain", "Distension", "Gas", "Bowel Habits", "Bowel Quality", "Jaundice", "Fatty Food Intolerane", "Other"]
+            dataEntrySectionArray = ["GI"]
+            dataEntryLabelArray = ["GI": ["Abdominal Pain", "Vomiting", "Change in Appetite", "Diarrhea", "Vomiting Blood", "Dyspepsia", "GERD", "Black or Tarry Stools", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(gastrointestinalSystemButton)
+        renderDataEntryViewForOrganSystemButton(gastrointestinalSystemButton)
     }
     
     func genitourinarySystemButtonClick(sender: UIButton) { //Gender choice changes labels
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
             if self.gender == 0 { //Male patient
-                dataEntryLabelArray = ["Appearance", "Perineum", "Other"]
+                dataEntrySectionArray = ["Male GU Exam", "Penis", "Scrotum", "Testes", "Prostate"]
+                dataEntryLabelArray = ["Male GU Exam": ["Patient Does Not Know Exam", "Additional Notes"], "Penis": ["Lesion", "Discharge", "Abnormal Foreskin", "Circumcised", "Additional Notes"], "Scrotum": ["Swelling", "Tenderness", "Hydrocele", "Varicocele", "Additional Notes"], "Testes": ["Not Descended", "Enlarged", "Mass", "Tenderness", "Additional Notes"], "Prostate": ["Asymmetrical", "Enlarged", "Tender", "Nodule", "Hard/Indurated", "Boggy (Fluctuant)", "Prostate", "Additional Notes"]]
             } else { //Female patient
-                dataEntryLabelArray = ["Dysuria", "Urgency", "Frequency", "Polyuria", "Nocturia", "Difficulty Initiating Stream", "Decrease in Force", "Incontinence", "Flank Pain", "Suprapubic Pain", "Hematuria", "Kidney Stones", "Groin Swelling", "Trauma", "UTI", "!!!Lesions", "Itching", "Discharge", "Pain on Intercourse", "Other"]
+                dataEntrySectionArray = ["Female GU Exam", "External Genitalia", "Vagina", "Cervix", "Uterus", "Adnexae", "Bladder & Urethra"]
+                dataEntryLabelArray = ["Female GU Exam": ["Patient Does Not Know Exam", "Additional Notes"], "External Genitalia": ["Abnormal", "Lesion", "Rash", "Additional Notes"], "Vagina": ["Abnormal Discharge", "Purulent Discharge", "Dry Mucosa", "Mass", "Tenderness", "Atrophic Mucosa", "Additional Notes"], "Cervix": ["Discharge", "Purulent Discharge", "Cervical Motion Tenderness", "Sample Taken for Pap Smear", "Absent Cervix", "Additional Notes"], "Uterus": ["Anteverted", "Retroverted", "Irregular Contour", "Mass", "Enlarged", "Tender", "Uterine Prolapse", "Absent", "Additional Notes"], "Adnexae": ["Palpable Mass", "Tender", "Additional Notes"], "Bladder & Urethra": ["Urethral Discharge", "Distended Bladder", "Cystocele", "Additional Notes"]]
             }
         } else if self.viewChoice == "reviewOfSystems" {
-            if self.gender == 0 { //Male patient
-                dataEntryLabelArray = ["Appearance", "Perineum", "Inguinal Nodes", "Scrotum", "Other"]
-            } else { //Female patient
-                dataEntryLabelArray = ["Dysuria", "Urgency", "Frequency", "Polyuria", "Nocturia", "Difficulty Initiating Stream", "Decrease in Force", "Incontinence", "Flank Pain", "Suprapubic Pain", "Hematuria", "Kidney Stones", "Groin Swelling", "Trauma", "!!!Lesions", "Discharge", "Impotence", "Penile Pain", "Scrotal Masses", "Testicular Masses", "Prostate Problems", "Other"]
-            }
+            dataEntrySectionArray = ["GU"]
+            dataEntryLabelArray = ["GU": ["Incontinence", "Difficulty Urinating", "Hematuria", "Increased Frequency", "Incomplete Emptying", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(genitourinarySystemButton)
+        renderDataEntryViewForOrganSystemButton(genitourinarySystemButton)
     }
     
     func breastButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Masses", "Other"]
-        } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Knows Self-Exam?", "Tenderness", "Asymmetry", "Mass", "Nipple Discharge", "Milky Discharge", "Change in Size", "Other"]
+            dataEntrySectionArray = ["Breast Exam", "Breast"]
+            dataEntryLabelArray = ["Breast Exam": ["Patient Does Not Know Exam", "Additional Notes"], "Breast": ["Mass", "Abnormal Tenderness", "Abnormal Discharge", "Fibrocystic", "Asymmetry", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(breastButton)
+        renderDataEntryViewForOrganSystemButton(breastButton)
     }
     
-    func spineAndBackButtonClick(sender: UIButton) {
+    func backButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Edema", "Sacroiliac Joint Tenderness", "Costovertebral Angle Tenderness", "Posture", "Spine Appearance"]
-        } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Other"]
+            dataEntrySectionArray = ["Back"]
+            dataEntryLabelArray = ["Back": ["Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(spineAndBackButton)
+        renderDataEntryViewForOrganSystemButton(backButton)
     }
     
-    func peripheralVascularSystemButtonClick(sender: UIButton) {
+    func integumentarySystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Edema", "Carotid Bruit", "Femoral Bruit", "Radial Pulse", "Femoral Pulse", "Dorsalis Pedis Pulse", "Posterior Tibial Pulse", "Other"]
+            dataEntrySectionArray = ["Inspection & Palpation", "Nails"]
+            dataEntryLabelArray = ["Inspection & Palpation": ["Rash", "Lesion", "Ulcer", "Indurated", "Nodule", "Decreased Turgor", "Jaundice", "Tattos", "Additional Notes"], "Nails": ["Abnormal", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Cyanosis/Discoloration", "Ankle/Leg Swelling", "Leg Pain on Walking", "Varicose Veins", "Hair Loss in Extremities", "Other"]
+            dataEntrySectionArray = ["Skin"]
+            dataEntryLabelArray = ["Skin": ["Abnormal Mole", "Jaundice", "Rash", "Laceration", "Itching", "Dry Skin", "Growths/Lesions", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(peripheralVascularSystemButton)
+        renderDataEntryViewForOrganSystemButton(integumentarySystemButton)
     }
     
     func musculoskeletalSystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
-        self.dataEntrySectionArray = ["Skin", "Muscles", "Joints"]
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Joint Swelling/Edema", "Joint Redness", "Range of Motion", "Other"]
+            dataEntrySectionArray = ["Motor Strength & Tone", "Joints, Bones, & Muscles", "Extremities"]
+            dataEntryLabelArray = ["Motor Strength & Tone": ["Abnormal Motor Strength", "Hypertonicity", "Hypotonicity", "Additional Notes"], "Joints, Bones, & Muscles": ["Limited ROM", "Bony Deformity", "Contracture", "Malalignment", "Tenderness", "Additional Notes"], "Extremities": ["Cyanosis", "Edema", "Varicosities", "Palpable Cord", "Clubbing", "Homan's Sign"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Rash", "Itching", "Color Change", "Lesions/Ulcerations", "Changes in Moles/Spots", "Redness", "!!!Arthralgia", "Joint Inflammation", "Joint Stiffness", "Joint Pain", "Limiting of Motion", "!!!Back Pain", "Neck Pain", "Muscle Pain", "Muscle Weakness", "Atrophy", "!!!Bone Pain", "Fractures", "Other"]
+            dataEntrySectionArray = ["MS"]
+            dataEntryLabelArray = ["MS": ["Muscle Aches", "Muscle Weakness", "Arthralgia/Joint Pain", "Back Pain", "Swelling in the Extremities", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(musculoskeletalSystemButton)
+        renderDataEntryViewForOrganSystemButton(musculoskeletalSystemButton)
     }
     
     func psychiatricButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Other"]
+            dataEntrySectionArray = ["Insight", "Mental Status", "Orientation", "Memory"]
+            dataEntryLabelArray = ["Insight": ["Poor Insight", "Additional Notes"], "Mental Status": ["Abnormal Affect", "Lethargic", "Confused", "Anxious", "Depressed", "Agitated", "Additional Notes"], "Orientation": ["Not Oriented to Time", "Not Oriented to Place", "Not Oriented to Person", "Additional Notes"], "Memory": ["Recent Memory Abnormal", "Remote Memory Abnormal", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Suicidal Ideation", "Psychotic Symptoms", "Other"]
+            dataEntrySectionArray = ["Psych"]
+            dataEntryLabelArray = ["Psych": ["Depression", "Sleep Disturbances", "Feeling Unsafe in Relationship", "Alcohol Abuse", "Anxiety", "Hallucinations", "Suicidal Thoughts", "Restless Sleep", "Additional Notes"]]
         }
-        self.dataEntryView.renderDataEntryViewForOrganSystemButton(psychiatricButton)
+        renderDataEntryViewForOrganSystemButton(psychiatricButton)
     }
     
     func endocrineSystemButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
-        if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Other"]
-        } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Hyperglycemia", "Polydipsia", "Polyuria", "Heat/Cold Intolerance", "Excessive Sweating", "Loss of Hair/Increased Hair", "Skin Dryness", "Increased/Decreased Body Fat", "Menstrual Irregularity", "Other"]
+        if (self.viewChoice == "reviewOfSystems") {
+            dataEntrySectionArray = ["Endocrine"]
+            dataEntryLabelArray = ["Endocrine": ["Fatigue", "Increased Thirst", "Hair Loss", "Increased Hair Growth", "Cold Intolerance", "Additional Notes"]]
         }
-        //self.dataEntryView.renderDataEntryViewForOrganSystemButton(endocrineSystemButton)
+        renderDataEntryViewForOrganSystemButton(endocrineSystemButton)
     }
     
-    func hematopoieticSystemButtonClick(sender: UIButton) {
+    func hematologicLymphaticSystemButtonClick(sender: UIButton) {
+        self.configureButtonVisualsOnSelection(sender)
+        if (self.viewChoice == "reviewOfSystems") {
+            dataEntrySectionArray = ["Lymph"]
+            dataEntryLabelArray = ["Lymph": ["Swollen Glands", "Easy Bruising", "Excessive Bleeding", "Additional Notes"]]
+        }
+        renderDataEntryViewForOrganSystemButton(hematologicLymphaticSystemButton)
+    }
+    
+    func eyesButtonClick(sender: UIButton) {
         self.configureButtonVisualsOnSelection(sender)
         if self.viewChoice == "physicalExam" {
-            dataEntryLabelArray = ["Other"]
+            dataEntrySectionArray = ["Lids & Conjunctivae", "Pupils", "Corneas", "Fundoscopic", "EOM", "Lens", "Sclerae"]
+            dataEntryLabelArray = ["Lids & Conjunctivae": ["Injected", "Discharge", "Pallor", "Xanthelasma", "Ptosis", "Exophthalmos", "Additional Notes"], "Pupils": ["Non-reactive to Light", "Anisocoria", "Additional Notes"], "Corneas": ["Arcus Senilis", "Abrasion", "Opacity", "Ulceration", "Additional Notes"], "Fundoscopic": ["Papilledema", "Increased Cupping", "Blurred Margins", "Narrowing of Arterioles", "A-V Nicking", "Exudate", "Soft Exudate", "Hard Exudate", "Hemorrhage", "Optic Disc Not Well Visualized", "Fundus Not Well Visualized", "Additional Notes"], "EOM": ["Dysconjugated", "Strabismus", "Nystagmus", "Additional Notes"], "Lens": ["Cataract", "Additional Notes"], "Sclerae": ["Injected", "Icteric", "Abrasion", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
-            dataEntryLabelArray = ["Anemia", "Paleness", "Weakness", "Blood Loss", "Easy Bruising or Bleeding", "Other"]
+            dataEntrySectionArray = ["Eyes"] //empty
+            dataEntryLabelArray = ["Eyes": ["Dry Eyes", "Vision Change", "Irritation", "Additional Notes"]]
         }
-        //self.dataEntryView.renderDataEntryViewForOrganSystemButton(hematopoieticSystemButton)
+        renderDataEntryViewForOrganSystemButton(eyesButton)
     }
+    
+    func enmtButtonClick(sender: UIButton) {
+        self.configureButtonVisualsOnSelection(sender)
+        if self.viewChoice == "physicalExam" {
+            dataEntrySectionArray = ["Ears", "Hearing", "Nose", "Lips, Teeth, & Gums", "Oropharynx"]
+            dataEntryLabelArray = ["Ears": ["External Ear Lesion", "EAC Ceruminous", "EAC Discharge", "TM Erythematous", "TM Bulging", "TM Perforated", "TM Opacified", "TM Immobile", "Middle Ear Fluid"], "Hearing": ["Hearing Decreased", "Weber's Sign", "Additional Notes"], "Nose": ["External Nose Lesion", "Nares Non-Patent", "Deviated Septum", "Nasal Obstruction", "Sinus Tenderness", "Nasal Discharge", "Nasal Discharge-Purulent", "Nasal Discharge-Rhinorrhea", "Post Nasal Drip", "Additional Notes"], "Lips, Teeth, & Gums": ["Mouth Ulcers", "Gingival Erythema", "Poor Dentition", "Edentulous", "Additional Notes"], "Oropharynx": ["Erythema", "Tonsils Enlarged", "Exudate", "Tonsils Absent", "Additional Notes"]]
+        } else if self.viewChoice == "reviewOfSystems" {
+            dataEntrySectionArray = ["Ears", "Nose", "Mouth/Throat"]
+            dataEntryLabelArray = ["Ears": ["Difficulty Hearing", "Ear Pain", "Additional Notes"], "Nose": ["Frequent Nosebleeds", "Nose Problems", "Sinus Problems", "Additional Notes"], "Mouth/Throat": ["Sore Throat", "Bleeding Gums", "Snoring", "Dry Mouth", "Mouth Ulcers", "Oral Abnormalities", "Teeth Problems", "Mouth Breathing", "Additional Notes"]]
+        }
+        renderDataEntryViewForOrganSystemButton(enmtButton)
+    }
+    
+    func chaperoneButtonClick(sender: UIButton) {
+        self.configureButtonVisualsOnSelection(sender)
+        if (self.viewChoice == "physicalExam") {
+            dataEntrySectionArray = ["Chaperone"]
+            dataEntryLabelArray = ["Chaperone": ["Present", "Offered & Declined", "Additional Notes"]]
+        }
+        renderDataEntryViewForOrganSystemButton(chaperoneButton)
+    }
+    
+    func rectalSystemButtonClick(sender: UIButton) {
+        self.configureButtonVisualsOnSelection(sender)
+        if (self.viewChoice == "physicalExam") {
+            dataEntrySectionArray = ["Rectal"]
+            dataEntryLabelArray = ["Rectal": ["Decreased Tone", "Hemorrhoids", "Fissure", "Mass", "Stool Heme Positive", "Rectocele", "Additional Notes"]]
+        }
+        renderDataEntryViewForOrganSystemButton(rectalSystemButton)
+    }
+    
+    func allergicImmunologicSystemButtonClick(sender: UIButton) {
+        self.configureButtonVisualsOnSelection(sender)
+        if (self.viewChoice == "reviewOfSystems") {
+            dataEntrySectionArray = ["Immune"]
+            dataEntryLabelArray = ["Immune": ["Runny Nose", "Sinus Pressure", "Itching", "Hives", "Frequent Sneezing", "Additional Notes"]]
+        }
+        renderDataEntryViewForOrganSystemButton(allergicImmunologicSystemButton)
+    }
+    
+    //MARK: - Default DataEntryView Rendering
+        
+    func renderDefaultDataEntryView() {//When we configure R side view, when no organ system is tapped, have label telling user what to do (w/ a list of keyboard shortcuts) & a text field to allow entry of shortcuts.
+        
+        //Configure view:
+        self.userInteractionEnabled = true
+        self.backgroundColor = UIColor(red: 0, green: 0.25, blue: 0.40, alpha: 1.0)
+            
+        //Add label, textField & button:
+        let dataEntryInstructionsLabel = UILabel(frame: CGRect(x: 150, y: 140, width: 500, height: 150))
+        let closeViewButton = UIButton(frame: CGRect(x: 600, y: 50, width: 120, height: 30))
+        organSystemSelectionTextField.frame = CGRect(x: 150, y: 300, width: 300, height: 50)
+        dataEntryView.addSubview(dataEntryInstructionsLabel)
+        dataEntryView.addSubview(closeViewButton)
+        dataEntryView.addSubview(organSystemSelectionTextField)
+            
+        //Configure Instruction Label:
+        dataEntryInstructionsLabel.numberOfLines = 5
+        dataEntryInstructionsLabel.backgroundColor = UIColor.whiteColor()
+        dataEntryInstructionsLabel.text = "Type in the abbreviation for an organ system or tap on the corresponding button. Abbreviations: General = G, Neuro = N, Psych = P, Heart = H, Lungs = L, GI = GI, GU = GU, Peripheral = Pe, MS = MS."
+            
+        //Configure TextField:
+        organSystemSelectionTextField.userInteractionEnabled = true
+        organSystemSelectionTextField.backgroundColor = UIColor.whiteColor()
+        organSystemSelectionTextField.tag = 200 //assign unique tag for 'return' behavior config
+        organSystemSelectionTextField.becomeFirstResponder()
+        organSystemSelectionTextField.placeholder = "Enter an organ system and hit 'Return'"
+        organSystemSelectionTextField.addTarget(self, action: "textFieldWasTapped:", forControlEvents: UIControlEvents.TouchUpInside)
+        
+        //Configure CloseView Button:
+        closeViewButton.setTitle("Close View", forState: UIControlState.Normal)
+        closeViewButton.addTarget(self, action: "closeViewButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+    }
+        
+    //MARK: - OrganSystem Button Rendering
+        
+    func renderDataEntryViewForOrganSystemButton(sender: PhysicalAndROSOrganSystemButton) {
+        //Remove the human body from view & take the whole screen to render the interface:
+        for subview in dataEntryView.subviews { //clears organSystemEntry view
+            subview.removeFromSuperview()
+        }
+        
+        for subview in bodyImageView.subviews {
+            subview.removeFromSuperview()
+        }
+        
+        bodyImageView.removeFromSuperview()
+        dataEntryView.removeFromSuperview()
+        
+        //Redraw the dataEntryView to take up the entire screen, then add it back:
+        dataEntryView.frame = CGRect(x: 0, y: 0, width: 964, height: 619)
+        
+        //Configure Escape Button (returns split view w/ humanBodyImage):
+        let escapeButton = UIButton(frame: CGRect(x: 50, y: 50, width: 80, height: 30))
+        escapeButton.setTitle("Escape", forState: UIControlState.Normal)
+        escapeButton.addTarget(self, action: "escapeButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
+        self.dataEntryView.addSubview(escapeButton)
+        self.addSubview(dataEntryView)
+    }
+        
+    //MARK: - Close & Escape Button Actions
+        
+    func closeViewButtonClick(sender: UIButton) {
+        //Remove views from main view & return the app to the default view (depends on application mode)
+        if (self.applicationMode == "DEM") {
+            self.removeFromSuperview()
+            //Configure DEM view for fieldName entry using delegate method:
+            self.delegate?.physicalOrROSViewWasClosed()
+        } else if (self.applicationMode == "PCM") {
+        
+        }
+    }
+    
+    func escapeButtonClick(sender: UIButton) { //called by hitting the escape (no escape on keyboards*) keyboard shortcut
+        //Configuration depends on application mode:
+        if (self.applicationMode == "DEM") { //Return to split view w/ bodyImageView on left & textField on right
+            self.dataEntryView.removeFromSuperview()
+            self.addSubview(bodyImageView)
+            bodyImageView.addSubview(rotationButton)
+            generalButtonConfiguration()
+            dataEntryView.frame = CGRect(x: 200, y: 0, width: 764, height: 619)
+            renderDefaultDataEntryView()
+        } else if (self.applicationMode == "PCM") {
+            
+        }
+    }
+    
 }

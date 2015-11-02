@@ -51,7 +51,7 @@ func fetchAllPatients() { //Returns all patients in Core Data store
             print("Number of objects fetched: \(objects.count)")
             for result in objects {
                 let patient = result as! Patient
-                print("Name: \(patient.name). Test Val: \(patient.testValue). Vitals: \(patient.vitals). Medications: \(patient.medications). Allergies: \(patient.allergies). HPI: \(patient.hpi).") //Will return optional
+                print("Name: \(patient.fullName). Vitals: \(patient.vitals). Medications: \(patient.medications). Allergies: \(patient.allergies). HPI: \(patient.hpi).") //Will return optional
             }
         } else {
             print("No results found in the Core Data Store.")

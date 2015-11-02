@@ -8,17 +8,17 @@
 import Foundation
 
 struct EMRDataParser {
-    let url : NSURL
+    let openScope: EMRField
     
-    init(url : NSURL) {//initialize struct by inputting the URL for our web server - we simply pass the long-form version of the field name entered & the data entered into each field as a JSON object.
-        self.url = url
+    init(openScope: EMRField) {//initialize struct by inputting the URL for our web server & the current fieldName - we then pass the data entered into each field as a JSON object.
+        self.openScope = openScope
     }
     
     func ParseJSON(completion : (EMRReturnedDataObject? -> Void)) {
-        let emrConnection = EMRConnection(queryURL: url)
+        let emrConnection = EMRConnection(openScope: self.openScope)
         emrConnection.downloadJSONFromURL {
             (let JSONDictionary) in
-            print("JSONDictionary contents: \(JSONDictionary)")
+            print("JSONDictionary Contents: \(JSONDictionary)")
             let returnedData = self.returnedDataFromJSON(JSONDictionary) //retrieve the parsed dict
             completion(returnedData) //present this dict to the user as a completion
         }
