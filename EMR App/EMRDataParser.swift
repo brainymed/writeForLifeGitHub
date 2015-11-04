@@ -8,19 +8,39 @@
 import Foundation
 
 struct EMRDataParser {
-    let openScope: EMRField
+    let jsonDict: Dictionary<String, AnyObject>?
+    let openScope: EMRField?
+    let useOtherInit: Bool
     
     init(openScope: EMRField) {//initialize struct by inputting the URL for our web server & the current fieldName - we then pass the data entered into each field as a JSON object.
         self.openScope = openScope
+        self.useOtherInit = false
+        self.jsonDict = nil
+    }
+    
+    init(patientDict: Dictionary<String, AnyObject>) { //different init when we are creating a new patient (no openScope to use here)
+        self.useOtherInit = true
+        self.openScope = nil
+        self.jsonDict = patientDict
     }
     
     func ParseJSON(completion : (EMRReturnedDataObject? -> Void)) {
-        let emrConnection = EMRConnection(openScope: self.openScope)
-        emrConnection.downloadJSONFromURL {
-            (let JSONDictionary) in
-            print("JSONDictionary Contents: \(JSONDictionary)")
-            let returnedData = self.returnedDataFromJSON(JSONDictionary) //retrieve the parsed dict
-            completion(returnedData) //present this dict to the user as a completion
+        if (useOtherInit == true) {
+            let emrConnection = EMRConnection(patientDict: self.jsonDict!)
+            emrConnection.downloadJSONFromURL {
+                (let JSONDictionary) in
+                print("JSONDictionary Contents: \(JSONDictionary)")
+                let returnedData = self.returnedDataFromJSON(JSONDictionary) //retrieve the parsed dict
+                completion(returnedData) //present this dict to the user as a completion
+            }
+        } else {
+            let emrConnection = EMRConnection(openScope: self.openScope!)
+            emrConnection.downloadJSONFromURL {
+                (let JSONDictionary) in
+                print("JSONDictionary Contents: \(JSONDictionary)")
+                let returnedData = self.returnedDataFromJSON(JSONDictionary) //retrieve the parsed dict
+                completion(returnedData) //present this dict to the user as a completion
+            }
         }
     }
     

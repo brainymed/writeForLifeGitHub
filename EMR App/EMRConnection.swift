@@ -8,14 +8,16 @@
 import Foundation
 
 class EMRConnection {
-    let openScope: EMRField
+    let openScope: EMRField?
     let baseURL: NSURL
     let queryURL: NSURL
     lazy var config: NSURLSessionConfiguration = NSURLSessionConfiguration.defaultSessionConfiguration()
     lazy var session: NSURLSession = NSURLSession(configuration: self.config)
+    var jsonDict: Dictionary<String, AnyObject>?
     
     init (openScope: EMRField) { //compute URL server to send information to based on fieldName
         //This will only work for single dictionary transfers (i.e. the user is online and entering patient data. If we are pulling from the persistent store to sync, there will be no (reliable) currentPatient, so we will have to do something else.
+        self.jsonDict = nil
         self.openScope = openScope
         self.baseURL = NSURL(string: "http://www.brainymed.com/brainymed/api/")!
         
@@ -45,13 +47,16 @@ class EMRConnection {
             queryString = "id/"
             self.queryURL = NSURL(string: queryString, relativeToURL: baseURL)!
             print("URL: http://www.brainymed.com/brainymed/api/\(queryString)")
-        case "createPatient":
-            queryString = "patients"
-            self.queryURL = NSURL(string: queryString, relativeToURL: baseURL)!
-            print("URL: http://www.brainymed.com/brainymed/api/\(queryString)")
         default: //should never be called
             self.queryURL = NSURL(string: "", relativeToURL: baseURL)!
         }
+    }
+    
+    init(patientDict: Dictionary<String, AnyObject>) {
+        self.baseURL = NSURL(string: "http://www.brainymed.com/brainymed/api/")!
+        self.queryURL = NSURL(string: "patients", relativeToURL: baseURL)!
+        self.openScope = nil
+        self.jsonDict = patientDict
     }
     
     typealias JSONDictionaryCompletion = ([String : AnyObject]?) -> Void
@@ -71,8 +76,11 @@ class EMRConnection {
         
         //HTTP POST request - for data entry, pass in the fieldName being mapped to & the data being sent. For data extraction, pass in the (processed?) query name.
         request.HTTPMethod = "POST"
-        let jsonDict = self.openScope.jsonDictToServer
-        let body: NSDictionary = NSDictionary(dictionary: jsonDict)
+        if (jsonDict == nil) {
+            jsonDict = self.openScope!.jsonDictToServer
+        } else { //patient creation, dict has already been created
+        }
+        let body: NSDictionary = NSDictionary(dictionary: jsonDict!)
         do {
             let dictionaryAsJSON: NSData = try (NSJSONSerialization.dataWithJSONObject(body, options: []))
             request.HTTPBody = dictionaryAsJSON

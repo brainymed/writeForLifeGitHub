@@ -19,11 +19,12 @@ class EMRField {
     private var currentItemLabel : String? //for specific views, generates a (singular) label to indicate what item is currently open (e.g. "medication", "diagnosis", "allergy"). The label & counter should only exist simultaneously!
     var jsonDictToServer = Dictionary<String, [String : AnyObject]>() //dictionary containing user inputs being mapped -> server; related to the Patient class (dict keys -> Patient properties)
     
-    init(inputWord: String, currentPatient: Patient) {
-        self.currentPatient = currentPatient
+    init(inputWord: String, patient: Patient) {
+        self.currentPatient = patient
+        
         //Initializer matches the input word to a keyword format & returns a boolean value & an EMR field name, which can be obtained from separate getter functions.
         let lowercaseInput = inputWord.lowercaseString
-        let formatArray : [String] = ["^med.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies", "hpi", "create"]
+        let formatArray : [String] = ["^med.*$", "^vitals$", "^physical$", "^r.*o.*s.*$", "allergies", "hpi"]
         var stopCounter = -1
         for format in formatArray {
             stopCounter += 1
@@ -57,8 +58,6 @@ class EMRField {
             self.currentItemLabel = "Allergy"
         case 5:
             self.fieldName = "historyOfPresentIllness"
-        case 6:
-            self.fieldName = "createPatient"
         default:
             //If the counter's value is 1 greater than the length(formatArray), NO match was found.
             self.fieldName = nil
@@ -68,8 +67,8 @@ class EMRField {
             //Create an entry in the mapping dict for the fieldName:
             self.jsonDictToServer[currentField] = Dictionary<String, AnyObject>()
             
-            //Set the tableViewLabels array for the fieldName:
-            switch currentField {
+            //Set the tableViewLabels array for the fieldName. We will need 2 arrays, one for display to the user (neatly formatted) & one matching the format specified by the server:
+            switch currentField { //max # of labels that can fit in the view is 12 (from the looks of it)
             case "medications":
                 tableViewLabels = ["Medication Name", "Route", "Dosage", "Frequency"]
             case "vitals":
@@ -82,9 +81,6 @@ class EMRField {
                 tableViewLabels = ["Allergen", "Reaction", "Severity"]
             case "historyOfPresentIllness":
                 tableViewLabels = ["History of Present Illness"]
-            case "createPatient": //max # of labels that can fit in the view is 12 (from the looks of it)
-                tableViewLabels = ["firstName", "lastName", "dob", "gender", "homePhone", "mobilePhone", "email", "address1", "address2", "city", "state", "zip"] //dict labels
-                //tableViewLabels = ["First Name", "Last Name", "Date of Birth", "Gender", "Home Phone", "Mobile Phone", "Email", "Address Line 1", "Address Line 2", "City", "State", "Zip"] //user visible labels
             default:
                 tableViewLabels = ["[getLabelsForMK - Default Switch (Error)"]
             }
@@ -197,17 +193,6 @@ class EMRField {
                         }
                     case "historyOfPresentIllness":
                         currentPatient.hpi = inputValuesArray[0]
-                    case "createPatient":
-                        //We only save the gender & DOB -> persistent store. All other values are NOT stored (only passed -> server)
-                        for input in inputValuesArray {
-                            let label = labelsArray[counter]
-                            if (label == "Sex") { //store value in persistent obj
-                                print("Input Gender: \(input)")
-                            } else if (label == "Date Of Birth") { //store value in persistent obj
-                                print("Input DOB: \(input)")
-                            }
-                            counter += 1
-                        }
                     default:
                         NSLog("Error in setFieldValue() - 'else' default statement")
                     }

@@ -294,7 +294,7 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
         //Checks if the input value matches an EMR field before mapping to it & opening a scope:
         if mltwTextLabel.text?.characters.count > 0 {
             
-            openScope = EMRField(inputWord: mltwTextLabel.text!, currentPatient: currentPatient!) //Open a new scope
+            openScope = EMRField(inputWord: mltwTextLabel.text!, patient: currentPatient!) //Open a new scope
             
             //For a given input, first we need to check if a patient file is currently open (whether 'currentPatient' exists. If not, we must next check if the user is inputting a MK for entry of a patient's name. If not, then the user must first input a patient name.
             //If currentPatient exists, then we need to check if the input word matches an EMR field name (this task is handled by the 'EMRFieldName' class).
@@ -424,8 +424,10 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     @IBAction func logoutButtonClick(sender: AnyObject) {
         //Clear out existing user defaults:
-        //        let appDomain = NSBundle.mainBundle().bundleIdentifier
-        //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
+        let preferences: NSUserDefaults = NSUserDefaults.standardUserDefaults()
+        preferences.removeObjectForKey("USERNAME")
+        preferences.removeObjectForKey("PROVIDER_TYPE")
+        
         currentUser = nil
     }
     

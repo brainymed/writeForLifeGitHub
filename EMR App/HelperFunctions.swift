@@ -72,7 +72,7 @@ func openPatientFile(patientName: String) -> Patient? { //Opens the file for the
     request.predicate = pred
     
     do {
-        let patients = try context.executeFetchRequest(request)
+        let patients = try context.executeFetchRequest(request) //causing crash, why isn't it throwing exception?
         if patients.count > 0 {
             print("Number of objects fetched for the entered name: \(patients.count)")
             return (patients[0] as! Patient)

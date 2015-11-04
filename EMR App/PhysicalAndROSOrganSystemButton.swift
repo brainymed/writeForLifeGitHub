@@ -9,6 +9,8 @@ import UIKit
 
 class PhysicalAndROSOrganSystemButton: UIButton {
     var informationHasBeenEnteredForOrganSystem: Bool
+    var sectionsArray: [String]? //array of sections to break down physical/ROS.
+    var labelsArray: [String: AnyObject]? //array of labels used to populate the R side view for data entry
     
     override init(frame: CGRect) {
         self.informationHasBeenEnteredForOrganSystem = false

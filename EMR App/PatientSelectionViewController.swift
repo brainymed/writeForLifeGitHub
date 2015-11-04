@@ -5,34 +5,160 @@
 
 import UIKit
 
-class PatientSelectionViewController: UIViewController {
+class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
     
     var currentPatient: Patient? = nil
     var currentUser: String?
+    let preferences: NSUserDefaults = NSUserDefaults.standardUserDefaults()
     var fileWasOpenedOrCreated: String = "" //checks if new or existing patient file was opened
     var properNameFormat: Bool = false
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+    
+    @IBOutlet weak var openPatientFileButton: UIButton!
+    @IBOutlet weak var createPatientFileButton: UIButton!
+    @IBOutlet weak var patientNameTextField: UITextField!
+    @IBOutlet weak var orLabel: UILabel!
     
     //Keyboard Detection:
     var keyboardSizeArray: [CGFloat] = []
     var keyboardAppearedHasFired: Bool?
     var bluetoothKeyboardAttached: Bool = false //true = BT keyboard, false = no BT keyboard
     
-    @IBOutlet weak var patientNameTextField: UITextField!
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        patientNameTextField.becomeFirstResponder()
+        
+        openPatientFileButton.layer.cornerRadius = 10.0 //round button edges
+        createPatientFileButton.layer.cornerRadius = 10.0 //round button edges
+        patientNameTextField.delegate = self
         
         //Add notifications the first time this view loads:
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChangedFrame:", name: UIKeyboardWillChangeFrameNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardAppeared:", name: UIKeyboardWillShowNotification, object: nil)
     }
     
+    override func viewWillAppear(animated: Bool) {
+        defaultViewConfiguration(preferences.objectForKey("PROVIDER_TYPE") as! String)
+    }
+    
     override func viewDidAppear(animated: Bool) { //function is called AFTER the keyboard appears!
-        //Check if starting keyboard is BT or normal (if the variable exists/has been set, then the keyboardAppeared action has fired & we know the initial keyboard is NOT BT.
-        if (keyboardAppearedHasFired == nil) { //BT keyboard
-            bluetoothKeyboardAttached = true
+    }
+    
+    //MARK: - View Configuration
+    
+    func defaultViewConfiguration(provider: String) {
+        //Check what "PROVIDER_TYPE" of the user is: "Front Office", "Nurse", or "Physician"
+        //let viewsDictionary = ["openButton": openPatientFileButton, "createButton": createPatientFileButton, "orLabel": orLabel, "textField": patientNameTextField]
+        switch provider {
+        case "Front Office": //show both buttons in Storyboard-defined layout
+            //Programmatically add constraints to buttons (height & width of all objects is already set):
+            print("")
+        case "Nurse":
+            createPatientFileButton.hidden = true
+            orLabel.hidden = true
+//            let openButton_constraint_vertical = NSLayoutConstraint.constraintsWithVisualFormat("H:|-[openButton]", options: NSLayoutFormatOptions(rawValue: 0), metrics: nil, views: viewsDictionary)
+//            let openButton_constraint_hCenter = NSLayoutConstraint(item: openPatientFileButton, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
+//            view.addConstraints(openButton_constraint_vertical)
+//            view.addConstraint(openButton_constraint_hCenter)
+            //How do we reset the view after the user closes a file?
+        case "Physician":
+            createPatientFileButton.hidden = true
+            orLabel.hidden = true
+        default:
+            print("Error - defaultViewConfig default switch statement")
+        }
+    }
+    
+    //MARK: - Patient File Button Actions
+    
+    func restoreDefaultView() {
+        openPatientFileButton.highlighted = false
+        createPatientFileButton.highlighted = false
+        openPatientFileButton.alpha = 1.0
+        openPatientFileButton.enabled = true
+        createPatientFileButton.alpha = 1.0
+        createPatientFileButton.enabled = true
+        patientNameTextField.hidden = true
+        patientNameTextField.resignFirstResponder()
+    }
+    
+    @IBAction func openPatientFileButtonClick(sender: AnyObject) { //reveal the text field.
+        openPatientFileButton.highlighted = true
+        createPatientFileButton.alpha = 0.3
+        createPatientFileButton.enabled = false
+        patientNameTextField.hidden = false
+        patientNameTextField.becomeFirstResponder()
+    }
+    
+    @IBAction func createPatientFileButtonClick(sender: AnyObject) {
+        //On button click, configures view for entry of a new patient. Present the required information in the first screen & optional information in the second screen, allow movement between screens using the arrow keys. Check if there is a keyboard attached, & if not, ask user to attach one.
+        createPatientFileButton.highlighted = true
+        openPatientFileButton.alpha = 0.3
+        openPatientFileButton.enabled = false
+        patientNameTextField.becomeFirstResponder()
+        NSTimer.scheduledTimerWithTimeInterval(2.0, target: self, selector: "delayedKeyboardCheck:", userInfo: nil, repeats: false) //check before transition if user has BT keyboard, first twice for some reason
+    }
+    
+    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        //Clear button behaviors when touch occurs not on button:
+        if !(openPatientFileButton.touchInside) || !(createPatientFileButton.touchInside) {
+            restoreDefaultView()
+        }
+    }
+    
+    func textFieldShouldReturn(textField: UITextField) -> Bool {
+        restoreDefaultView()
+        let whitespaceSet = NSCharacterSet.whitespaceCharacterSet()
+        let trimmedName = patientNameTextField.text?.stringByTrimmingCharactersInSet(whitespaceSet)
+        if (trimmedName != "") {
+            properNameFormat = true
+        } else {
+            properNameFormat = false
+        }
+        if properNameFormat == true {
+            patientNameTextField.resignFirstResponder()
+            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> FOM or DEM
+                if (preferences.objectForKey("PROVIDER_TYPE") as! String == "Front Office") {
+                    //Configure FOM for modifying patient's documents:
+                    performSegueWithIdentifier("showFOM", sender: self)
+                    return true
+                } else {
+                    currentPatient = Patient(firstName: "a", lastName: "p", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
+                    performSegueWithIdentifier("showDEM", sender: self)
+                    return true
+                }
+                
+                //                if let existingPatient = openPatientFile(trimmedName!) {
+                //                    currentPatient = existingPatient
+                //                    fileWasOpenedOrCreated = "opened"
+                //                    performSegueWithIdentifier("showDEM", sender: self)
+                //                    return true
+                //                } else { //no patient found for given name
+                //                    patientNameTextField.becomeFirstResponder()
+                //                    let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                //                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                //                    alertController.addAction(ok)
+                //                    presentViewController(alertController, animated: true, completion: nil)
+                //                    return false
+                //                }
+            } else { //No BT keyboard, segue -> PCM
+                if let existingPatient = openPatientFile(trimmedName!) {
+                    currentPatient = existingPatient
+                    fileWasOpenedOrCreated = "opened"
+                    performSegueWithIdentifier("showPCM", sender: self)
+                    return true
+                } else { //no patient found for given name
+                    patientNameTextField.becomeFirstResponder()
+                    let alertController = UIAlertController(title: "Oops.", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                    alertController.addAction(ok)
+                    presentViewController(alertController, animated: true, completion: nil)
+                    return false
+                }
+            }
+        } else {
+            patientNameTextField.becomeFirstResponder()
+            print("Please enter a patient name.")
+            return false
         }
     }
     
@@ -58,108 +184,31 @@ class PatientSelectionViewController: UIViewController {
         keyboardSizeArray = [] //clear for next sequence
     }
     
-    //MARK: - Patient File Button Actions
-    
-    @IBAction func openPatientFileButtonClick(sender: AnyObject) {
-        let whitespaceSet = NSCharacterSet.whitespaceCharacterSet()
-        let trimmedName = patientNameTextField.text?.stringByTrimmingCharactersInSet(whitespaceSet)
-        if (trimmedName != "") {
-            properNameFormat = true
+    func delayedKeyboardCheck(timer: NSTimer) { //fires after delay
+        if (shouldPerformSegueWithIdentifier("showFOM", sender: self)) {
+            performSegueWithIdentifier("showFOM", sender: self)
         } else {
-            properNameFormat = false
-        }
-        if properNameFormat == true {
             patientNameTextField.resignFirstResponder()
-            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> DEM
-                if let existingPatient = openPatientFile(trimmedName!) {
-                    currentPatient = existingPatient
-                    fileWasOpenedOrCreated = "opened"
-                    performSegueWithIdentifier("showDEM", sender: self)
-                } else { //no patient found for given name
-                    patientNameTextField.becomeFirstResponder()
-                    let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
-                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-                    alertController.addAction(ok)
-                    presentViewController(alertController, animated: true, completion: nil)
-                }
-            } else { //No BT keyboard, segue -> PCM
-                if let existingPatient = openPatientFile(trimmedName!) {
-                    currentPatient = existingPatient
-                    fileWasOpenedOrCreated = "opened"
-                    performSegueWithIdentifier("showPCM", sender: self)
-                } else { //no patient found for given name
-                    patientNameTextField.becomeFirstResponder()
-                    let alertController = UIAlertController(title: "Oops.", message: "No patient was found for the given name.", preferredStyle: .Alert)
-                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-                    alertController.addAction(ok)
-                    presentViewController(alertController, animated: true, completion: nil)
-                }
-            }
-        } else {
-            patientNameTextField.becomeFirstResponder()
-            print("Please enter a patient name.")
+            let alertController = UIAlertController(title: "Warning", message: "Please enter a bluetooth keyboard before proceeding.", preferredStyle: .Alert)
+            let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+            alertController.addAction(ok)
+            presentViewController(alertController, animated: true, completion: nil)
         }
-    }
-    
-    @IBAction func createPatientFileButtonClick(sender: AnyObject) {
-        let whitespaceSet = NSCharacterSet.whitespaceCharacterSet()
-        let trimmedName = patientNameTextField.text?.stringByTrimmingCharactersInSet(whitespaceSet)
-        if (trimmedName != "") {
-            properNameFormat = true
-        } else {
-            properNameFormat = false
-        }
-        if properNameFormat == true {
-            patientNameTextField.resignFirstResponder()
-            if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> DEM
-                if (openPatientFile(trimmedName!) != nil) { //patient already exists
-                    patientNameTextField.becomeFirstResponder()
-                    let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
-                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-                    alertController.addAction(ok)
-                    presentViewController(alertController, animated: true, completion: nil)
-                } else { //no patient found for given name
-                    currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
-                    fileWasOpenedOrCreated = "created"
-                    performSegueWithIdentifier("showDEM", sender: self)
-                }
-            } else { //No BT keyboard, segue -> PCM
-                if (openPatientFile(trimmedName!) != nil) { //patient already exists
-                    patientNameTextField.becomeFirstResponder()
-                    let alertController = UIAlertController(title: "Warning", message: "File already exists for this patient. Please open it.", preferredStyle: .Alert)
-                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-                    alertController.addAction(ok)
-                    presentViewController(alertController, animated: true, completion: nil)
-                } else { //no patient found for given name
-                    currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
-                    fileWasOpenedOrCreated = "created"
-                    performSegueWithIdentifier("showPCM", sender: self)
-                }
-            }
-        } else {
-            patientNameTextField.becomeFirstResponder()
-            print("Please enter a patient name.")
-        }
-    }
-    
-    //MARK: - Keyboard Shortcuts
-    
-    override var keyCommands: [UIKeyCommand]? { //special Apple API for defining keyboard shortcuts
-        let controlKey = UIKeyModifierFlags.Control
-        let controlO = UIKeyCommand(input: "o", modifierFlags: [controlKey], action: "controlOKeyPressed:")
-        let controlC = UIKeyCommand(input: "c", modifierFlags: [controlKey], action: "controlCKeyPressed:")
-        return [controlO, controlC]
-    }
-    
-    func controlOKeyPressed(command: UIKeyCommand) {
-        openPatientFileButtonClick(self)
-    }
-    
-    func controlCKeyPressed(command: UIKeyCommand) {
-        createPatientFileButtonClick(self)
+        restoreDefaultView()
     }
     
     //MARK: - Navigation
+    
+    override func shouldPerformSegueWithIdentifier(identifier: String, sender: AnyObject?) -> Bool {
+        if (identifier == "showFOM") {
+            if (bluetoothKeyboardAttached == true) {
+                return true
+            } else {
+                return false
+            }
+        }
+        return true
+    }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if (segue.identifier == "showPCM") { //Pass current patient

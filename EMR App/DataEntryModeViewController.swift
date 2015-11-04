@@ -10,9 +10,10 @@ import CoreData
 
 class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate, PhysicalAndROSDelegate {
     
+    let preferences: NSUserDefaults = NSUserDefaults.standardUserDefaults()
     var openScope: EMRField? //handles MK identification & data mapping -> EMR
     var patientFileWasJustOpened: Bool = false //checks if patient file was just opened (for notification)
-    var fileWasOpenedOrCreated: String = "" //checks if file was opened or created (for notification)
+    var fileWasOpenedOrCreated: String = "" //checks if file was opened or created
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     var transitionedToDifferentView: Bool = false //false = currently in DEM, true = segued away
     
@@ -65,13 +66,15 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     override func viewDidAppear(animated: Bool) {
-        if (currentUser == nil) {//If user isn't logged in, modally segue -> login screen.
+        //The ENTIRE viewDidAppear function is run when the view appears (i.e. it does not stop running after segueing to a different view. It runs through the end first. We need to put in checks to account for this (when checking for currentPatient, make sure currentUser is set first).
+        //Rethink the current routing - a FO user will never need to be redirected to DEM, so we need a different starting point (loginVC).
+        if (currentUser == nil) { //if user isn't logged in, modally segue -> login screen.
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
         currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext) //disable when doing live testing
         
-        if (currentPatient == nil) { //user must select patient to proceed
+        if ((currentUser != nil) && (currentPatient == nil)) { //if user isn't logged in, modally segue -> login screen.
             performSegueWithIdentifier("showPatientSelection", sender: nil)
         }
         
@@ -89,17 +92,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         print("Current User (DEnMVC): \(currentUser)")
         print("Current Patient (DEnMVC): \(currentPatient?.fullName)")
         
-        //Alternative way to authenticate using user defaults:
-        //        let preferences : NSUserDefaults = NSUserDefaults.standardUserDefaults()
-        //        let loggedInCheck : Int = preferences.integerForKey("ISLOGGEDIN") as Int
-        //        if (loggedInCheck != 1) {
-        //            self.performSegueWithIdentifier("showLogin", sender: self)
-        //        } else {
-        //            self.loginStatusLabel.text = preferences.valueForKey("USERNAME") as? String
-        //        }
-        
-        //Call the correct first responder depending on view status:
-        setFirstResponder()
+        setFirstResponder() //call the correct first responder depending on view status
     }
 
     override func didReceiveMemoryWarning() {
@@ -124,147 +117,6 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     //MARK: - Default View Configuration
-    
-    func configureViewForEntry(desiredView: String) { //Configures view
-        switch desiredView {
-        case "fieldName": //Configure view for field name entry
-            //Hide fieldValue entry views:
-            labelsTableView.hidden = true
-            dataEntryImageView.hidden = true
-            plusButton.hidden = true
-            currentItemNumberLabel.hidden = true
-            
-            //Bring up 'Field Name' Entry Views, set delegate:
-            fieldNameEntryLabel.hidden = false
-            fieldNameTextField.hidden = false
-            fieldNameTextField.delegate = self
-        case "fieldValue":
-            //Hide the fieldName entry views & pull up the formatted TV & imageView:
-            fieldNameEntryLabel.hidden = true
-            fieldNameTextField.hidden = true
-            fieldNameTextField.resignFirstResponder() //*
-            plusButton.hidden = true
-            currentItemNumberLabel.hidden = true
-            renderDataEntryImageView(tableViewCellLabels!.count)
-            labelsTableView.reloadData() //refreshes visible TV cells w/ existing data
-            labelsTableView.hidden = false
-            dataEntryImageView.hidden = false
-        default:
-            print("Error. Switch case triggered unknown statement")
-        }
-        setFirstResponder()
-    }
-    
-    func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior for 'RETURN' button
-        let input = textField.text
-        textField.resignFirstResponder()
-        if textField.tag == 1 { //sender is fieldName text field
-            openScope = EMRField(inputWord: input!, currentPatient: currentPatient!)
-            if (openScope!.matchFound()) { //Open Scope & render view according to fieldName
-                print("Match found")
-                notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
-                fadeIn()
-                fadeOut()
-                        
-                //Check if the user requested a physical or ROS view:
-                if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") { //Render Px or ROS View
-                    configurePhysicalOrROSView((openScope?.getFieldName())!)
-                } else { //NOT a Px or ROS view
-                    (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())! //set the # of tableView cells according to the MK
-                    configureViewForEntry("fieldValue")
-                }
-            } else {//'matchFound' == nil
-                openScope = nil
-                print("No match found!")
-                configureViewForEntry("fieldName") //re-render fieldName entry view
-            }
-        } else if textField.tag == 100 { //Sender is lastTextField from dataEntryImageView sending FVs
-            //Obtain dictionary & notificationText containing input values; send dictionary -> central web server/persistent store & show notification, then configure the 'fieldName' view:
-            var error: Bool = false
-            var errorTagIndicator: Int = 0
-            getInputValuesFromTextFields(input!, notificationString: { (let notification) in
-                self.notificationsFeed.text = notification.2 //display all mapped values in feed
-                error = notification.0
-                errorTagIndicator = notification.1 //gives tag of the view which is empty
-            })
-            for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
-                print("Dict: \(item): \(value)")
-            }
-            fadeIn()
-            fadeOut()
-            if (error == true) { //block reconfiguration of the view if there was an error
-                dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
-                return false //block transition
-            }
-            print("Sending dictionary to EMR...")
-            sendHTTPRequestToEMR() //*testing, send data -> server when user presses enter
-            tableViewCellLabels = nil //clear array w/ labels
-            plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
-            currentItemNumberLabel.hidden = true
-            configureViewForEntry("fieldName")
-            openScope = nil //close the existing scope
-        } else if textField.tag == 200 { //sender is Px & ROS dataEntryView organSystemTextField
-            switch input!.lowercaseString { //configure view based on input
-            case "g":
-                physicalOrROSView?.constitutionalButtonClick((physicalOrROSView?.constitutionalButton)!)
-            case "hn":
-                physicalOrROSView?.headAndNeckButtonClick((physicalOrROSView?.headAndNeckButton)!)
-            case "n":
-                physicalOrROSView?.neurologicalSystemButtonClick((physicalOrROSView?.neurologicalSystemButton)!)
-            case "p":
-                physicalOrROSView?.psychiatricButtonClick((physicalOrROSView?.psychiatricButton)!)
-            case "h":
-                physicalOrROSView?.cardiovascularSystemButtonClick((physicalOrROSView?.cardiovascularSystemButton)!)
-            case "l":
-                physicalOrROSView?.respiratorySystemButtonClick((physicalOrROSView?.respiratorySystemButton)!)
-            case "gi":
-                physicalOrROSView?.gastrointestinalSystemButtonClick((physicalOrROSView?.gastrointestinalSystemButton)!)
-            case "gu":
-                physicalOrROSView?.genitourinarySystemButtonClick((physicalOrROSView?.genitourinarySystemButton)!)
-            case "pe":
-                physicalOrROSView?.integumentarySystemButtonClick((physicalOrROSView?.integumentarySystemButton)!)
-            case "s":
-                physicalOrROSView?.backButtonClick((physicalOrROSView?.backButton)!)
-            case "ms":
-                physicalOrROSView?.musculoskeletalSystemButtonClick((physicalOrROSView?.musculoskeletalSystemButton)!)
-            case "b":
-                physicalOrROSView?.breastButtonClick((physicalOrROSView?.breastButton)!)
-            default:
-                physicalOrROSView?.organSystemSelectionTextField.becomeFirstResponder()
-                notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
-                fadeIn()
-                fadeOut()
-            }
-        }
-        textField.text = "" //clear textField before proceeding
-        return true
-    }
-    
-    func textViewShouldReturn(textView: UITextView) -> Bool { //get info from a textView (e.g. HPI)
-        var error: Bool = false
-        var errorTagIndicator: Int = 0
-        getInputValuesFromTextFields(textView.text, notificationString: { (let notification) in
-            self.notificationsFeed.text = notification.2 //display all mapped values in feed
-            error = notification.0
-            errorTagIndicator = notification.1 //gives tag of the view which is empty
-        })
-        for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
-            print("Dict: \(item): \(value)")
-        }
-        fadeIn()
-        fadeOut()
-        if (error == true) { //block reconfiguration of the view if there was an error
-            dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
-            return false //block transition
-        }
-        tableViewCellLabels = nil //clear array w/ labels
-        plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
-        currentItemNumberLabel.hidden = true
-        configureViewForEntry("fieldName")
-        openScope = nil //close the existing scope
-        textView.text = "" //clear view before proceeding
-        return true
-    }
     
     func setFirstResponder() { //called any time DEM appears or view is rendered, sets 1st responder
         //When user returns to this screen, bring up the previous 1st responder again:
@@ -294,6 +146,204 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
                 dataEntryImageView.viewWithTag(100)?.becomeFirstResponder() //called for HPI view b/c the optional cast would do nothing
             }
         }
+    }
+    
+    func configureViewForEntry(desiredView: String) { //Configures view
+        switch desiredView {
+        case "fieldName": //Configure view for field name entry
+            //Hide fieldValue entry views:
+            labelsTableView.hidden = true
+            dataEntryImageView.hidden = true
+            plusButton.hidden = true
+            currentItemNumberLabel.hidden = true
+            
+            //Bring up 'Field Name' Entry Views, set delegate:
+            fieldNameEntryLabel.hidden = false
+            fieldNameTextField.hidden = false
+            fieldNameTextField.delegate = self
+        case "fieldValue":
+            if (openScope?.getFieldName() != "physicalExam") || (openScope?.getFieldName() != "reviewOfSystems") { //clear any open Px or ROS view
+                physicalOrROSView?.removeFromSuperview()
+                physicalOrROSView = nil
+            }
+            //Hide the fieldName entry views & pull up the formatted TV & imageView:
+            fieldNameEntryLabel.hidden = true
+            fieldNameTextField.hidden = true
+            fieldNameTextField.resignFirstResponder()
+            plusButton.hidden = true
+            currentItemNumberLabel.hidden = true
+            renderDataEntryImageView(tableViewCellLabels!.count)
+            labelsTableView.reloadData() //refreshes visible TV cells w/ existing data
+            labelsTableView.hidden = false
+            dataEntryImageView.hidden = false
+        default:
+            print("Error. Switch case triggered unknown statement")
+        }
+        setFirstResponder()
+    }
+    
+    func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior for 'RETURN' button
+        let input = textField.text
+        textField.resignFirstResponder()
+        if (textField.tag == 1) { //sender is fieldName text field
+            openScope = EMRField(inputWord: input!, patient: currentPatient!)
+            if (openScope!.matchFound()) { //Open Scope & render view according to fieldName
+                print("Match found")
+                notificationsFeed.text = "Scope has been opened for '\(openScope!.getFieldName()!)' field"
+                fadeIn()
+                fadeOut()
+                        
+                //Check if the user requested a physical or ROS view:
+                if (openScope?.getFieldName() == "physicalExam" || openScope?.getFieldName() == "reviewOfSystems") { //Render Px or ROS View
+                    configurePhysicalOrROSView((openScope?.getFieldName())!)
+                } else { //NOT a Px or ROS view
+                    (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())! //set the # of tableView cells according to the MK
+                    configureViewForEntry("fieldValue")
+                }
+            } else {//'matchFound' == nil
+                openScope = nil
+                print("No match found!")
+                configureViewForEntry("fieldName") //re-render fieldName entry view
+            }
+        } else if (textField.tag == 100) { //Sender is lastTextField from dataEntryImageView sending FVs
+            //Obtain dictionary & notificationText containing input values; send dictionary -> central web server/persistent store & show notification, then configure the 'fieldName' view:
+            var error: Bool = false
+            var errorTagIndicator: Int = 0
+            getInputValuesFromTextFields(input!, notificationString: { (let notification) in
+                self.notificationsFeed.text = notification.2 //display all mapped values in feed
+                error = notification.0
+                errorTagIndicator = notification.1 //gives tag of the view which is empty
+            })
+            for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
+                print("Dict: \(item): \(value)")
+            }
+            fadeIn()
+            fadeOut()
+            if (error == true) { //block reconfiguration of the view if there was an error
+                dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
+                return false //block transition
+            }
+            
+            print("Sending dictionary to EMR...")
+            sendHTTPRequestToEMR() //*testing, send data -> server when user presses enter
+            tableViewCellLabels = nil //clear array w/ labels
+            plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
+            currentItemNumberLabel.hidden = true
+            configureViewForEntry("fieldName")
+            openScope = nil //close the existing scope
+            print("Current Patient: \(currentPatient?.fullName)")
+        } else if (textField.tag == 200) { //sender is Px & ROS dataEntryView organSystemTextField
+            switchOrganSystemButtons(input!)
+        }
+        textField.text = "" //clear textField before proceeding
+        return true
+    }
+    
+    func switchOrganSystemButtons(input: String) {
+        let bodyImageView = physicalOrROSView!.bodyImageView
+        if (bodyImageView.viewChoice == "physicalExam") { //switch Px buttons only
+            switch input.lowercaseString { //configure view based on input
+            case "c":
+                bodyImageView.constitutionalButtonClick((bodyImageView.constitutionalButton))
+            case "hn":
+                bodyImageView.headAndNeckButtonClick((bodyImageView.headAndNeckButton))
+            case "n":
+                bodyImageView.neurologicalSystemButtonClick((bodyImageView.neurologicalSystemButton))
+            case "p":
+                bodyImageView.psychiatricButtonClick((bodyImageView.psychiatricButton))
+            case "h":
+                bodyImageView.cardiovascularSystemButtonClick((bodyImageView.cardiovascularSystemButton))
+            case "l":
+                bodyImageView.respiratorySystemButtonClick((bodyImageView.respiratorySystemButton))
+            case "gi":
+                bodyImageView.gastrointestinalSystemButtonClick((bodyImageView.gastrointestinalSystemButton))
+            case "gu":
+                bodyImageView.genitourinarySystemButtonClick((bodyImageView.genitourinarySystemButton))
+            case "sk":
+                bodyImageView.integumentarySystemButtonClick((bodyImageView.integumentarySystemButton))
+            case "b":
+                bodyImageView.backButtonClick((bodyImageView.backButton))
+            case "ms":
+                bodyImageView.musculoskeletalSystemButtonClick((bodyImageView.musculoskeletalSystemButton))
+            case "re":
+                bodyImageView.rectalSystemButtonClick((bodyImageView.rectalSystemButton))
+            case "ch":
+                bodyImageView.chaperoneButtonClick((bodyImageView.chaperoneButton))
+            case "enmt":
+                bodyImageView.enmtButtonClick((bodyImageView.enmtButton))
+            case "ey":
+                bodyImageView.eyesButtonClick((bodyImageView.eyesButton))
+            case "br":
+                bodyImageView.breastButtonClick((bodyImageView.breastButton))
+            default:
+                physicalOrROSView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
+                notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
+                fadeIn()
+                fadeOut()
+            }
+        } else { //switch ROS buttons only
+            switch input.lowercaseString { //configure view based on input
+            case "c":
+                bodyImageView.constitutionalButtonClick((bodyImageView.constitutionalButton))
+            case "n":
+                bodyImageView.neurologicalSystemButtonClick((bodyImageView.neurologicalSystemButton))
+            case "p":
+                bodyImageView.psychiatricButtonClick((bodyImageView.psychiatricButton))
+            case "cv":
+                bodyImageView.cardiovascularSystemButtonClick((bodyImageView.cardiovascularSystemButton))
+            case "r":
+                bodyImageView.respiratorySystemButtonClick((bodyImageView.respiratorySystemButton))
+            case "gi":
+                bodyImageView.gastrointestinalSystemButtonClick((bodyImageView.gastrointestinalSystemButton))
+            case "gu":
+                bodyImageView.genitourinarySystemButtonClick((bodyImageView.genitourinarySystemButton))
+            case "in":
+                bodyImageView.integumentarySystemButtonClick((bodyImageView.integumentarySystemButton))
+            case "ms":
+                bodyImageView.musculoskeletalSystemButtonClick((bodyImageView.musculoskeletalSystemButton))
+            case "en":
+                bodyImageView.endocrineSystemButtonClick((bodyImageView.endocrineSystemButton))
+            case "hl":
+                bodyImageView.hematologicLymphaticSystemButtonClick((bodyImageView.hematologicLymphaticSystemButton))
+            case "ai":
+                bodyImageView.allergicImmunologicSystemButtonClick((bodyImageView.allergicImmunologicSystemButton))
+            case "enmt":
+                bodyImageView.enmtButtonClick((bodyImageView.enmtButton))
+            case "ey":
+                bodyImageView.eyesButtonClick((bodyImageView.eyesButton))
+            default:
+                physicalOrROSView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
+                notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
+                fadeIn()
+                fadeOut()
+            }
+        }
+    }
+    
+    func textViewShouldReturn(textView: UITextView) -> Bool { //get info from a textView (e.g. HPI)
+        var error: Bool = false
+        var errorTagIndicator: Int = 0
+        getInputValuesFromTextFields(textView.text, notificationString: { (let notification) in
+            self.notificationsFeed.text = notification.2 //display all mapped values in feed
+            error = notification.0
+            errorTagIndicator = notification.1 //gives tag of the view which is empty
+        })
+        for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
+            print("Dict: \(item): \(value)")
+        }
+        fadeIn()
+        fadeOut()
+        if (error == true) { //block reconfiguration of the view if there was an error
+            dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
+            return false //block transition
+        }
+        tableViewCellLabels = nil //clear array w/ labels
+        plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
+        currentItemNumberLabel.hidden = true
+        configureViewForEntry("fieldName")
+        openScope = nil //close the existing scope
+        textView.text = "" //clear view before proceeding
+        return true
     }
     
     //MARK: - Notification Feed Animations
@@ -533,15 +583,22 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     func configurePhysicalOrROSView(requestedView: String) {
-        //Hide open views:
+        //Hide fieldName & fieldValue entry views:
         fieldNameEntryLabel.hidden = true
         fieldNameTextField.hidden = true
+        labelsTableView.hidden = true
+        dataEntryImageView.hidden = true
+        plusButton.hidden = true
+        currentItemNumberLabel.hidden = true
         
-        //Render the custom view. Make sure to put in an adjustable frame (not static, but based on the view dimensions)!
+        //Nullify/remove any existing Px or ROS view, then render the custom view. Make sure to put in an adjustable frame (not static, but based on the view dimensions)!.
+        physicalOrROSView?.removeFromSuperview()
+        physicalOrROSView = nil //this will erase any data we were in the middle of adding & remove our highlighted buttons. Is there any way to avoid this? 
+        
         physicalOrROSView = PhysicalAndROSView(applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
-        physicalOrROSView?.delegate = self
+        physicalOrROSView?.dataEntryView.delegate = self
         self.view.addSubview(physicalOrROSView!)
-        physicalOrROSView?.organSystemSelectionTextField.delegate = self
+        physicalOrROSView?.dataEntryView.organSystemSelectionTextField.delegate = self
         
         //Bring back fieldName view after Px or ROS is closed
     }
@@ -663,36 +720,36 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     //MARK: - Template-Selection View Configuration
     
     @IBAction func vitalsButtonClick(sender: AnyObject) {
-        openScope = EMRField(inputWord: "vitals", currentPatient: currentPatient!)
+        openScope = EMRField(inputWord: "vitals", patient: currentPatient!)
         (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
         configureViewForEntry("fieldValue")
     }
     
     @IBAction func hpiButtonClick(sender: AnyObject) {
-        openScope = EMRField(inputWord: "hpi", currentPatient: currentPatient!)
+        openScope = EMRField(inputWord: "hpi", patient: currentPatient!)
         (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
         configureViewForEntry("fieldValue")
     }
     
     @IBAction func medicationsButtonClick(sender: AnyObject) {
-        openScope = EMRField(inputWord: "medications", currentPatient: currentPatient!)
+        openScope = EMRField(inputWord: "medications", patient: currentPatient!)
         (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
         configureViewForEntry("fieldValue")
     }
     
     @IBAction func allergiesButtonClick(sender: AnyObject) {
-        openScope = EMRField(inputWord: "allergies", currentPatient: currentPatient!)
+        openScope = EMRField(inputWord: "allergies", patient: currentPatient!)
         (tableViewCellLabels, tableViewCellColors) = (openScope?.getLabelsForMK())!
         configureViewForEntry("fieldValue")
     }
     
     @IBAction func physicalButtonClick(sender: AnyObject) {
-        openScope = EMRField(inputWord: "physical", currentPatient: currentPatient!)
+        openScope = EMRField(inputWord: "physical", patient: currentPatient!)
         configurePhysicalOrROSView((openScope?.getFieldName())!)
     }
     
     @IBAction func rosButtonClick(sender: AnyObject) {
-        openScope = EMRField(inputWord: "ros", currentPatient: currentPatient!)
+        openScope = EMRField(inputWord: "ros", patient: currentPatient!)
         configurePhysicalOrROSView((openScope?.getFieldName())!)
     }
     
@@ -736,8 +793,9 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     
     @IBAction func logoutButtonClick(sender: AnyObject) { //for now, will also clear scope/current patient
         //Clear out existing user defaults:
-        //        let appDomain = NSBundle.mainBundle().bundleIdentifier
-        //        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(appDomain!)
+        let preferences: NSUserDefaults = NSUserDefaults.standardUserDefaults()
+        preferences.removeObjectForKey("USERNAME")
+        preferences.removeObjectForKey("PROVIDER_TYPE")
         
         openScope = nil
         currentUser = nil //clears currentUser to trigger segue
@@ -780,7 +838,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     
     //MARK: - User Authentication & Patient Selection
     
-    var currentUser: String? = "Arnav" { //When we want login functionality, set this to nil!!!
+    var currentUser: String? = "a" { //when we want login functionality, set this to nil!
         didSet {
             if (currentUser != nil) { //do nothing, go to DEM view.
             } else { //go to login screen
