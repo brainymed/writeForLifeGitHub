@@ -53,8 +53,8 @@ class HumanBodyImageView: UIImageView {
         self.rotated = false
         
         //Pick starting image for the view:
-        if self.childOrAdult == 0 { //Patient is an adult
-            if self.gender == 0 { //Male adult {1}
+        if (self.childOrAdult == 0) { //Patient is an adult
+            if (self.gender == 0) { //Male adult {1}
                 self.index = 1
                 self.imageName = "adult_male_outline_front.png"
             } else { //Female adult {2}
@@ -62,7 +62,7 @@ class HumanBodyImageView: UIImageView {
                 self.imageName = "adult_female_outline_front.png"
             }
         } else { //Patient is a child
-            if self.gender == 0 { //Male child {3}
+            if (self.gender == 0) { //Male child {3}
                 self.index = 3
                 self.imageName = "child_male_outline_front.png"
             } else { //Female child {4}
@@ -167,11 +167,9 @@ class HumanBodyImageView: UIImageView {
             for button in rosButtonsForBackArray { //hide the buttons on the back of the IV
                 button.hidden = true
             }
-            revealBreastButton()
         }
+        revealBreastButton()
         self.addSubview(addRotationButton()) //add configured rotation button
-        
-        
     }
     
     private func revealBreastButton() { //reveal breastButton for adult females in front Px view
@@ -438,7 +436,7 @@ class HumanBodyImageView: UIImageView {
     func enmtButtonClick(sender: PhysicalAndROSOrganSystemButton) {
         if self.viewChoice == "physicalExam" {
             enmtButton.sectionsArray = ["Ears", "Hearing", "Nose", "Lips, Teeth, & Gums", "Oropharynx"]
-            enmtButton.labelsArray = ["Ears": ["External Ear Lesion", "EAC Ceruminous", "EAC Discharge", "TM Erythematous", "TM Bulging", "TM Perforated", "TM Opacified", "TM Immobile", "Middle Ear Fluid"], "Hearing": ["Hearing Decreased", "Weber's Sign", "Additional Notes"], "Nose": ["External Nose Lesion", "Nares Non-Patent", "Deviated Septum", "Nasal Obstruction", "Sinus Tenderness", "Nasal Discharge", "Nasal Discharge-Purulent", "Nasal Discharge-Rhinorrhea", "Post Nasal Drip", "Additional Notes"], "Lips, Teeth, & Gums": ["Mouth Ulcers", "Gingival Erythema", "Poor Dentition", "Edentulous", "Additional Notes"], "Oropharynx": ["Erythema", "Tonsils Enlarged", "Exudate", "Tonsils Absent", "Additional Notes"]]
+            enmtButton.labelsArray = ["Ears": ["External Ear Lesion", "EAC Ceruminous", "EAC Discharge", "TM Erythematous", "TM Bulging", "TM Perforated", "TM Opacified", "TM Immobile", "Middle Ear Fluid", "Additional Notes"], "Hearing": ["Hearing Decreased", "Weber's Sign", "Additional Notes"], "Nose": ["External Nose Lesion", "Nares Non-Patent", "Deviated Septum", "Nasal Obstruction", "Sinus Tenderness", "Nasal Discharge", "Nasal Discharge-Purulent", "Nasal Discharge-Rhinorrhea", "Post Nasal Drip", "Additional Notes"], "Lips, Teeth, & Gums": ["Mouth Ulcers", "Gingival Erythema", "Poor Dentition", "Edentulous", "Additional Notes"], "Oropharynx": ["Erythema", "Tonsils Enlarged", "Exudate", "Tonsils Absent", "Additional Notes"]]
         } else if self.viewChoice == "reviewOfSystems" {
             enmtButton.sectionsArray = ["Ears", "Nose", "Mouth/Throat"]
             enmtButton.labelsArray = ["Ears": ["Difficulty Hearing", "Ear Pain", "Additional Notes"], "Nose": ["Frequent Nosebleeds", "Nose Problems", "Sinus Problems", "Additional Notes"], "Mouth/Throat": ["Sore Throat", "Bleeding Gums", "Snoring", "Dry Mouth", "Mouth Ulcers", "Oral Abnormalities", "Teeth Problems", "Mouth Breathing", "Additional Notes"]]

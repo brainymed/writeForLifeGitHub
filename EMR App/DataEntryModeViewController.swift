@@ -72,7 +72,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             performSegueWithIdentifier("showLogin", sender: nil)
         }
         
-        currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext) //disable when doing live testing
+        currentPatient = openPatientFile("arnav") //disable when doing live testing
         
         if ((currentUser != nil) && (currentPatient == nil)) { //if user isn't logged in, modally segue -> login screen.
             performSegueWithIdentifier("showPatientSelection", sender: nil)
@@ -373,7 +373,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         //When we draw cells, put a background color for each cell that matches the color of the side view (create an array of colors & iterate through it as each cell is drawn, selecting a color from the array each time)! Can help user w/ visual cues.
-        let cell : UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell")! as UITableViewCell
+        let cell: UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell")! as UITableViewCell
         if let labelArray = tableViewCellLabels { //Partition TV based on # of cells
             cell.textLabel?.text = labelArray[indexPath.row]
             cell.textLabel?.numberOfLines = 2
@@ -468,9 +468,10 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
                 textField.tag = partition //tag each textField for later reference
                 let placeholderText = openScope?.getLabelsForMK().0![partition - 1]
                 let placeholder = "Enter a value for the \(placeholderText!) & press 'Tab'"
-                textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.yellowColor()]) //change placeholder color
+                textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.grayColor()]) //change placeholder color
                 textField.textColor = UIColor.whiteColor()
                 textField.backgroundColor = UIColor.clearColor()
+                textField.tintColor = UIColor.blackColor() //cursor color
                 textField.userInteractionEnabled = true //In IB, set user interaction = enabled for parent imageView as well or textField will not respond to touch!
                 
                 dataEntryImageView.addSubview(partitionView)
@@ -500,6 +501,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             textView.textColor = UIColor.whiteColor()
             textView.font = UIFont(name: "HelveticaNeue", size: 16) //change font size
             textView.backgroundColor = UIColor.clearColor()
+            textView.tintColor = UIColor.blackColor()
             textView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
             textView.layer.borderWidth = 1.0 //set border
             textView.layer.borderColor = UIColor.blackColor().CGColor //modify border color
@@ -512,10 +514,11 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             let lastTextField = UITextField(frame: CGRect(x: (viewWidth * 0.125), y: lastTextFieldYPosition, width: (viewWidth * 0.75), height: 50))
             lastTextField.textColor = UIColor.whiteColor()
             lastTextField.backgroundColor = UIColor.clearColor()
+            lastTextField.tintColor = UIColor.blackColor() //cursor color
             lastTextField.tag = 100 //allows us to reference lastTextField in 'TFshouldReturn' function
             let placeholderText = openScope?.getLabelsForMK().0![numberOfLabels - 1]
             let placeholder = "Enter a value for \(placeholderText!) & press the 'Return' key."
-            lastTextField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.yellowColor()]) //set placeholder text color
+            lastTextField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.grayColor()]) //set placeholder text color
             lastTextField.delegate = self
             dataEntryImageView.addSubview(lastTextField)
             dataEntryImageView.bringSubviewToFront(lastTextField)
@@ -593,18 +596,19 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         
         //Nullify/remove any existing Px or ROS view, then render the custom view. Make sure to put in an adjustable frame (not static, but based on the view dimensions)!.
         physicalOrROSView?.removeFromSuperview()
-        physicalOrROSView = nil //this will erase any data we were in the middle of adding & remove our highlighted buttons. Is there any way to avoid this? 
+        //physicalOrROSView = nil //this will erase any data we were in the middle of adding & remove our highlighted buttons. Is there any way to avoid this but maintain safety in the app - can we make a singleton instance of each type of Physical&ROS view? In its current form, the app crashes if you click the Px or ROS buttons twice b/c it won't let you make a second instance of the class w/o releasing the first. How do we get it so that we ALWAYS get reference to the original instances each time, like w/ the userdefaults? 
         
         physicalOrROSView = PhysicalAndROSView(applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
-        physicalOrROSView?.dataEntryView.delegate = self
-        self.view.addSubview(physicalOrROSView!)
-        physicalOrROSView?.dataEntryView.organSystemSelectionTextField.delegate = self
-        
-        //Bring back fieldName view after Px or ROS is closed
+        if (physicalOrROSView != nil) {
+            physicalOrROSView?.dataEntryView.delegate = self
+            self.view.addSubview(physicalOrROSView!)
+            physicalOrROSView?.dataEntryView.organSystemSelectionTextField.delegate = self
+        } else {
+            print("PhysicalOrROSView == nil, trying to set the value twice")
+        }
     }
     
-    func physicalOrROSViewWasClosed() {
-        //Renders view for fieldName entry:
+    func physicalOrROSViewWasClosed() { //renders view for fieldName entry
         configureViewForEntry("fieldName")
     }
     

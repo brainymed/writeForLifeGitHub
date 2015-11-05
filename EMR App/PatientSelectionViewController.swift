@@ -85,8 +85,17 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
         openPatientFileButton.highlighted = true
         createPatientFileButton.alpha = 0.3
         createPatientFileButton.enabled = false
-        patientNameTextField.hidden = false
-        patientNameTextField.becomeFirstResponder()
+        
+        if (fetchAllPatients() > 0) {
+            patientNameTextField.hidden = false
+            patientNameTextField.becomeFirstResponder()
+        } else {
+            //Bypass when there are no patients left in the store -> even if no keyboard is attached, will take us to DEM!
+            print("WARNING: unsafe bypass (PatientSelectionVC > openPatientFileButtonClick! Takes user to DEM even if no BT keyboard is attached!")
+            currentPatient = Patient(firstName: "Arnav", lastName: "Pondicherry", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
+            fileWasOpenedOrCreated = "opened"
+            performSegueWithIdentifier("showDEM", sender: self)
+        }
     }
     
     @IBAction func createPatientFileButtonClick(sender: AnyObject) {
@@ -114,32 +123,56 @@ class PatientSelectionViewController: UIViewController, UITextFieldDelegate {
         } else {
             properNameFormat = false
         }
-        if properNameFormat == true {
+        if (properNameFormat == true) {
             patientNameTextField.resignFirstResponder()
             if (bluetoothKeyboardAttached == true) { //BT keyboard attached, segue -> FOM or DEM
                 if (preferences.objectForKey("PROVIDER_TYPE") as! String == "Front Office") {
                     //Configure FOM for modifying patient's documents:
-                    performSegueWithIdentifier("showFOM", sender: self)
-                    return true
+                    if let existingPatient = openPatientFile(trimmedName!) {
+                        currentPatient = existingPatient
+                        fileWasOpenedOrCreated = "opened"
+                        performSegueWithIdentifier("showFOM", sender: self)
+                        return true
+                    } else { //no patient found for given name
+                        patientNameTextField.becomeFirstResponder()
+                        let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                        let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                        alertController.addAction(ok)
+                        presentViewController(alertController, animated: true, completion: nil)
+                        return false
+                    }
+                } else if (preferences.objectForKey("PROVIDER_TYPE") as! String == "Nurse") {
+                    if let existingPatient = openPatientFile(trimmedName!) {
+                        currentPatient = existingPatient
+                        fileWasOpenedOrCreated = "opened"
+                        performSegueWithIdentifier("showDEM", sender: self)
+                        return true
+                    } else { //no patient found for given name
+                        patientNameTextField.becomeFirstResponder()
+                        let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                        let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                        alertController.addAction(ok)
+                        presentViewController(alertController, animated: true, completion: nil)
+                        return false
+                    }
+                } else if (preferences.objectForKey("PROVIDER_TYPE") as! String == "Physician") {
+                    if let existingPatient = openPatientFile(trimmedName!) {
+                        currentPatient = existingPatient
+                        fileWasOpenedOrCreated = "opened"
+                        performSegueWithIdentifier("showDEM", sender: self)
+                        return true
+                    } else { //no patient found for given name
+                        patientNameTextField.becomeFirstResponder()
+                        let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
+                        let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
+                        alertController.addAction(ok)
+                        presentViewController(alertController, animated: true, completion: nil)
+                        return false
+                    }
                 } else {
-                    currentPatient = Patient(firstName: "a", lastName: "p", gender: Gender.Male, dob: NSDate(dateString: "11/23/1992"), insertIntoManagedObjectContext: managedObjectContext)
-                    performSegueWithIdentifier("showDEM", sender: self)
-                    return true
+                    print("Error - PatientSelectionVC > TFShouldReturn > else statement")
+                    return false
                 }
-                
-                //                if let existingPatient = openPatientFile(trimmedName!) {
-                //                    currentPatient = existingPatient
-                //                    fileWasOpenedOrCreated = "opened"
-                //                    performSegueWithIdentifier("showDEM", sender: self)
-                //                    return true
-                //                } else { //no patient found for given name
-                //                    patientNameTextField.becomeFirstResponder()
-                //                    let alertController = UIAlertController(title: "Oops!", message: "No patient was found for the given name.", preferredStyle: .Alert)
-                //                    let ok = UIAlertAction(title: "OK", style: .Default, handler: { (action) -> Void in })
-                //                    alertController.addAction(ok)
-                //                    presentViewController(alertController, animated: true, completion: nil)
-                //                    return false
-                //                }
             } else { //No BT keyboard, segue -> PCM
                 if let existingPatient = openPatientFile(trimmedName!) {
                     currentPatient = existingPatient

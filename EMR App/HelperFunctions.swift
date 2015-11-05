@@ -40,7 +40,7 @@ func clearAllPatientsFromDataStore() {
     }
 }
 
-func fetchAllPatients() { //Returns all patients in Core Data store
+func fetchAllPatients() -> Int? { //Returns # of patients in Core Data store
     let context = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     let entityDescription = NSEntityDescription.entityForName("Patient", inManagedObjectContext: context)
     let request = NSFetchRequest()
@@ -53,11 +53,14 @@ func fetchAllPatients() { //Returns all patients in Core Data store
                 let patient = result as! Patient
                 print("Name: \(patient.fullName). Vitals: \(patient.vitals). Medications: \(patient.medications). Allergies: \(patient.allergies). HPI: \(patient.hpi).") //Will return optional
             }
+            return objects.count
         } else {
             print("No results found in the Core Data Store.")
+            return nil
         }
     } catch {
         NSLog("Error! 'Execute Fetch Request' Failed.")
+        return nil
     }
 }
 
@@ -67,12 +70,15 @@ func openPatientFile(patientName: String) -> Patient? { //Opens the file for the
     let request = NSFetchRequest()
     request.entity = entityDescription
     
-    //Predicate: used to map info for specific patients to the EMR. Currently we are using a predicate that searches by name (only works if the name is unique). In reality, multiple patients could have the same name, so we should search by a unique patient ID #.
-    let pred = NSPredicate(format: "(name = %@)", patientName) //Filters results - matches a value in the obtained results to the string.
+    //Predicate: used to map info for specific patients to the EMR. Currently we are using a predicate that searches by firstName (only works if the name is unique). In reality, multiple patients could have the same name, so we should search by a unique patient ID #.
+    let pred = NSPredicate(format: "(firstName ==[c] %@)", patientName) //Filters results - matches a value in the obtained results to the 'firstName' of all objects in the store. Make this case insensitive w/ the [c].
+    
+    //Currently there is no way to create a patient if the store is empty for a physician, so they can't proceed with the workflow!!! Need a bypass for physicians & nurses. 
+    
     request.predicate = pred
     
     do {
-        let patients = try context.executeFetchRequest(request) //causing crash, why isn't it throwing exception?
+        let patients = try context.executeFetchRequest(request)
         if patients.count > 0 {
             print("Number of objects fetched for the entered name: \(patients.count)")
             return (patients[0] as! Patient)

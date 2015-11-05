@@ -41,6 +41,7 @@
 		B17842A21BB0D22600C34C48 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17842A11BB0D22500C34C48 /* LoginViewController.swift */; };
 		B182015E1BA87CEA0028E7E7 /* TabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */; };
 		B1860DE91BD5AE0400E35308 /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1860DE81BD5AE0400E35308 /* ExternalAccessory.framework */; };
+		B19F78BB1BE9A64A0013DA30 /* FindingsButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19F78BA1BE9A64A0013DA30 /* FindingsButton.swift */; };
 		B1A8585B1BC8845300DC94F9 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */; };
 		B1A8585D1BC884C100DC94F9 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */; };
 		B1A8585F1BC8853200DC94F9 /* JotTouchSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */; };
@@ -121,6 +122,7 @@
 		B182015D1BA87CEA0028E7E7 /* TabBarViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabBarViewController.swift; sourceTree = "<group>"; };
 		B1860DE81BD5AE0400E35308 /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhysicalAndROSView.swift; sourceTree = "<group>"; };
+		B19F78BA1BE9A64A0013DA30 /* FindingsButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FindingsButton.swift; sourceTree = "<group>"; };
 		B1A8585A1BC8845300DC94F9 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
 		B1A8585C1BC884C100DC94F9 /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
 		B1A8585E1BC8853200DC94F9 /* JotTouchSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JotTouchSDK.framework; path = "../../Desktop/JotTouchSDK-master/JotTouchSDK.framework"; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 			isa = PBXGroup;
 			children = (
 				B1B8F8DE1BCEC6FC00B6CC6D /* PhysicalAndROSOrganSystemButton.swift */,
+				B19F78BA1BE9A64A0013DA30 /* FindingsButton.swift */,
 				B1C4DC411BE85E19005849E6 /* HumanBodyImageView.swift */,
 				B1C4DC431BE85E91005849E6 /* PhysicalAndROSDataEntryView.swift */,
 				B1889FB21BA7760800344130 /* PhysicalAndROSView.swift */,
@@ -497,6 +500,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B1BAAEA11BCE74BC002D6733 /* DataExtractionModeViewController.swift in Sources */,
+				B19F78BB1BE9A64A0013DA30 /* FindingsButton.swift in Sources */,
 				B1B11C351BA856ED00651FC7 /* EMRField.swift in Sources */,
 				B11545861BA707DD00E31EB6 /* CustomMLTWView.swift in Sources */,
 				B1E0D5AE1BB0966A0097EC0F /* DataEntryModeViewController.swift in Sources */,
