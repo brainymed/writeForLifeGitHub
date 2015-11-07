@@ -27,6 +27,8 @@ class FindingsButton: UIButton {
                 } else if (columnNumber == 1) { //second column
                     appropriateFrameInCollectionView = CGRect(x: 150, y: (45 + rowNumber*50), width: 120, height: 40)
                 }
+            } else { //not in collectionView = no appropriateFrame (security measure)
+                appropriateFrameInCollectionView = nil
             }
         }
     }

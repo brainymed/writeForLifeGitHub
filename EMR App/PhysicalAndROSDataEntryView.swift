@@ -8,7 +8,7 @@
 import UIKit
 
 protocol PhysicalAndROSDelegate {
-    //This delegate acts as follows: when the user hits the 'Close View' button, it calls a function in the delegate (DEM & PCMVC) that renders the view appropriately!
+    //This delegate acts as follows: when the user hits the 'Close View' button, it calls a function in the delegate (DEM & PCMVC) that renders the view appropriately! We also allow access to the notifications feed for display of messages to the user.
     func physicalOrROSViewWasClosed()
     func callNotificationsFeedFromPhysicalAndROSView(notificationText: String)
 }
@@ -19,6 +19,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     
     var delegate: PhysicalAndROSDelegate? //Delegate Stored Property
     
+    //General Variables:
     let applicationMode: String
     let viewChoice: String
     var currentVisibleSection: Int //used to keep track of which sub-section of the view is open
@@ -31,7 +32,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     var titleLabel = UILabel()
     var closeViewButton = UIButton()
     
-    //Custom Views:
+    //Custom View:
     var organSystemTitleLabel = UILabel()
     var sectionTitleLabel = UILabel()
     var escapeButton = UIButton()
@@ -115,8 +116,10 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         dataEntryInstructionsLabel.backgroundColor = UIColor.whiteColor()
         
         if (viewChoice == "physicalExam") { //PX label & abbreviations
+            //Improve visual formatting & display!
             dataEntryInstructionsLabel.text = "Type in the abbreviation for an organ system or tap on the corresponding button to the left.\n Abbreviations: Constitutional = C, Neuro = N, Psych = P, Head & Neck = HN, Eyes = EY, Ears/Nose/Mouth/Throat = ENMT, Heart = H, Lungs = L, GI = GI, GU = GU, Musculoskeletal = MS, Breast = BR, Chaperone = CH, Rectal = RE, Back = B, Skin = SK."
         } else { //ROS label & abbreviations
+            //Improve visual formatting & display!
             dataEntryInstructionsLabel.text = "Type in the abbreviation for an organ system or tap on the corresponding button to the left.\n Abbreviations: Constitutional = C, Neuro = N, Psych = P, Eyes = EY, Ears/Nose/Mouth/Throat = ENMT, Cardiovascular = CV, Respiratory = R, GI = GI, GU = GU, Musculoskeletal = MS, Integumentary = IN, Hematologic/Lymphatic = HL, Allergic/Immunologic = AI, Endocrine = EN."
         }
         return dataEntryInstructionsLabel
@@ -145,7 +148,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     //MARK: - Default Button Actions
     
     func closeViewButtonClick(sender: UIButton) {
-        //Remove views from main view & return the app to the default view (depends on application mode)
+        //Remove views from main view & returns the app to the default view (depends on application mode)
         if (self.applicationMode == "DEM") {
             obtainReferenceToSuperview()
             self.superview?.removeFromSuperview() //removes the Px & ROS View (remove or delete?)
@@ -164,7 +167,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         obtainReferenceToSuperview()
         physicalAndROSView?.clearPhysicalAndROSView() //hides bodyIV & removes subviews from dataEntryV
         
-        //Redraw the dataEntryView to take up the entire screen:
+        //Redraw the dataEntryView to take up the entire screen (make it dynamic!):
         self.frame = CGRect(x: 0, y: 0, width: 964, height: 619)
         self.backgroundColor = UIColor(red: 50/255, green: 163/255, blue: 216/255, alpha: 1)
         
@@ -183,7 +186,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         self.addSubview(configureButtonCollectionView())
         
         let sectionsArray = openOrganSystemButton!.sectionsArray!
-        if (sectionsArray.count != 1) {
+        if (sectionsArray.count != 1) { //only add 'next' & 'last' if there is > 1 section!
             self.addSubview(configureNextSectionButton())
             self.addSubview(configureLastSectionButton())
         }
@@ -194,7 +197,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         findingsTableView.reloadData()
     }
     
-    func configureOrganSystemTitleLabel(system: String) -> UILabel {
+    func configureOrganSystemTitleLabel(system: String) -> UILabel { //selected organSystem
         organSystemTitleLabel.frame = CGRect(x: 300, y: 70, width: 250, height: 40)
         organSystemTitleLabel.text = "Section: " + system
         organSystemTitleLabel.textColor = UIColor.whiteColor()
@@ -214,7 +217,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return sectionTitleLabel
     }
     
-    func configureEscapeButton() -> UIButton {
+    func configureEscapeButton() -> UIButton { //allows an escape from view W/O saving
         escapeButton.frame = CGRect(x: 50, y: 50, width: 80, height: 30)
         escapeButton.setTitle("Escape", forState: UIControlState.Normal)
         escapeButton.addTarget(self, action: "escapeButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
@@ -230,7 +233,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return doneButton
     }
     
-    func configureNextSectionButton() -> UIButton {
+    func configureNextSectionButton() -> UIButton { //button for navigating -> next section
         nextSectionButton.frame = CGRect(x: 750, y: 570, width: 150, height: 30)
         nextSectionButton.enabled = true //default is enabled
         nextSectionButton.alpha = 1.0
@@ -241,7 +244,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return nextSectionButton
     }
     
-    func configureLastSectionButton() -> UIButton {
+    func configureLastSectionButton() -> UIButton { //button for navigating -> previous section
         lastSectionButton.frame = CGRect(x: 50, y: 570, width: 150, height: 30)
         lastSectionButton.enabled = false //default is not enabled b/c we start on the first section
         lastSectionButton.alpha = 0.5
@@ -252,7 +255,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return lastSectionButton
     }
     
-    func configureAdditionalFindingsTextField() -> UITextField {
+    func configureAdditionalFindingsTextField() -> UITextField { //TF for entry of additional notes
         let placeholder = "Enter Any Additional Findings & Press 'Return'"
         let x = findingsTableView.frame.minX
         let y = findingsTableView.frame.minY
@@ -268,11 +271,11 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return additionalFindingsTextField
     }
     
-    func configureButtonCollectionView() -> UIView {
+    func configureButtonCollectionView() -> UIView { //collection for holding selected Findings Buttons
         buttonCollectionView.frame = CGRect(x: 635, y: 100, width: 300, height: 350)
         buttonCollectionView.backgroundColor = UIColor(red: 239/255, green: 239/255, blue: 244/255, alpha: 1)
         
-        //Configure Title:
+        //Configure CollectionView Title Label:
         buttonCollectionView.addSubview(buttonCollectionViewTitleLabel)
         let titleWidth = buttonCollectionView.frame.width
         buttonCollectionViewTitleLabel.frame = CGRect(x: 0, y: 0, width: titleWidth, height: 35)
@@ -285,7 +288,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return buttonCollectionView
     }
     
-    func generateArrayOfButtonTitles() { //create buttons on bottom of view for each section
+    func generateArrayOfButtonTitles() { //create titles for buttons on bottom of view for each section
         let labelsDict = openOrganSystemButton!.labelsArray!
         let sectionsArray = openOrganSystemButton!.sectionsArray!
         var labelsArray: [[String]] = [] //array containing an array of each section's labels
@@ -296,7 +299,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         generateButtonsWithFindings(labelsArray)
     }
     
-    private func generateButtonsWithFindings(buttonTitlesArray: [[String]]) {
+    private func generateButtonsWithFindings(buttonTitlesArray: [[String]]) { //creates buttons w/ titles
         let currentSectionTitles = buttonTitlesArray[currentVisibleSection]
         let lastSectionTitleNumber = currentSectionTitles.count
         var tagIncrementer = 0
@@ -441,8 +444,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                 }
             }
             searchBar.text = ""
-        } else if (searchBarTrimmedText != "") && (filteredArray.count > 1) {
-            //If there is an exact match, select that button:
+        } else if (searchBarTrimmedText != "") && (filteredArray.count > 1) { //if there's an EXACT match, select that button
             if (filteredArray.contains(searchBarTrimmedText.capitalizedString)) { //check for EXACT match
                 for view in self.subviews {
                     if let button = (view as? FindingsButton) { //if button label matches, 'click' it
@@ -452,7 +454,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                     }
                 }
                 searchBar.text = ""
-            } else if (searchBarTrimmedText != "") && (filteredArray.count > 1) {
+            } else if (searchBarTrimmedText != "") && (filteredArray.count > 1) { //no exact matches
                 //Provide notification telling user to narrow down to 1 option:
                 delegate?.callNotificationsFeedFromPhysicalAndROSView("Please narrow your search down to 1 button before pressing 'Return'")
             }
@@ -490,7 +492,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     
     //MARK: - Custom Button Actions
     
-    func escapeButtonClick(sender: UIButton) { //called by hitting escape (no escape on keyboards*) keyboard shortcut. We need to get the button is currently opened
+    func escapeButtonClick(sender: UIButton) { //called by hitting escape (no escape on keyboards*) keyboard shortcut.
         currentVisibleSection = 0 //reset for next run, or should we leave it as is so user can return to last point?
         tagsForButtonsInCollectionView = Dictionary<String, [Int]>() //reset or not?
         
@@ -507,10 +509,12 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         
         currentVisibleSection = 0 //reset for next run
         tagsForButtonsInCollectionView = Dictionary<String, [Int]>() //reset
-        openOrganSystemButton?.informationHasBeenEnteredForOrganSystem = true //completion indicator, does this actually pass the reference to the actual button itself? Need to redraw button for it to show. 
+        openOrganSystemButton?.informationHasBeenEnteredForOrganSystem = true
         obtainReferenceToSuperview()
         physicalAndROSView?.passButtonVisualConfigurationToBodyImageView(openOrganSystemButton!)
         returnToDefaultDataEntryView()
+        
+        //What do we do if a user has already entered information for a specific system but they click on the button again in defaultView? Should we block them? How do we deal w/ the updated information?
     }
     
     //MARK: - Findings Buttons Logic
@@ -566,7 +570,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         searchController.searchBar.becomeFirstResponder()
     }
     
-    func storeButtonsCurrentlyInCollectionView(currentSection: String) {
+    func storeButtonsCurrentlyInCollectionView(currentSection: String) { //recalls buttons that are present in the collectionView (called when user switches -> next OR previous section)
         tagsForButtonsInCollectionView[currentSection] = [] //initialize dict
         for button in buttonCollectionView.subviews {
             if (button is FindingsButton) || (button is AdditionalFindingsButton) {
@@ -581,7 +585,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         }
     }
     
-    func assignButtonsToCollectionView(upcomingSection: String) { //reassign buttons to collection view
+    func assignButtonsToCollectionView(upcomingSection: String) { //reassign buttons -> collection view after navigating back to a view that has already been worked on
         let buttonsInCollection: [Int]? = tagsForButtonsInCollectionView[upcomingSection]
         if let tagArray = buttonsInCollection {
             for tag in tagArray {
@@ -595,9 +599,26 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         }
     }
     
+    func adjustButtonPositionsInCollectionView (removedButtonOverallPosition: Int) { //after removing a button from the collectionView, shifts the remaining buttons to their appropriate positions
+        for view in buttonCollectionView.subviews { //set new position -> change frame
+            if let button = view as? FindingsButton { //button must have positionInCollectionView!
+                let columnNumber = button.positionInCollectionView!.0
+                let rowNumber = button.positionInCollectionView!.1
+                let overallPosition = 6 * columnNumber + (rowNumber + 1)
+                if (overallPosition > removedButtonOverallPosition) { //move buttons AFTER removedButton
+                    if (columnNumber == 1) && (rowNumber == 0) { //position -> last button in row 1
+                        button.positionInCollectionView = (0, 5)
+                    } else { //slide other buttons up 1 row
+                        button.positionInCollectionView = (columnNumber, rowNumber - 1)
+                    }
+                    button.frame = button.appropriateFrameInCollectionView!
+                }
+            }
+        }
+    }
+    
     func findingButtonClick(sender: FindingsButton) { //all findingsButtons except 'Additional Findings'
         if (sender.inCollectionView == false) { //not in collectionView, move -> collectionView
-            //Not rendering properly b/c - if you have 2 buttons in the view & click on the top-most one to remove it, there is still 1 button left. The next time you add a button, it counts & notices there is 1 button, so it adds the new button 1 slot down (where the other button is currently sitting). To adjust best practice is to slide up the other buttons.
             sender.inCollectionView = true
             sender.removeFromSuperview()
             let count = buttonCollectionView.subviews.count - 1 //check # of buttons already in the view (1 minus total b/c of the titleLabel)
@@ -611,28 +632,15 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                 sender.positionInCollectionView = (0, buttonsInRow)
             }
         } else { //in collectionView, move -> dataEntryView
+            //Get the removedButton's position & absolute # count:
             let removedButtonColumn = sender.positionInCollectionView!.0
             let removedButtonRow = sender.positionInCollectionView!.1
             let removedButtonOverallPosition = 6 * removedButtonColumn + (removedButtonRow + 1)
-            sender.inCollectionView = false //sets positionInView -> nil*
+            sender.inCollectionView = false //sets positionInView & appropriateFrame -> nil
             sender.removeFromSuperview()
             self.addSubview(sender)
             sender.frame = sender.originalFrame //return to its original spot
-            for view in buttonCollectionView.subviews { //set button's new position & change frame
-                if let button = view as? FindingsButton { //generic cast, works for all buttons
-                    let columnNumber = button.positionInCollectionView!.0
-                    let rowNumber = button.positionInCollectionView!.1
-                    let overallPosition = 6 * columnNumber + (rowNumber + 1)
-                    if (overallPosition > removedButtonOverallPosition) { //only need to modify for buttons after the removed button
-                        if (columnNumber == 1) && (rowNumber == 0) { //position -> last button in row 1
-                            button.positionInCollectionView = (0, 5)
-                        } else { //slide other buttons up 1 row
-                            button.positionInCollectionView = (columnNumber, rowNumber - 1)
-                        }
-                        button.frame = button.appropriateFrameInCollectionView!
-                    }
-                }
-            }
+            adjustButtonPositionsInCollectionView(removedButtonOverallPosition) //shift remaining buttons
         }
         generateTableViewDataArray() //change the tableView data according to what items are in view
         findingsTableView.reloadData()
@@ -674,21 +682,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
             sender.removeFromSuperview()
             self.addSubview(sender)
             sender.frame = sender.originalFrame //return to its original spot
-            for view in buttonCollectionView.subviews { //set new position & change frame
-                if let button = view as? FindingsButton {
-                    let columnNumber = button.positionInCollectionView!.0
-                    let rowNumber = button.positionInCollectionView!.1
-                    let overallPosition = 6 * columnNumber + (rowNumber + 1)
-                    if (overallPosition > removedButtonOverallPosition) {
-                        if (columnNumber == 1) && (rowNumber == 0) { //position -> last button in row 1
-                            button.positionInCollectionView = (0, 5)
-                        } else { //slide other buttons up 1 row
-                            button.positionInCollectionView = (columnNumber, rowNumber - 1)
-                        }
-                        button.frame = button.appropriateFrameInCollectionView!
-                    }
-                }
-            }
+            adjustButtonPositionsInCollectionView(removedButtonOverallPosition) //shift remaining buttons
             generateTableViewDataArray() //change the tableView data according to what items are in view
             findingsTableView.reloadData()
             renderDefaultFindingsButtonVisuals()
@@ -697,7 +691,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         searchController.searchBar.text = ""
     }
     
-    func renderAdditionalFindingsTextField() { //handles display of TF vs. TV
+    func renderAdditionalFindingsTextField() { //handles display of additionalFindingsTF vs. tableView
         additionalFindingsTextField.text = "" //clear text for new cycle
         if (additionalFindingsTextField.hidden == true) { //reveal TF, hide TV
             additionalFindingsTextFieldShouldBeVisible = true
@@ -705,7 +699,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
             searchController.active = false
             searchController.searchBar.hidden = true
             searchController.searchBar.resignFirstResponder()
-            additionalFindingsTextField.becomeFirstResponder() //flashes for a second before disappearing! Something is taking FR afterwards maybe? After button press - ended called 2x (maybe once is when the view is invisible)
+            additionalFindingsTextField.becomeFirstResponder()
         } else { //reveal TV, hide TF
             additionalFindingsTextFieldShouldBeVisible = false
             additionalFindingsTextField.hidden = true
@@ -715,7 +709,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         }
     }
     
-    func switchAdditionalFindingsButtonVisualState(button: AdditionalFindingsButton) {
+    func switchAdditionalFindingsButtonVisualState(button: AdditionalFindingsButton) { //either highlights the AF button or returns it to a default visual state
         if (button.visualState == false) { //highlight button
             button.visualState = true
             button.backgroundColor = UIColor.greenColor()
@@ -727,8 +721,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         }
     }
     
-    func textFieldShouldReturn(textField: UITextField) -> Bool { //for additionalFindingsTF
-        print("Return was hit, saving entered input...")
+    func textFieldShouldReturn(textField: UITextField) -> Bool { //called by additionalFindingsTF
         let whitespaceSet = NSCharacterSet.whitespaceCharacterSet() //trim whiteSpace
         let textFieldTrimmedText = textField.text!.stringByTrimmingCharactersInSet(whitespaceSet)
         let labelsDict = openOrganSystemButton!.labelsArray!
@@ -755,7 +748,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         physicalAndROSView = (self.superview as? PhysicalAndROSView)
     }
     
-    func clearDataEntryView() {
+    func clearDataEntryView() { //clears all subviews from the view
         obtainReferenceToSuperview()
         searchController.searchBar.hidden = true
         searchController.searchBar.resignFirstResponder()
@@ -774,7 +767,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         physicalAndROSView?.bodyImageView.hidden = false //reveal bodyIV
         
         //Configure default dataEntryView:
-        self.frame = CGRect(x: 200, y: 0, width: 764, height: 619)
+        self.frame = CGRect(x: 200, y: 0, width: 764, height: 619) //make dynamic
         renderDefaultDataEntryView()
     }
 
