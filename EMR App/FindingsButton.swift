@@ -9,9 +9,31 @@ import UIKit
 
 class FindingsButton: UIButton {
 
-    var inCollectionView: Bool = false //set to true when button moves -> collectionView
-    var originalFrame: CGRect //reference to original position in dataEntryView
+    var inCollectionView: Bool = false { //set to true when button moves -> collectionView
+        didSet {
+            if (inCollectionView == false) { //if button is not in collectionView, it has no position
+                positionInCollectionView = nil
+            }
+        }
+    }
     
+    var positionInCollectionView: (Int, Int)? { //(column #, row #) in collectionView
+        didSet {
+            if (positionInCollectionView != nil) {
+                let columnNumber = positionInCollectionView!.0
+                let rowNumber = positionInCollectionView!.1
+                if (columnNumber == 0) { //first column
+                    appropriateFrameInCollectionView = CGRect(x: 10, y: (45 + rowNumber*50), width: 120, height: 40)
+                } else if (columnNumber == 1) { //second column
+                    appropriateFrameInCollectionView = CGRect(x: 150, y: (45 + rowNumber*50), width: 120, height: 40)
+                }
+            }
+        }
+    }
+    
+    var originalFrame: CGRect //reference to original position in dataEntryView
+    var appropriateFrameInCollectionView: CGRect? //the correct position for the button based on row/col
+
     override init(frame: CGRect) {
         self.originalFrame = frame
         super.init(frame: frame)

@@ -396,6 +396,12 @@ class PatientCareModeViewController: UIViewController, MLTWMultiLineViewDelegate
     
     //MARK: - Physical/ROS View Configuration
     
+    func callNotificationsFeedFromPhysicalAndROSView(notificationText: String) {
+        notificationsFeed.text = notificationText
+        fadeIn()
+        fadeOut()
+    }
+    
     func physicalOrROSViewWasClosed() {
         //render view appropriately after Px/ROS view is closed
     }

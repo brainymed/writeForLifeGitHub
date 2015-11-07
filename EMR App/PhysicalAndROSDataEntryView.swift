@@ -10,6 +10,7 @@ import UIKit
 protocol PhysicalAndROSDelegate {
     //This delegate acts as follows: when the user hits the 'Close View' button, it calls a function in the delegate (DEM & PCMVC) that renders the view appropriately!
     func physicalOrROSViewWasClosed()
+    func callNotificationsFeedFromPhysicalAndROSView(notificationText: String)
 }
 
 // Problem - how do we control flow here? The user may not want to go through all the sections, so we should allow them to truncate the flow. Since we have next & last buttons, how can they navigate where they want to go more precisely rather than having to scroll through?
@@ -38,6 +39,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     var lastSectionButton = UIButton()
     var doneButton = UIButton()
     var additionalFindingsTextField = UITextField()
+    var additionalFindingsTextFieldShouldBeVisible: Bool = false //protection variable
     var buttonCollectionView = UIView() //view that holds selected 'findingButton's
     var buttonCollectionViewTitleLabel = UILabel() //title for collectionView
     var tagsForButtonsInCollectionView = Dictionary<String, [Int]>() //remembers what buttons are selected
@@ -46,7 +48,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     var tableViewDataArray: [String] = [] //data displayed when user is not searching (should be empty)
     var filteredArray = [String]() //populated when user types in search bar
     var shouldShowSearchResults: Bool = false
-    var findingsTableView: UITableView = UITableView(frame: CGRect(x: 300, y: 180, width: 300, height: 50), style: UITableViewStyle.Plain)
+    var findingsTableView: UITableView = UITableView(frame: CGRect(x: 220, y: 180, width: 360, height: 50), style: UITableViewStyle.Plain)
     var searchController = UISearchController(searchResultsController: nil) //does this need to be set to nil when the class is closed?
     
     //MARK: - Initializers
@@ -251,9 +253,12 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     }
     
     func configureAdditionalFindingsTextField() -> UITextField {
-        additionalFindingsTextField.frame = CGRect(x: 300, y: 280, width: 280, height: 40)
-        additionalFindingsTextField.placeholder = "Enter Any Additional Findings & Press 'Return'"
-        additionalFindingsTextField.backgroundColor = UIColor.whiteColor()
+        let placeholder = "Enter Any Additional Findings & Press 'Return'"
+        additionalFindingsTextField.frame = CGRect(x: 220, y: 180, width: 360, height: 40)
+        additionalFindingsTextField.backgroundColor = UIColor.blackColor()
+        additionalFindingsTextField.tintColor = UIColor(red: 74/255, green: 144/255, blue: 226/255, alpha: 1)
+        additionalFindingsTextField.textColor = UIColor.whiteColor()
+        additionalFindingsTextField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSForegroundColorAttributeName: UIColor.lightGrayColor()])
         additionalFindingsTextField.hidden = true //default is hidden
         additionalFindingsTextField.delegate = self
         return additionalFindingsTextField
@@ -354,28 +359,23 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
 //        } else {
 //            return tableViewDataArray.count
 //        }
-        return 0 //don't display the TV itself (use the button highlighting as the visual cue)
+        return 0 //don't display the TV itself (use the button highlighting as user's visual cue)
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell: UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell")! as UITableViewCell
-        if (shouldShowSearchResults) {
+        if (shouldShowSearchResults) { //use filteredArray to populate dataArray
             cell.textLabel?.text = filteredArray[indexPath.row]
-        }
-        else {
+        } else { //use full list to populate dataArray
             cell.textLabel?.text = tableViewDataArray[indexPath.row]
         }
-        cell.textLabel?.numberOfLines = 2
-        cell.textLabel?.textAlignment = NSTextAlignment.Center
-        cell.backgroundColor = UIColor.blackColor()
-        cell.textLabel?.textColor = UIColor.whiteColor()
-        cell.separatorInset = UIEdgeInsetsZero
-        cell.userInteractionEnabled = false //*
+//        cell.textLabel?.numberOfLines = 2
+//        cell.textLabel?.textAlignment = NSTextAlignment.Center
+//        cell.backgroundColor = UIColor.blackColor()
+//        cell.textLabel?.textColor = UIColor.whiteColor()
+//        cell.separatorInset = UIEdgeInsetsZero
+        cell.userInteractionEnabled = false
         return cell
-    }
-    
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        //Send button to the collectionView, eventually get rid of this (we only want the user to either tap on the button directly or press enter, not touch a TV cell). Disable interaction w/ TV cells!
     }
     
     //MARK: - Search Controller & Search Bar
@@ -392,19 +392,14 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     }
     
     func didPresentSearchController(searchController: UISearchController) { //called when view 1st appears
-        print("Search bar was presented")
         searchController.searchBar.showsCancelButton = false //gets rid of 'Cancel' button
     }
     
-    func searchBarTextDidBeginEditing(searchBar: UISearchBar) {
-        print("Editing started")
-    }
-    
     func searchBarTextDidEndEditing(searchBar: UISearchBar) { //called after tapping out of searchBar
-        print("Editing ended")
         if (searchBar.hidden == false) && !(searchBar.isFirstResponder()) { //set it as 1st responder
             searchBar.becomeFirstResponder()
-            print("Set searchbar -> FR")
+        } else if (searchBar.hidden == true) && (additionalFindingsTextFieldShouldBeVisible) {
+            additionalFindingsTextField.becomeFirstResponder() //do not delete, only thing that works!
         }
         if (shouldShowSearchResults) { //reset TV data & button visuals
             shouldShowSearchResults = false
@@ -441,12 +436,26 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                     }
                 }
             }
+            searchBar.text = ""
+        } else if (searchBarTrimmedText != "") && (filteredArray.count > 1) {
+            //If there is an exact match, select that button:
+            if (filteredArray.contains(searchBarTrimmedText.capitalizedString)) { //check for EXACT match
+                for view in self.subviews {
+                    if let button = (view as? FindingsButton) { //if button label matches, 'click' it
+                        if (button.titleLabel?.text == searchBarTrimmedText.capitalizedString) {
+                            findingButtonClick(button)
+                        }
+                    }
+                }
+                searchBar.text = ""
+            } else if (searchBarTrimmedText != "") && (filteredArray.count > 1) {
+                //Provide notification telling user to narrow down to 1 option:
+                delegate?.callNotificationsFeedFromPhysicalAndROSView("Please narrow your search down to 1 button before pressing 'Return'")
+            }
         }
-        searchBar.text = ""
         shouldShowSearchResults = false //set data from filtered -> complete array
         findingsTableView.reloadData()
         renderDefaultFindingsButtonVisuals() //reset buttons
-        //Does not allow click when there is more than 1 item, but what if we have a situation where one item's end is still where another item exists (e.g. 'cough' & 'coughing up blood'). How do we select the item we want then?
     }
     
     func updateSearchResultsForSearchController(searchController: UISearchController) {
@@ -584,33 +593,53 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     
     func findingButtonClick(sender: FindingsButton) { //all findingsButtons except 'Additional Findings'
         if (sender.inCollectionView == false) { //not in collectionView, move -> collectionView
+            //Not rendering properly b/c - if you have 2 buttons in the view & click on the top-most one to remove it, there is still 1 button left. The next time you add a button, it counts & notices there is 1 button, so it adds the new button 1 slot down (where the other button is currently sitting). To adjust best practice is to slide up the other buttons.
             sender.inCollectionView = true
             sender.removeFromSuperview()
-            let count = buttonCollectionView.subviews.count - 1 //check # of buttons already in the view (1 minus the total b/c of the title)
-            let buttonsInRow = count%6 //# of buttons are in the right-most row
+            let count = buttonCollectionView.subviews.count - 1 //check # of buttons already in the view (1 minus total b/c of the titleLabel)
+            let buttonsInRow = count%6 //# of buttons in the right-most row
             buttonCollectionView.addSubview(sender)
             if (count >= 6) { //start a new row
-                //Sometimes this doesn't render properly
                 sender.frame = CGRect(x: 150, y: (45 + buttonsInRow*50), width: 120, height: 40)
+                sender.positionInCollectionView = (1, buttonsInRow)
             } else {
                 sender.frame = CGRect(x: 10, y: (45 + buttonsInRow*50), width: 120, height: 40)
+                sender.positionInCollectionView = (0, buttonsInRow)
             }
         } else { //in collectionView, move -> dataEntryView
-            sender.inCollectionView = false
+            let removedButtonColumn = sender.positionInCollectionView!.0
+            let removedButtonRow = sender.positionInCollectionView!.1
+            let removedButtonOverallPosition = 6 * removedButtonColumn + (removedButtonRow + 1)
+            sender.inCollectionView = false //sets positionInView -> nil*
             sender.removeFromSuperview()
             self.addSubview(sender)
             sender.frame = sender.originalFrame //return to its original spot
+            for view in buttonCollectionView.subviews { //set button's new position & change frame
+                if let button = view as? FindingsButton { //generic cast, works for all buttons
+                    let columnNumber = button.positionInCollectionView!.0
+                    let rowNumber = button.positionInCollectionView!.1
+                    let overallPosition = 6 * columnNumber + (rowNumber + 1)
+                    if (overallPosition > removedButtonOverallPosition) { //only need to modify for buttons after the removed button
+                        if (columnNumber == 1) && (rowNumber == 0) { //position -> last button in row 1
+                            button.positionInCollectionView = (0, 5)
+                        } else { //slide other buttons up 1 row
+                            button.positionInCollectionView = (columnNumber, rowNumber - 1)
+                        }
+                        button.frame = button.appropriateFrameInCollectionView!
+                    }
+                }
+            }
         }
         generateTableViewDataArray() //change the tableView data according to what items are in view
         findingsTableView.reloadData()
-        searchController.searchBar.text = ""
         renderDefaultFindingsButtonVisuals()
         searchController.searchBar.becomeFirstResponder()
+        searchController.searchBar.text = ""
     }
     
     func additionalFindingsButtonClick(sender: AdditionalFindingsButton) {//'Additional Findings' button
         if (sender.inCollectionView == false) { //not in collectionView, move -> collectionView
-            if (sender.additionalFindings == "") { //no additional findings added yet, highlight
+            if (sender.additionalFindings == "") { //no additional findings added yet, highlight button
                 switchAdditionalFindingsButtonVisualState(sender)
                 renderAdditionalFindingsTextField() //display TF for entry
             } else { //additional finding has been entered, move -> collection view
@@ -622,8 +651,10 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                 buttonCollectionView.addSubview(sender)
                 if (count >= 6) {
                     sender.frame = CGRect(x: 150, y: (45 + buttonsInRow*50), width: 120, height: 40)
+                    sender.positionInCollectionView = (1, buttonsInRow)
                 } else {
                     sender.frame = CGRect(x: 10, y: (45 + buttonsInRow*50), width: 120, height: 40)
+                    sender.positionInCollectionView = (0, buttonsInRow)
                 }
                 generateTableViewDataArray() //change tableView data according to what items are in view
                 findingsTableView.reloadData()
@@ -631,12 +662,29 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                 renderAdditionalFindingsTextField() //hide TF
             }
         } else { //in collectionView, move -> dataEntryView
+            let removedButtonColumn = sender.positionInCollectionView!.0
+            let removedButtonRow = sender.positionInCollectionView!.1
+            let removedButtonOverallPosition = 6 * removedButtonColumn + (removedButtonRow + 1)
             sender.inCollectionView = false
             sender.additionalFindings = "" //clear the findings
             sender.removeFromSuperview()
             self.addSubview(sender)
             sender.frame = sender.originalFrame //return to its original spot
-            
+            for view in buttonCollectionView.subviews { //set new position & change frame
+                if let button = view as? FindingsButton {
+                    let columnNumber = button.positionInCollectionView!.0
+                    let rowNumber = button.positionInCollectionView!.1
+                    let overallPosition = 6 * columnNumber + (rowNumber + 1)
+                    if (overallPosition > removedButtonOverallPosition) {
+                        if (columnNumber == 1) && (rowNumber == 0) { //position -> last button in row 1
+                            button.positionInCollectionView = (0, 5)
+                        } else { //slide other buttons up 1 row
+                            button.positionInCollectionView = (columnNumber, rowNumber - 1)
+                        }
+                        button.frame = button.appropriateFrameInCollectionView!
+                    }
+                }
+            }
             generateTableViewDataArray() //change the tableView data according to what items are in view
             findingsTableView.reloadData()
             renderDefaultFindingsButtonVisuals()
@@ -648,20 +696,18 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     func renderAdditionalFindingsTextField() { //handles display of TF vs. TV
         additionalFindingsTextField.text = "" //clear text for new cycle
         if (additionalFindingsTextField.hidden == true) { //reveal TF, hide TV
+            additionalFindingsTextFieldShouldBeVisible = true
             additionalFindingsTextField.hidden = false
             searchController.active = false
-            print("deactivating SC")
             searchController.searchBar.hidden = true
+            searchController.searchBar.resignFirstResponder()
             additionalFindingsTextField.becomeFirstResponder() //flashes for a second before disappearing! Something is taking FR afterwards maybe? After button press - ended called 2x (maybe once is when the view is invisible)
-            print("set TF -> FR")
         } else { //reveal TV, hide TF
+            additionalFindingsTextFieldShouldBeVisible = false
             additionalFindingsTextField.hidden = true
             searchController.searchBar.hidden = false
-            additionalFindingsTextField.resignFirstResponder()
-            searchController.searchBar.becomeFirstResponder()
-            //searchController.active = true
-            generateTableViewDataArray() //configure after AF button has been moved
-            findingsTableView.reloadData()
+            additionalFindingsTextField.resignFirstResponder() //do not delete!
+            searchController.searchBar.becomeFirstResponder() //do not delete (necessary)!
         }
     }
     
@@ -678,6 +724,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     }
     
     func textFieldShouldReturn(textField: UITextField) -> Bool { //for additionalFindingsTF
+        print("Return was hit, saving entered input...")
         let whitespaceSet = NSCharacterSet.whitespaceCharacterSet() //trim whiteSpace
         let textFieldTrimmedText = textField.text!.stringByTrimmingCharactersInSet(whitespaceSet)
         let labelsDict = openOrganSystemButton!.labelsArray!

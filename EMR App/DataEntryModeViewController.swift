@@ -608,6 +608,12 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         }
     }
     
+    func callNotificationsFeedFromPhysicalAndROSView(notificationText: String) {
+        notificationsFeed.text = notificationText
+        fadeIn()
+        fadeOut()
+    }
+    
     func physicalOrROSViewWasClosed() { //renders view for fieldName entry
         configureViewForEntry("fieldName")
     }
