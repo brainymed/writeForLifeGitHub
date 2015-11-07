@@ -254,7 +254,11 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     
     func configureAdditionalFindingsTextField() -> UITextField {
         let placeholder = "Enter Any Additional Findings & Press 'Return'"
-        additionalFindingsTextField.frame = CGRect(x: 220, y: 180, width: 360, height: 40)
+        let x = findingsTableView.frame.minX
+        let y = findingsTableView.frame.minY
+        let width = searchController.searchBar.frame.width
+        let height = searchController.searchBar.frame.height
+        additionalFindingsTextField.frame = CGRect(x: x, y: y, width: width, height: height)
         additionalFindingsTextField.backgroundColor = UIColor.blackColor()
         additionalFindingsTextField.tintColor = UIColor(red: 74/255, green: 144/255, blue: 226/255, alpha: 1)
         additionalFindingsTextField.textColor = UIColor.whiteColor()
