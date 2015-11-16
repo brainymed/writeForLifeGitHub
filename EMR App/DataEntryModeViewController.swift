@@ -22,6 +22,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     @IBOutlet weak var currentPatientButton: UIButton!
     @IBOutlet weak var currentUserButton: UIButton!
     @IBOutlet weak var notificationsFeed: UILabel! //Convert notification feed -> scrolling set of TV cells instead of a label?
+    @IBOutlet weak var escapeButton: UIButton! //escape from fieldEntry view
     
     //CurrentUser & CurrentPatient Views (this can be achieved more cleanly using a popover segue):
     @IBOutlet weak var patientInfoView: UIView!
@@ -36,7 +37,8 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     var tableViewCellColors: [UIColor]? //color code the labels & partitions
     var newWidth: CGFloat? //on rotation, the width of the incoming view
     var newHeight: CGFloat? //on rotation, the height of the incoming view
-    var physicalOrROSView: PhysicalAndROSView? //renders Px or ROS view
+    var physicalExamView: PhysicalAndROSView? //renders Px view (singleton)
+    var reviewOfSystemsView: PhysicalAndROSView? //renders ROS view (singleton)
     
     //Template Buttons:
     @IBOutlet weak var vitalsButton: UIButton!
@@ -54,6 +56,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.definesPresentationContext = true //needed for BT keyboard check/key commands to work in Px/ROS views
         
         //Sets the DEMVC as delegate & datasource for TV:
         labelsTableView.delegate = self
@@ -149,6 +152,10 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     func configureViewForEntry(desiredView: String) { //Configures view
+        userInfoView.hidden = true //hide info labels on left during transition
+        patientInfoView.hidden = true
+        closePhysicalAndROSViews()
+        
         switch desiredView {
         case "fieldName": //Configure view for field name entry
             //Hide fieldValue entry views:
@@ -156,30 +163,42 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             dataEntryImageView.hidden = true
             plusButton.hidden = true
             currentItemNumberLabel.hidden = true
+            escapeButton.hidden = true
             
             //Bring up 'Field Name' Entry Views, set delegate:
             fieldNameEntryLabel.hidden = false
             fieldNameTextField.hidden = false
             fieldNameTextField.delegate = self
         case "fieldValue":
-            if (openScope?.getFieldName() != "physicalExam") || (openScope?.getFieldName() != "reviewOfSystems") { //clear any open Px or ROS view
-                physicalOrROSView?.removeFromSuperview()
-                physicalOrROSView = nil
-            }
-            //Hide the fieldName entry views & pull up the formatted TV & imageView:
+            //Hide the fieldName entry views:
             fieldNameEntryLabel.hidden = true
             fieldNameTextField.hidden = true
             fieldNameTextField.resignFirstResponder()
             plusButton.hidden = true
             currentItemNumberLabel.hidden = true
+            
+            //Pull up the formatted TV & imageView + escape button:
             renderDataEntryImageView(tableViewCellLabels!.count)
             labelsTableView.reloadData() //refreshes visible TV cells w/ existing data
             labelsTableView.hidden = false
             dataEntryImageView.hidden = false
+            escapeButton.hidden = false
+            self.view.bringSubviewToFront(escapeButton)
         default:
             print("Error. Switch case triggered unknown statement")
         }
         setFirstResponder()
+    }
+    
+    func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String) -> Bool { //hide the user & patientInfo views when user types
+        //For some reason, typing in the fieldName TF increases memory consumption!
+        if (userInfoView.hidden == false) {
+            userInfoView.hidden = true
+        }
+        if (patientInfoView.hidden == false) {
+            patientInfoView.hidden = true
+        }
+        return true
     }
     
     func textFieldShouldReturn(textField: UITextField) -> Bool { //Configure behavior for 'RETURN' button
@@ -233,15 +252,42 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             openScope = nil //close the existing scope
             print("Current Patient: \(currentPatient?.fullName)")
         } else if (textField.tag == 200) { //sender is Px & ROS dataEntryView organSystemTextField
-            switchOrganSystemButtons(input!)
+            let viewChoice = openScope?.getFieldName()
+            switchOrganSystemButtons(viewChoice!, input: input!)
         }
         textField.text = "" //clear textField before proceeding
         return true
     }
     
-    func switchOrganSystemButtons(input: String) {
-        let bodyImageView = physicalOrROSView!.bodyImageView
-        if (bodyImageView.viewChoice == "physicalExam") { //switch Px buttons only
+    func textViewShouldReturn(textView: UITextView) -> Bool { //get info from a textView (e.g. HPI)
+        var error: Bool = false
+        var errorTagIndicator: Int = 0
+        getInputValuesFromTextFields(textView.text, notificationString: { (let notification) in
+            self.notificationsFeed.text = notification.2 //display all mapped values in feed
+            error = notification.0
+            errorTagIndicator = notification.1 //gives tag of the view which is empty
+        })
+        for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
+            print("Dict: \(item): \(value)")
+        }
+        fadeIn()
+        fadeOut()
+        if (error == true) { //block reconfiguration of the view if there was an error
+            dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
+            return false //block transition
+        }
+        tableViewCellLabels = nil //clear array w/ labels
+        plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
+        currentItemNumberLabel.hidden = true
+        configureViewForEntry("fieldName")
+        openScope = nil //close the existing scope
+        textView.text = "" //clear view before proceeding
+        return true
+    }
+    
+    func switchOrganSystemButtons(viewChoice: String, input: String) {
+        if (viewChoice == "physicalExam") { //switch Px buttons only
+            let bodyImageView = physicalExamView!.bodyImageView
             switch input.lowercaseString { //configure view based on input
             case "c":
                 bodyImageView.constitutionalButtonClick((bodyImageView.constitutionalButton))
@@ -276,12 +322,13 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             case "br":
                 bodyImageView.breastButtonClick((bodyImageView.breastButton))
             default:
-                physicalOrROSView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
+                physicalExamView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
                 notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
                 fadeIn()
                 fadeOut()
             }
-        } else { //switch ROS buttons only
+        } else if (viewChoice == "reviewOfSystems") { //switch ROS buttons only
+            let bodyImageView = reviewOfSystemsView!.bodyImageView
             switch input.lowercaseString { //configure view based on input
             case "c":
                 bodyImageView.constitutionalButtonClick((bodyImageView.constitutionalButton))
@@ -312,7 +359,7 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             case "ey":
                 bodyImageView.eyesButtonClick((bodyImageView.eyesButton))
             default:
-                physicalOrROSView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
+                reviewOfSystemsView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
                 notificationsFeed.text = "No results found for entry. Please enter a valid abbreviation"
                 fadeIn()
                 fadeOut()
@@ -320,30 +367,9 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         }
     }
     
-    func textViewShouldReturn(textView: UITextView) -> Bool { //get info from a textView (e.g. HPI)
-        var error: Bool = false
-        var errorTagIndicator: Int = 0
-        getInputValuesFromTextFields(textView.text, notificationString: { (let notification) in
-            self.notificationsFeed.text = notification.2 //display all mapped values in feed
-            error = notification.0
-            errorTagIndicator = notification.1 //gives tag of the view which is empty
-        })
-        for (item, value) in (openScope?.jsonDictToServer)! { //output dictionary contents
-            print("Dict: \(item): \(value)")
-        }
-        fadeIn()
-        fadeOut()
-        if (error == true) { //block reconfiguration of the view if there was an error
-            dataEntryImageView.viewWithTag(errorTagIndicator)?.becomeFirstResponder()
-            return false //block transition
-        }
-        tableViewCellLabels = nil //clear array w/ labels
-        plusButton.hidden = true //re-hide plusButton & itemLabel (in case they were opened)
-        currentItemNumberLabel.hidden = true
+    @IBAction func escapeButtonClick(sender: AnyObject) { //return to fieldName view
         configureViewForEntry("fieldName")
         openScope = nil //close the existing scope
-        textView.text = "" //clear view before proceeding
-        return true
     }
     
     //MARK: - Notification Feed Animations
@@ -585,6 +611,8 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         }
     }
     
+    //MARK: - Physical & ROS View Configuration
+    
     func configurePhysicalOrROSView(requestedView: String) {
         //Hide fieldName & fieldValue entry views:
         fieldNameEntryLabel.hidden = true
@@ -593,18 +621,26 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         dataEntryImageView.hidden = true
         plusButton.hidden = true
         currentItemNumberLabel.hidden = true
+        closePhysicalAndROSViews()
         
-        //Nullify/remove any existing Px or ROS view, then render the custom view. Make sure to put in an adjustable frame (not static, but based on the view dimensions)!.
-        physicalOrROSView?.removeFromSuperview()
-        //physicalOrROSView = nil //this will erase any data we were in the middle of adding & remove our highlighted buttons. Is there any way to avoid this but maintain safety in the app - can we make a singleton instance of each type of Physical&ROS view? In its current form, the app crashes if you click the Px or ROS buttons twice b/c it won't let you make a second instance of the class w/o releasing the first. How do we get it so that we ALWAYS get reference to the original instances each time, like w/ the userdefaults? 
-        
-        physicalOrROSView = PhysicalAndROSView(applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults). Don't forget to set the variable to nil after view is closed.
-        if (physicalOrROSView != nil) {
-            physicalOrROSView?.dataEntryView.delegate = self
-            self.view.addSubview(physicalOrROSView!)
-            physicalOrROSView?.dataEntryView.organSystemSelectionTextField.delegate = self
-        } else {
-            print("PhysicalOrROSView == nil, trying to set the value twice")
+        if (requestedView == "physicalExam") {
+            if (physicalExamView == nil) { //create the Px object
+                physicalExamView = PhysicalAndROSView(applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0) //capture patient gender & age programmatically (for now assign defaults).
+            }
+            physicalExamView?.hidden = false //reveal Px view
+            physicalExamView?.dataEntryView.delegate = self
+            self.view.addSubview(physicalExamView!)
+            physicalExamView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
+            physicalExamView?.dataEntryView.organSystemSelectionTextField.delegate = self
+        } else if (requestedView == "reviewOfSystems") {
+            if (reviewOfSystemsView == nil) { //create the ROS object
+                reviewOfSystemsView = PhysicalAndROSView(applicationMode: "DEM", viewChoice: requestedView, gender: 0, childOrAdult: 0)
+            }
+            reviewOfSystemsView?.hidden = false //reveal ROS view
+            reviewOfSystemsView?.dataEntryView.delegate = self
+            self.view.addSubview(reviewOfSystemsView!)
+            reviewOfSystemsView?.dataEntryView.organSystemSelectionTextField.becomeFirstResponder()
+            reviewOfSystemsView?.dataEntryView.organSystemSelectionTextField.delegate = self
         }
     }
     
@@ -614,7 +650,16 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         fadeOut()
     }
     
-    func physicalOrROSViewWasClosed() { //renders view for fieldName entry
+    func closePhysicalAndROSViews() {
+        //Called whenever another view is rendered:
+        reviewOfSystemsView?.hidden = true
+        reviewOfSystemsView?.renderDefaultView()
+        physicalExamView?.hidden = true
+        physicalExamView?.renderDefaultView()
+    }
+    
+    func physicalOrROSViewWasClosed() { //delegate method - renders view for fieldName entry
+        //Reset the Physical or ROS View for next time the user opens it:
         configureViewForEntry("fieldName")
     }
     
@@ -634,35 +679,39 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             //Add the key into the jsonDict:
             openScope?.jsonDictToServer[fieldName]![currentItemKey] = Dictionary<String, AnyObject>()
             var tempDict: [String: AnyObject] = (openScope?.jsonDictToServer[fieldName]![currentItemKey])! as! [String: AnyObject] //create temporary dict to assign value
+            let dictionaryItemKeys: [String] = (openScope?.getDictionaryKeysForMK())! //keys match -> API
             for view in dataEntryImageView.subviews { //iterate through the views & capture values
                 if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
-                    let key = tableViewCellLabels![counter]
+                    let label = tableViewCellLabels![counter] //for user to see
+                    let key = dictionaryItemKeys[counter]
                     let value = (view as? UITextField)?.text
                     if (value != nil) { //make sure cast from UIView -> TextField worked
                         let trimmedValue = value!.stringByTrimmingCharactersInSet(whitespaceSet)
                         if (trimmedValue == "") { //make sure no value is left empty
                             error = true
                             errorTagIndicator = view.tag
-                            notificationText = "Please enter a value for '\(key)'"
+                            notificationText = "Please enter a value for '\(label)'"
                             break
+                        } else {
+                            tempDict[key] = trimmedValue //'key' from dictItemsArray, 'value' = txt input
+                            notificationText += label + ": " + trimmedValue + "\n"
                         }
-                        tempDict[key] = trimmedValue //'key' = label from labelsArray, 'value' = txt input
-                        notificationText += key + ": " + trimmedValue + "\n"
                     } else { //shouldn't trigger unless a UIView added to dataEntryIV has a tag (error)
                         notificationText = "Error occurred. UIView in DataEntryIV has a tag when it shouldn't."
                         error = true
                     }
                     counter += 1
                 } else if (view.tag == 100) { //grab lastTextField's input value
-                    let key = (tableViewCellLabels?.last)!
+                    let label = (tableViewCellLabels?.last)! //for user to see
+                    let key: String = dictionaryItemKeys.last!
                     if (lastFieldTrimmedText == "") { //check if any value is empty
                         error = true
                         errorTagIndicator = view.tag
-                        notificationText = "Please enter a value for '\(key)'"
+                        notificationText = "Please enter a value for '\(label)'"
                         break
                     } else { //no value is empty
                         tempDict[key] = lastFieldTrimmedText
-                        notificationText += key + ": " + lastFieldTrimmedText
+                        notificationText += label + ": " + lastFieldTrimmedText
                     }
                 }
                 openScope?.jsonDictToServer[fieldName]![currentItemKey] = tempDict //Assign the temporary value in the temp dict -> jsonDictToServer @ end of each iteration
@@ -684,45 +733,49 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
             }
             
         } else { //fieldName does NOT have sub-scopes (only called by textField- or textViewShouldReturn)
+            let dictionaryItemKeys: [String] = (openScope?.getDictionaryKeysForMK())!
             for view in dataEntryImageView.subviews {
                 if (view.tag > 0 && view.tag < tableViewCellLabels!.count) {
-                    let key = tableViewCellLabels![counter]
+                    let label = tableViewCellLabels![counter] //for user to see
+                    let key = dictionaryItemKeys[counter]
                     let value = (view as? UITextField)?.text
                     if (value != nil) { //make sure cast from UIView -> TextField worked
                         let trimmedValue = value!.stringByTrimmingCharactersInSet(whitespaceSet)
                         if (trimmedValue == "") { //make sure no value is left empty
                             error = true
                             errorTagIndicator = view.tag
-                            notificationText = "Please enter a value for '\(key)'"
+                            notificationText = "Please enter a value for '\(label)'"
                             break
+                        } else {
+                            openScope?.jsonDictToServer[fieldName]![key] = trimmedValue
+                            notificationText += label + ": " + trimmedValue + "\n"
                         }
-                        openScope?.jsonDictToServer[fieldName]![key] = trimmedValue
-                        notificationText += key + ": " + trimmedValue + "\n"
                     } else { //shouldn't trigger unless a UIView added to dataEntryIV has a tag (error)
                         notificationText = "Error occurred. UIView in DataEntryIV has a tag when it shouldn't."
                         error = true
                     }
                     counter += 1
                 } else if (view.tag == 100) {//Grab last textField's or textView's input value
-                    let key = (tableViewCellLabels!.last)!
+                    let label = (tableViewCellLabels!.last)! //for patient to see
+                    let key: String = dictionaryItemKeys.last!
                     if (lastFieldTrimmedText == "") { //check if any values were left empty
                         error = true
                         errorTagIndicator = view.tag
-                        notificationText = "Please enter a value for '\(key)'"
+                        notificationText = "Please enter a value for '\(label)'"
                         break
                     } else { //no field is empty
                         openScope?.jsonDictToServer[fieldName]![key] = lastFieldTrimmedText
                         if (openScope?.getFieldName() == "historyOfPresentIllness") {
                             notificationText += "History of present illness has been entered."
                         } else { //all other fields
-                            notificationText += key + ": " + lastFieldTrimmedText
+                            notificationText += label + ": " + lastFieldTrimmedText
                         }
                     }
                 }
             }
         }
         if (error == false) {
-            openScope?.setFieldValueForCurrentPatient()
+            openScope?.setFieldValueForCurrentPatient() //*
         }
         notificationString(error, errorTagIndicator, notificationText) //Send back the closure containing the notification text, error (bool), & error tagIndicator
     }
@@ -779,8 +832,9 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         userInfoView.hidden = true
         //Clicking this button configures the popup if it is hidden & closes the popup if it is visible:
         if patientInfoView.hidden == true { //reveal the view
+            self.view.bringSubviewToFront(patientInfoView)
             patientInfoView.hidden = false //revealing the view reveals all subviews too
-            if currentPatient != nil {
+            if (currentPatient != nil) {
                 currentPatientLabel.text = "Current Patient: \(currentPatient!.fullName)"
             } else {
                 currentPatientLabel.text = "No Patient File Open"
@@ -794,9 +848,14 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         patientInfoView.hidden = true
         //Clicking this button configures the popup if it is hidden & closes the popup if it is visible:
         if (userInfoView.hidden == true) { //reveal the view
+            self.view.bringSubviewToFront(userInfoView)
             userInfoView.hidden = false //revealing view reveals all subviews too
-            currentUserLabel.text = "Current User: \(currentUser!)"
-        } else { //Hide the view
+            if (currentUser != nil) {
+                currentUserLabel.text = "Current User: \(currentUser!)"
+            } else {
+                currentUserLabel.text = "No user logged in"
+            }
+        } else { //hide the view
             userInfoView.hidden = true
         }
     }
@@ -808,6 +867,8 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         preferences.removeObjectForKey("PROVIDER_TYPE")
         
         openScope = nil
+        physicalExamView = nil
+        reviewOfSystemsView = nil
         currentUser = nil //clears currentUser to trigger segue
         currentPatient = nil //clears currentPatient
         configureViewForEntry("fieldName")
@@ -819,7 +880,9 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     }
     
     @IBAction func closePatientFileButtonClick(sender: AnyObject) {
-        //Close the patient file by setting 'currentPatient' = nil, setting any openScope to nil, and rendering the view for fieldName entry:
+        //Close the patient file by setting 'currentPatient' = nil, setting any openScope & Px/ROS view to nil, and rendering the view for fieldName entry:
+        physicalExamView = nil
+        reviewOfSystemsView = nil
         openScope = nil
         currentPatient = nil
         configureViewForEntry("fieldName")
@@ -872,23 +935,35 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
     
     override var keyCommands: [UIKeyCommand]? { //special Apple API for defining keyboard shortcuts
         let controlKey = UIKeyModifierFlags.Control
+        let commandKey = UIKeyModifierFlags.Command
         //let shiftKey = UIKeyModifierFlags.Shift
-        let controlA = UIKeyCommand(input: "a", modifierFlags: [controlKey], action: "controlAKeyPressed:") //UIKeyCommand detects specified keyboard commands
-        let escape = UIKeyCommand(input: UIKeyInputEscape, modifierFlags: [], action: "escapeKeyPressed:")
+        let controlA = UIKeyCommand(input: "a", modifierFlags: [controlKey], action: "addItemKeyPressed:") //UIKeyCommand detects specified keyboard commands
+        let controlQ = UIKeyCommand(input: "q", modifierFlags: [controlKey], action: "quitKeyPressed:")
         let controlRArrow = UIKeyCommand(input: UIKeyInputRightArrow, modifierFlags: controlKey, action: "controlRightArrowKeyPressed:") //for HPI data capture
-        let upArrow = UIKeyCommand(input: UIKeyInputUpArrow, modifierFlags: [], action: "upArrowKeyPressed:") //the modifierFlags array can contain 0 modifier flags or more than 1 (e.g. when creating a cmd + shift + "" shortcut
-        return [controlA, escape, upArrow, controlRArrow]
+        let commandRightArrow = UIKeyCommand(input: UIKeyInputRightArrow, modifierFlags: [commandKey], action: "nextKeyPressed:") //for HPI data capture
+        let commandLeftArrow = UIKeyCommand(input: UIKeyInputLeftArrow, modifierFlags: [commandKey], action: "lastKeyPressed:") //for HPI data capture
+        return [controlA, controlQ, commandLeftArrow, commandRightArrow, controlRArrow]
     }
     
-    func controlAKeyPressed(command: UIKeyCommand) {
+    func addItemKeyPressed(command: UIKeyCommand) { //adds items in meds, allergies, diagnosis views
         if (openScope?.getCurrentItem() != nil) { //Ctrl+A can be used to add additional item
             plusButtonClick(self)
         }
     }
     
-    func escapeKeyPressed(command: UIKeyCommand) {
-        if (openScope?.getFieldName() == "physicalExam") || (openScope?.getFieldName() == "reviewOfSystems") {
-            //make sure escape button is visible (check which view is configured)
+    func quitKeyPressed(command: UIKeyCommand) { //acts as the escape button
+        if (openScope?.getFieldName() == "physicalExam") {
+            let dataEntryView = physicalExamView!.dataEntryView
+            if (physicalExamView?.bodyImageView.hidden == true) { //dataEntryView is open
+                dataEntryView.escapeButtonClick(dataEntryView.escapeButton)
+            }
+        } else if (openScope?.getFieldName() == "reviewOfSystems") {
+            let dataEntryView = reviewOfSystemsView!.dataEntryView
+            if (reviewOfSystemsView?.bodyImageView.hidden == true) { //dataEntryView is open
+                dataEntryView.escapeButtonClick(dataEntryView.escapeButton)
+            }
+        } else if (openScope?.getFieldName() != nil) { //fieldEntry view is open
+            escapeButtonClick(self)
         }
     }
     
@@ -901,8 +976,32 @@ class DataEntryModeViewController: UIViewController, UITextFieldDelegate, UITabl
         }
     }
     
-    func upArrowKeyPressed(command: UIKeyCommand) {
-        print("User hit up arrow key")
+    func nextKeyPressed(command: UIKeyCommand) { //matches -> (nextSection) in Px/ROS views
+        if (openScope?.getFieldName() == "physicalExam") {
+            let dataEntryView = physicalExamView!.dataEntryView
+            if (physicalExamView?.bodyImageView.hidden == true) { //organSystemView is open
+                dataEntryView.nextSectionButtonClick(dataEntryView.nextSectionButton)
+            }
+        } else if (openScope?.getFieldName() == "reviewOfSystems") {
+            let dataEntryView = reviewOfSystemsView!.dataEntryView
+            if (reviewOfSystemsView?.bodyImageView.hidden == true) { //organSystemView is open
+                dataEntryView.nextSectionButtonClick(dataEntryView.nextSectionButton)
+            }
+        }
+    }
+    
+    func lastKeyPressed(command: UIKeyCommand) { //matches <- (previousSection) in Px/ROS views
+        if (openScope?.getFieldName() == "physicalExam") {
+            let dataEntryView = physicalExamView!.dataEntryView
+            if (physicalExamView?.bodyImageView.hidden == true) { //dataEntryView is open
+                dataEntryView.lastSectionButtonClick(dataEntryView.lastSectionButton)
+            }
+        } else if (openScope?.getFieldName() == "reviewOfSystems") {
+            let dataEntryView = reviewOfSystemsView!.dataEntryView
+            if (reviewOfSystemsView?.bodyImageView.hidden == true) { //dataEntryView is open
+                dataEntryView.lastSectionButtonClick(dataEntryView.lastSectionButton)
+            }
+        }
     }
     
     //MARK: - Navigation

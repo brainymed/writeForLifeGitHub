@@ -10,13 +10,14 @@ import Foundation
 
 class EMRField {
     private let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext //MOC for insertion of persistent data objects
-    private var match : Bool = false
+    private var match: Bool = false
     private var currentPatient: Patient //assign open scope -> the current patient
-    private var fieldName : String? //'fieldName' should always = nil when 'match' == FALSE
-    private var tableViewLabels : [String]?
-    private var tableViewCellColors : [UIColor]?
-    private var currentItemCounter : Int? //for specific views (e.g. medications, diagnoses, allergies), counts the # of the item currently open.
-    private var currentItemLabel : String? //for specific views, generates a (singular) label to indicate what item is currently open (e.g. "medication", "diagnosis", "allergy"). The label & counter should only exist simultaneously!
+    private var fieldName: String? //'fieldName' should always = nil when 'match' == FALSE
+    private var tableViewLabels: [String]?
+    private var jsonDictionaryKeys: [String]? //keys for the dictionary (based on API)
+    private var tableViewCellColors: [UIColor]?
+    private var currentItemCounter: Int? //for specific views (e.g. medications, diagnoses, allergies), counts the # of the item currently open.
+    private var currentItemLabel: String? //for specific views, generates a (singular) label to indicate what item is currently open (e.g. "medication", "diagnosis", "allergy"). The label & counter should only exist simultaneously!
     var jsonDictToServer = Dictionary<String, [String : AnyObject]>() //dictionary containing user inputs being mapped -> server; related to the Patient class (dict keys -> Patient properties)
     
     init(inputWord: String, patient: Patient) {
@@ -67,20 +68,26 @@ class EMRField {
             //Create an entry in the mapping dict for the fieldName:
             self.jsonDictToServer[currentField] = Dictionary<String, AnyObject>()
             
-            //Set the tableViewLabels array for the fieldName. We will need 2 arrays, one for display to the user (neatly formatted) & one matching the format specified by the server:
+            //Set the tableViewLabels & jsonDictionaryLabels array for the fieldName. The tableViewLabels are for display to the user (neatly formatted); the jsonDictArray is for matching the format specified by the server & API. The two arrays should ALWAYS have the same length! When these keys are defined according to the API, make sure to go to the 'setFieldValues()' function & correct the code there!!!
             switch currentField { //max # of labels that can fit in the view is 12 (from the looks of it)
             case "medications":
                 tableViewLabels = ["Medication Name", "Route", "Dosage", "Frequency"]
+                jsonDictionaryKeys = ["medicationName", "route", "dosage", "frequency"]
             case "vitals":
                 tableViewLabels = ["Height", "Weight", "Blood Pressure", "Heart Rate", "Respiratory Rate", "Temperature"]
+                jsonDictionaryKeys = ["height", "weight", "bloodPressure", "heartRate", "respiratoryRate", "temperature"]
             case "physicalExam":
                 tableViewLabels = [] //no labels - TV is not called
+                jsonDictionaryKeys = []
             case "reviewOfSystems":
                 tableViewLabels = [] //no labels - TV is not called
+                jsonDictionaryKeys = []
             case "allergies":
                 tableViewLabels = ["Allergen", "Reaction", "Severity"]
+                jsonDictionaryKeys = ["allergen", "reaction", "severity"]
             case "historyOfPresentIllness":
                 tableViewLabels = ["History of Present Illness"]
+                jsonDictionaryKeys = ["hpi"]
             default:
                 tableViewLabels = ["[getLabelsForMK - Default Switch (Error)"]
             }
@@ -129,14 +136,17 @@ class EMRField {
         return (tableViewLabels, tableViewCellColors)
     }
     
+    internal func getDictionaryKeysForMK() -> [String]? { //obtains dictionary keys for a fieldName
+        return jsonDictionaryKeys
+    }
+    
     internal func setFieldValueForCurrentPatient() {
-        //Sets the FV for the appropriate field name in the persistent data store for the object's current patient using the 'jsonDictToServer':
-        //Link up behavior w/ open & create file - when open is selected, pick the patient from the MOC! App crashes if inputs are empty, make sure they are not!
+        //Sets the FV for the appropriate field name in the persistent data store for the object's current patient using the 'jsonDictToServer'. App crashes if inputs are empty, make sure they are not!
         if let field = self.fieldName {
-            if let labelsArray = tableViewLabels {
+            if let keysArray = jsonDictionaryKeys {
                 var inputValuesArray: [String] = []
                 var counter = 0 //counter to access labels in the array
-                if labelsArray.count == 0 { //Px & ROS views, custom behavior
+                if (keysArray.count == 0) { //Px & ROS views, custom behavior
                     switch field {
                     case "physicalExam":
                         print("PX")
@@ -147,8 +157,8 @@ class EMRField {
                     }
                 } else if (fieldName == "medications") || (fieldName == "allergies") { //for fields w/ subscopes
                     let customKey = self.generateCustomDictionaryKey()! //get current item label
-                    for label in labelsArray { //generate array containing the input values
-                        let inputValue = jsonDictToServer[field]![customKey]![label] as! String
+                    for key in keysArray { //generate array containing the input values
+                        let inputValue = jsonDictToServer[field]![customKey]![key] as! String
                         inputValuesArray.append(inputValue)
                     }
                     switch field {
@@ -158,8 +168,8 @@ class EMRField {
                         }
                         currentPatient.medications[customKey] = Dictionary<String, AnyObject>()
                         for input in inputValuesArray {
-                            let label = labelsArray[counter]
-                            currentPatient.medications[customKey]![label] = input
+                            let key = keysArray[counter]
+                            currentPatient.medications[customKey]![key] = input
                             counter += 1
                         }
                     case "allergies":
@@ -168,26 +178,26 @@ class EMRField {
                         }
                         currentPatient.allergies[customKey] = Dictionary<String, AnyObject>()
                         for input in inputValuesArray {
-                            let label = labelsArray[counter]
-                            currentPatient.allergies[customKey]![label] = input
+                            let key = keysArray[counter]
+                            currentPatient.allergies[customKey]![key] = input
                             counter += 1
                         }
                     default:
                         NSLog("Error in setFieldValue() - 'elseif' default statement")
                     }
                 } else { //fields w/o subscopes
-                    for label in labelsArray { //generate array containing the input values
-                        let inputValue = jsonDictToServer[field]![label] as! String
+                    for key in keysArray { //generate array containing the input values
+                        let inputValue = jsonDictToServer[field]![key] as! String
                         inputValuesArray.append(inputValue)
                     }
                     switch field {
                     case "vitals":
                         for input in inputValuesArray {
-                            let label = labelsArray[counter]
-                            if ((label == "Blood Pressure") || (label == "Height")) { //store value as string instead of int
-                                currentPatient.vitals[label] = input
+                            let key = keysArray[counter]
+                            if ((key == "bloodPressure") || (key == "height")) { //store value as string instead of int
+                                currentPatient.vitals[key] = input
                             } else { //all other values are stored as Int
-                                currentPatient.vitals[label] = Int(input)
+                                currentPatient.vitals[key] = Int(input)
                             }
                             counter += 1
                         }

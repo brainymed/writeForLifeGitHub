@@ -49,8 +49,8 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     var tableViewDataArray: [String] = [] //data displayed when user is not searching (should be empty)
     var filteredArray = [String]() //populated when user types in search bar
     var shouldShowSearchResults: Bool = false
-    var findingsTableView: UITableView = UITableView(frame: CGRect(x: 220, y: 180, width: 360, height: 50), style: UITableViewStyle.Plain)
-    var searchController = UISearchController(searchResultsController: nil) //does this need to be set to nil when the class is closed?
+    var findingsTableView: UITableView = UITableView(frame: CGRect(x: 220, y: 180, width: 360, height: 44), style: UITableViewStyle.Plain)
+    var searchController: UISearchController? = nil
     
     //MARK: - Initializers
     
@@ -61,19 +61,11 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         
         super.init(frame: CGRect(x: 200, y: 0, width: 764, height: 619)) //only call super.init AFTER initializing instance variables
         
-        //Set up TV & Search Controller/Search Bar:
+        //Set up tableView:
         findingsTableView.delegate = self
         findingsTableView.dataSource = self
-        searchController.delegate = self
-        searchController.searchResultsUpdater = self
-        searchController.searchBar.delegate = self
         findingsTableView.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        searchController.dimsBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Search for a finding and hit 'Return'"
-        searchController.searchBar.barStyle = .Black
-        searchController.searchBar.sizeToFit() //formats size properly WRT tableView
-        findingsTableView.tableHeaderView = searchController.searchBar
-        findingsTableView.hidden = true //TV is not visible
+        findingsTableView.hidden = false
         
         renderDefaultDataEntryView()
     }
@@ -104,8 +96,6 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
             titleLabel.text = "Review of Systems View"
         }
         titleLabel.textColor = UIColor.whiteColor()
-        //        let title_constraint_hCenter = NSLayoutConstraint(item: titleLabel, attribute: .CenterX, relatedBy: .Equal, toItem: self, attribute: .CenterX, multiplier: 1, constant: 0)
-        //        self.addConstraint(title_constraint_hCenter)
         return titleLabel
     }
     
@@ -126,7 +116,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
     }
     
     func configureOrganSystemSelectionTextField() -> UITextField {
-        //How to create some spacing away from the wall?
+        //How to create some spacing/padding away from the L border?
         organSystemSelectionTextField.frame = CGRect(x: 150, y: 350, width: 500, height: 50)
         organSystemSelectionTextField.userInteractionEnabled = true
         organSystemSelectionTextField.backgroundColor = UIColor.whiteColor()
@@ -171,10 +161,9 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         self.frame = CGRect(x: 0, y: 0, width: 964, height: 619)
         self.backgroundColor = UIColor(red: 50/255, green: 163/255, blue: 216/255, alpha: 1)
         
-        //Add subviews:
+        //Add subviews & searchController:
+        configureSearchController() //add searchController
         self.addSubview(findingsTableView)
-        searchController.searchBar.hidden = false
-        searchController.searchBar.becomeFirstResponder()
         self.addSubview(configureEscapeButton())
         self.addSubview(configureViewTitleLabel())
         self.addSubview(configureDoneButton())
@@ -197,6 +186,20 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         findingsTableView.reloadData()
     }
     
+    func configureSearchController() {
+        searchController = UISearchController(searchResultsController: nil)
+        searchController!.searchBar.hidden = false
+        searchController!.searchBar.becomeFirstResponder()
+        searchController!.delegate = self
+        searchController!.searchResultsUpdater = self
+        searchController!.searchBar.delegate = self
+        searchController!.dimsBackgroundDuringPresentation = false
+        searchController!.searchBar.placeholder = "Search for a finding and hit 'Return'"
+        searchController!.searchBar.barStyle = .Black
+        searchController!.searchBar.sizeToFit() //formats size properly WRT tableView
+        findingsTableView.tableHeaderView = searchController!.searchBar
+    }
+    
     func configureOrganSystemTitleLabel(system: String) -> UILabel { //selected organSystem
         organSystemTitleLabel.frame = CGRect(x: 300, y: 70, width: 250, height: 40)
         organSystemTitleLabel.text = "Section: " + system
@@ -208,7 +211,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         sectionTitleLabel.frame = CGRect(x: 300, y: 120, width: 250, height: 40)
         let sectionsArray = openOrganSystemButton!.sectionsArray!
         if (sectionsArray.count > 1) { //only render the label if there is more than 1 section
-            sectionTitleLabel.text = "Sub-section: " + sectionsArray[currentVisibleSection] //grab items from open button's section array
+            sectionTitleLabel.text = "Subsection: " + sectionsArray[currentVisibleSection] //grab items from open button's section array
             sectionTitleLabel.adjustsFontSizeToFitWidth = true
         } else { //empty section title (or just remove the label altogether?)
             return nil
@@ -259,8 +262,8 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         let placeholder = "Enter Any Additional Findings & Press 'Return'"
         let x = findingsTableView.frame.minX
         let y = findingsTableView.frame.minY
-        let width = searchController.searchBar.frame.width
-        let height = searchController.searchBar.frame.height
+        let width = searchController!.searchBar.frame.width
+        let height = searchController!.searchBar.frame.height
         additionalFindingsTextField.frame = CGRect(x: x, y: y, width: width, height: height)
         additionalFindingsTextField.backgroundColor = UIColor.blackColor()
         additionalFindingsTextField.tintColor = UIColor(red: 74/255, green: 144/255, blue: 226/255, alpha: 1)
@@ -275,7 +278,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         buttonCollectionView.frame = CGRect(x: 635, y: 100, width: 300, height: 350)
         buttonCollectionView.backgroundColor = UIColor(red: 239/255, green: 239/255, blue: 244/255, alpha: 1)
         
-        //Configure CollectionView Title Label:
+        //Configure collectionView's titleLabel:
         buttonCollectionView.addSubview(buttonCollectionViewTitleLabel)
         let titleWidth = buttonCollectionView.frame.width
         buttonCollectionViewTitleLabel.frame = CGRect(x: 0, y: 0, width: titleWidth, height: 35)
@@ -319,21 +322,23 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                 button.tag = 20 + tagIncrementer //button tags are between 20 - 40
                 button.setTitle(title, forState: UIControlState.Normal)
                 button.titleLabel?.adjustsFontSizeToFitWidth = true
+                button.titleLabel?.numberOfLines = 2
+                button.titleLabel?.textAlignment = .Center
                 button.addTarget(self, action: "findingButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
                 button.backgroundColor = UIColor.blackColor()
                 button.layer.borderColor = UIColor.whiteColor().CGColor
                 button.layer.borderWidth = 1.0
-                button.layoutMargins = UIEdgeInsets(top: 10, left: 5, bottom: 10, right: 5) //*
                 self.addSubview(button)
             } else { //last item in the array ('Additional Findings' button) has special class
                 let button = AdditionalFindingsButton(frame: CGRect(x: (100 + horizontalSpacer*150), y: (480 + verticalSpacer*50), width: 120, height: 40))
                 button.tag = 20 + tagIncrementer
                 button.setTitle(title, forState: UIControlState.Normal)
                 button.titleLabel?.adjustsFontSizeToFitWidth = true
+                button.titleLabel?.numberOfLines = 2
+                button.titleLabel?.textAlignment = .Center
                 button.addTarget(self, action: "additionalFindingsButtonClick:", forControlEvents: UIControlEvents.TouchUpInside)
                 button.backgroundColor = UIColor.blackColor()
                 button.layer.borderColor = UIColor.whiteColor().CGColor
-                button.layoutMargins = UIEdgeInsets(top: 10, left: 5, bottom: 10, right: 5) //*
                 button.layer.borderWidth = 1.0
                 self.addSubview(button)
             }
@@ -490,36 +495,10 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         }
     }
     
-    //MARK: - Custom Button Actions
-    
-    func escapeButtonClick(sender: UIButton) { //called by hitting escape (no escape on keyboards*) keyboard shortcut.
-        currentVisibleSection = 0 //reset for next run, or should we leave it as is so user can return to last point?
-        tagsForButtonsInCollectionView = Dictionary<String, [Int]>() //reset or not?
-        
-        if (self.applicationMode == "DEM") { //return to default view
-            returnToDefaultDataEntryView()
-        } else if (self.applicationMode == "PCM") {
-            
-        }
-    }
-    
-    func doneButtonClick(sender: UIButton) { //captures & stores information, then returns -> defaultView
-        print("Done! Saving information...")
-        //Capturing info: create a dictionary for each section containing the buttons that were selected + any additional findings. Based on this dictionary, we know what is normal (everything else). We need to check API to understand what to do but create the dictionary & save it to the persistent store (make 1 dict each for Px & ROS). 
-        
-        currentVisibleSection = 0 //reset for next run
-        tagsForButtonsInCollectionView = Dictionary<String, [Int]>() //reset
-        openOrganSystemButton?.informationHasBeenEnteredForOrganSystem = true
-        obtainReferenceToSuperview()
-        physicalAndROSView?.passButtonVisualConfigurationToBodyImageView(openOrganSystemButton!)
-        returnToDefaultDataEntryView()
-        
-        //What do we do if a user has already entered information for a specific system but they click on the button again in defaultView? Should we block them? How do we deal w/ the updated information?
-    }
-    
     //MARK: - Findings Buttons Logic
     
     func nextSectionButtonClick(sender: UIButton) { //moves view to next section (sync w/ R arrow?)
+        hideAdditionalFindingsTextField()
         let sectionsArray = openOrganSystemButton!.sectionsArray!
         let currentSection = sectionsArray[currentVisibleSection]
         
@@ -528,7 +507,7 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
             lastSectionButton.alpha = 1
             
             if (currentVisibleSection < sectionsArray.count - 1) {
-                currentVisibleSection += 1 //don't forget to reset this variable whenever the escape button is pressed. This won't get reset if someone clicks on another template or gets out by some other method, how to account for this?
+                currentVisibleSection += 1
                 let upcomingSection = sectionsArray[currentVisibleSection] //section being transitioned ->
                 storeButtonsCurrentlyInCollectionView(currentSection)
                 configureSectionTitleLabel()
@@ -543,10 +522,11 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
                 nextSectionButton.enabled = false
             }
         }
-        searchController.searchBar.becomeFirstResponder()
+        searchController!.searchBar.becomeFirstResponder()
     }
     
     func lastSectionButtonClick(sender: UIButton) { //moves view to previous section (sync w/ L arrow?)
+        hideAdditionalFindingsTextField()
         nextSectionButton.enabled = true //reset nextSection button
         nextSectionButton.alpha = 1
         let sectionsArray = openOrganSystemButton!.sectionsArray!
@@ -567,15 +547,16 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
             lastSectionButton.alpha = 0.5
             lastSectionButton.enabled = false
         }
-        searchController.searchBar.becomeFirstResponder()
+        searchController!.searchBar.becomeFirstResponder()
     }
     
-    func storeButtonsCurrentlyInCollectionView(currentSection: String) { //recalls buttons that are present in the collectionView (called when user switches -> next OR previous section)
+    func storeButtonsCurrentlyInCollectionView(currentSection: String) {
+        //Remembers the buttons that are present in the collectionView upon transition (called when user switches -> next OR previous section):
         tagsForButtonsInCollectionView[currentSection] = [] //initialize dict
         for button in buttonCollectionView.subviews {
             if (button is FindingsButton) || (button is AdditionalFindingsButton) {
                 tagsForButtonsInCollectionView[currentSection]!.append(button.tag)
-                button.removeFromSuperview() //remember which buttons were removed by tag #! Set a tag number for the 'additional findings' button (it is always the last item in the array) that opens up a textField for custom entry, then change the button color to reflect special information (make it green). Press enter to accept info from the text field (use existing textField in the search bar!).
+                button.removeFromSuperview() //remember which buttons were removed by tag #!
             }
         }
         for subview in self.subviews { //remove other existing buttons for current section
@@ -585,7 +566,8 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         }
     }
     
-    func assignButtonsToCollectionView(upcomingSection: String) { //reassign buttons -> collection view after navigating back to a view that has already been worked on
+    func assignButtonsToCollectionView(upcomingSection: String) {
+        //Reassign buttons -> collection view after navigating back to a view that has been worked on:
         let buttonsInCollection: [Int]? = tagsForButtonsInCollectionView[upcomingSection]
         if let tagArray = buttonsInCollection {
             for tag in tagArray {
@@ -645,8 +627,8 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         generateTableViewDataArray() //change the tableView data according to what items are in view
         findingsTableView.reloadData()
         renderDefaultFindingsButtonVisuals()
-        searchController.searchBar.becomeFirstResponder()
-        searchController.searchBar.text = ""
+        searchController!.searchBar.becomeFirstResponder()
+        searchController!.searchBar.text = ""
     }
     
     func additionalFindingsButtonClick(sender: AdditionalFindingsButton) {//'Additional Findings' button
@@ -686,26 +668,56 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
             generateTableViewDataArray() //change the tableView data according to what items are in view
             findingsTableView.reloadData()
             renderDefaultFindingsButtonVisuals()
-            searchController.searchBar.becomeFirstResponder()
+            searchController!.searchBar.becomeFirstResponder()
         }
-        searchController.searchBar.text = ""
+        searchController!.searchBar.text = ""
     }
     
-    func renderAdditionalFindingsTextField() { //handles display of additionalFindingsTF vs. tableView
+    func renderAdditionalFindingsTextField(sender: String? = nil) { //handles display of AFTF vs. TV
         additionalFindingsTextField.text = "" //clear text for new cycle
         if (additionalFindingsTextField.hidden == true) { //reveal TF, hide TV
             additionalFindingsTextFieldShouldBeVisible = true
             additionalFindingsTextField.hidden = false
-            searchController.active = false
-            searchController.searchBar.hidden = true
-            searchController.searchBar.resignFirstResponder()
+            searchController!.active = false
+            searchController!.searchBar.hidden = true
+            searchController!.searchBar.resignFirstResponder()
             additionalFindingsTextField.becomeFirstResponder()
         } else { //reveal TV, hide TF
             additionalFindingsTextFieldShouldBeVisible = false
             additionalFindingsTextField.hidden = true
-            searchController.searchBar.hidden = false
+            searchController!.searchBar.hidden = false
             additionalFindingsTextField.resignFirstResponder() //do not delete!
-            searchController.searchBar.becomeFirstResponder() //do not delete (necessary)!
+            
+            //Transition behavior is different if sender is doneButton or escapeButton:
+            if (sender == "returnToDefault") { //returning -> defaultView (from done/escapeButton)
+                //DO NOT return 1stR -> searchController!
+            } else { //remaining in dataEntryView (return 1stR -> searchController)
+                searchController!.searchBar.becomeFirstResponder() //do not delete (necessary)!
+            }
+        }
+    }
+    
+    func hideAdditionalFindingsTextField(sender: String? = nil) { //hides TF when user clicks any button
+        if (additionalFindingsTextField.hidden == false) {
+            //Obtain reference to the additionalFindings button:
+            let labelsDict = openOrganSystemButton!.labelsArray!
+            let sectionsArray = openOrganSystemButton!.sectionsArray!
+            let section = sectionsArray[currentVisibleSection]
+            let numberOfLabelsForCurrentSection = labelsDict[section]!.count
+            let lastButtonTag = 19 + numberOfLabelsForCurrentSection
+            let additionalFindingsButton = self.viewWithTag(lastButtonTag) as! AdditionalFindingsButton
+            switchAdditionalFindingsButtonVisualState(additionalFindingsButton) //un-highlight
+            renderAdditionalFindingsTextField(sender)
+        }
+    }
+    
+    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        //If the user taps the screen when additionalFindingsTF is open, render the normal view:
+        let touch = touches.first
+        let touchLocation = touch!.locationInView(self)
+        let additionalFindingsTextFieldFrame = additionalFindingsTextField.frame
+        if (!CGRectContainsPoint(additionalFindingsTextFieldFrame, touchLocation)) {
+            hideAdditionalFindingsTextField()
         }
     }
     
@@ -742,25 +754,46 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         return true
     }
     
+    //MARK: - Escape & Done Button Actions
+    
+    func escapeButtonClick(sender: UIButton) { //called by hitting Ctrl+Q keyboard shortcut
+        hideAdditionalFindingsTextField("returnToDefault")
+        if (self.applicationMode == "DEM") { //return to default view
+            returnToDefaultDataEntryView()
+        } else if (self.applicationMode == "PCM") {
+            //control the presentation from 'returnToDefault' - check there which view we are in & render accordingly.
+        }
+    }
+    
+    func doneButtonClick(sender: UIButton) { //captures & stores information, then returns -> defaultView
+        print("Done! Saving information...")
+        hideAdditionalFindingsTextField("returnToDefault")
+        
+        //Capturing info: create a dictionary for each section containing the buttons that were selected + any additional findings. Based on this dictionary, we know what is normal (everything else). We need to check API to understand what to do but create the dictionary & save it to the persistent store (make 1 dict each for Px & ROS).
+        if (self.viewChoice == "physicalExam") {
+            print("Px Dictionary: ")
+        } else if (self.viewChoice == "reviewOfSystems") {
+            print("ROS Dictionary: ")
+        }
+        
+        //Set visuals & variables for the organSystemButton:
+        openOrganSystemButton?.informationHasBeenEnteredForOrganSystem = true
+        obtainReferenceToSuperview()
+        physicalAndROSView?.passButtonVisualConfigurationToBodyImageView(openOrganSystemButton!)
+        returnToDefaultDataEntryView()
+        
+        //What do we do if a user has already entered information for a specific system but they click on the button again in defaultView? Should we block them? How do we deal w/ the updated information?
+    }
+    
     //MARK: - Helper Functions
     
-    func obtainReferenceToSuperview() {
+    private func obtainReferenceToSuperview() {
         physicalAndROSView = (self.superview as? PhysicalAndROSView)
     }
     
-    func clearDataEntryView() { //clears all subviews from the view
-        obtainReferenceToSuperview()
-        searchController.searchBar.hidden = true
-        searchController.searchBar.resignFirstResponder()
-        for button in buttonCollectionView.subviews { //clear collection view
-            button.removeFromSuperview()
-        }
-        for subview in self.subviews {
-            subview.removeFromSuperview()
-        }
-    }
-    
     func returnToDefaultDataEntryView() {
+        currentVisibleSection = 0 //reset or should we leave it as is so user can return to last point?
+        tagsForButtonsInCollectionView = Dictionary<String, [Int]>() //reset or not?
         openOrganSystemButton = nil //clear openSystemButton
         clearDataEntryView() //remove all sub-views
         obtainReferenceToSuperview()
@@ -769,6 +802,25 @@ class PhysicalAndROSDataEntryView: UIView, UITableViewDelegate, UITableViewDataS
         //Configure default dataEntryView:
         self.frame = CGRect(x: 200, y: 0, width: 764, height: 619) //make dynamic
         renderDefaultDataEntryView()
+    }
+    
+    private func clearDataEntryView() { //clears all subviews from the view
+        if (searchController != nil) { //clear the searchController
+            searchController!.searchBar.hidden = true
+            searchController!.searchBar.resignFirstResponder()
+            searchController!.delegate = nil
+            searchController!.searchResultsUpdater = nil
+            searchController!.searchBar.delegate = nil
+            searchController!.active = false
+            searchController = nil
+        }
+        
+        for button in buttonCollectionView.subviews { //clear buttonCollection view
+            button.removeFromSuperview()
+        }
+        for subview in self.subviews { //clear dataEntryView
+            subview.removeFromSuperview()
+        }
     }
 
 }

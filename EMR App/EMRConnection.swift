@@ -8,7 +8,7 @@
 import Foundation
 
 class EMRConnection {
-    let openScope: EMRField?
+    let openScope: EMRField? //optional b/c we might be syncing old info (from persistent store) & no scope will be open @ that point
     let baseURL: NSURL
     let queryURL: NSURL
     lazy var config: NSURLSessionConfiguration = NSURLSessionConfiguration.defaultSessionConfiguration()
@@ -22,7 +22,7 @@ class EMRConnection {
         self.baseURL = NSURL(string: "http://www.brainymed.com/brainymed/api/")!
         
         var queryString: String = "" //string to be appended
-        switch (openScope.getFieldName())! {
+        switch (self.openScope?.getFieldName())! { //
         case "medications":
             queryString = "id/"
             self.queryURL = NSURL(string: queryString, relativeToURL: baseURL)!
